@@ -44,10 +44,6 @@ export function Skills() {
             </div>
             <pre className="overflow-x-auto bg-[var(--bg)] px-5 py-6 font-mono text-sm leading-relaxed">
               <code>
-                <span className="text-[var(--text-muted)]">
-                  {"// still asking \"why?\" — now about render cycles"}
-                </span>
-                {"\n"}
                 <span className="text-[var(--green)]">const</span>{" "}
                 <span className="text-[var(--blue)]">skills</span> = {"{"}
                 {groups.map((g) => (

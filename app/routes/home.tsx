@@ -9,7 +9,7 @@ import { useScrollProgress } from "~/hooks/useScrollProgress";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Aaron Parisi — Frontend Developer" },
+    { title: "Aaron Parisi; Frontend Developer" },
     {
       name: "description",
       content:

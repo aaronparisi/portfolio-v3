@@ -18,15 +18,14 @@ export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
           <span className="font-mono text-xs text-[var(--text-muted)]">{entry.range}</span>
         </div>
 
-        <h3 className="mt-2 text-xl font-semibold text-[var(--text-strong)]">
-          {entry.title} — {entry.org}
-        </h3>
+        <h3 className="mt-2 text-xl font-semibold text-[var(--text-strong)]">{entry.title}</h3>
+        <p className="font-mono text-sm text-[var(--blue)]">{entry.org}</p>
 
         <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
           At 1031 Services, transactions were tracked on a whiteboard and a stack of hand-written
-          calendars — functional, but barely. I taught myself enough Visual Basic to build a
-          calendar application in Excel — I could see exactly what I needed to do for each day of
-          the week, for each transaction — and it worked. Watching something I&rsquo;d built
+          calendars. Functional, but barely. I taught myself enough Visual Basic to build a
+          calendar application in Excel. I could see exactly what I needed to do for each day of
+          the week, for each transaction, and it worked. Watching something I&rsquo;d built
           actually make my day easier was the hook: I quit the job and spent the next year at my
           kitchen table, studying full time, determined to make this my career.
         </p>

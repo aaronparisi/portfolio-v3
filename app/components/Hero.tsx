@@ -44,12 +44,12 @@ export function Hero() {
         <p className="mx-auto mt-6 max-w-xl text-balance text-base leading-relaxed text-[var(--text)]">
           Calculus teacher turned self-taught web developer with expertise in SQL, React,
           TypeScript, Node.js, and Recharts. Hungry to deepen my knowledge of frontend tools and
-          the infrastructure behind them — the kind of kid who kept asking, &ldquo;Why?&rdquo;
+          the infrastructure behind them.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
             href="#journey"
-            className="rounded-full bg-[var(--blue)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
+            className="rounded-full bg-[var(--blue-deep)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
           >
             See My Journey
           </a>
