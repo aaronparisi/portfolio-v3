@@ -22,6 +22,15 @@ export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
           {entry.title} — {entry.org}
         </h3>
 
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+          At 1031 Services, closings were tracked on a color-coded whiteboard and a stack of
+          hand-written calendars — functional, but barely. I taught myself just enough Excel VBA
+          to build the team a real calendar application instead, and it worked. Watching
+          something I&rsquo;d built actually make people&rsquo;s day easier was the hook: not
+          long after, I quit and spent the next year at my kitchen table, studying full time,
+          determined to make this my career.
+        </p>
+
         <div className="mt-4 flex flex-wrap items-center gap-3 font-mono text-sm">
           <span className="rounded-md bg-[var(--yellow)]/10 px-3 py-1.5 text-[var(--yellow)] decoration-2 line-through">
             ∫ f(x) dx
