@@ -54,7 +54,7 @@ export const timeline: TimelineEntry[] = [
     range: "2020 – 2022",
     title: "Web Development",
     org: "App Academy Open",
-    bullets: ["Self-taught curriculum: Rails, React, Redux, TypeScript"],
+    bullets: ["Curriculum: Rails, React, Redux, TypeScript"],
     icon: "terminal",
   },
   {
