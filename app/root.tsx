@@ -23,26 +23,40 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-// Applied before hydration so the correct Solarized variant (and the
-// visitor's previous choice) is in place for the very first paint.
+// Applied before hydration so the correct Solarized variant, and the
+// correct parallax on/off state, are in place for the very first paint.
 const themeInitScript = `
 (function () {
+  var root = document.documentElement;
   try {
-    var stored = localStorage.getItem("theme");
+    var storedTheme = localStorage.getItem("theme");
     var theme =
-      stored === "light" || stored === "dark"
-        ? stored
+      storedTheme === "light" || storedTheme === "dark"
+        ? storedTheme
         : window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light";
-    document.documentElement.setAttribute("data-theme", theme);
+    root.setAttribute("data-theme", theme);
+  } catch (e) {}
+  try {
+    var storedMotion = localStorage.getItem("motion");
+    var motion =
+      storedMotion === "on" || storedMotion === "off"
+        ? storedMotion
+        : window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "off"
+        : "on";
+    root.setAttribute("data-motion", motion);
   } catch (e) {}
 })();
 `;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // data-theme / data-motion are set by the inline script above before
+    // hydration; React never renders them itself, so this expected diff
+    // needs to be told not to trigger a hydration-mismatch warning.
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
