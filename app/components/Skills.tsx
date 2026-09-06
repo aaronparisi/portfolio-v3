@@ -1,5 +1,6 @@
 import { Reveal } from "./Reveal";
 import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
+import { KeyboardIcon, MouseIcon } from "./icons";
 
 const groups: { key: string; items: string[] }[] = [
   { key: "languages", items: ["TypeScript", "JavaScript", "SQL"] },
@@ -7,13 +8,17 @@ const groups: { key: string; items: string[] }[] = [
   { key: "tooling", items: ["Node.js", "Storybook", "Playwright", "OAuth2", "Vite"] },
 ];
 
-// Pure code, no chalk left — the fully-arrived developer voice.
+// Almost entirely code by now, but a stray equation still turns up now
+// and then — old habits. Positioned above/below the code panel (which is
+// opaque) rather than behind it, so nothing gets hidden.
 const glyphs: Glyph[] = [
-  { symbol: "return", top: "10%", left: "85%", size: "1.25rem", speed: 0.4, font: "mono" },
-  { symbol: "0x2A", top: "30%", left: "5%", size: "1.5rem", speed: 0.26, font: "mono" },
-  { symbol: "( )", top: "55%", left: "90%", size: "2.5rem", speed: 0.5, font: "mono" },
-  { symbol: "export", top: "78%", left: "6%", size: "1.1rem", speed: 0.32, font: "mono" },
-  { symbol: "++", top: "90%", left: "82%", size: "2rem", speed: 0.2, font: "mono" },
+  { symbol: "return", top: "6%", left: "85%", size: "1.25rem", speed: 0.4, font: "mono" },
+  { symbol: "π", top: "14%", left: "46%", size: "1.4rem", speed: 0.22, font: "chalk", opacity: 0.14 },
+  { icon: MouseIcon, top: "4%", left: "68%", size: "1.6rem", speed: 0.28, opacity: 0.18 },
+  { symbol: "0x2A", top: "32%", left: "5%", size: "1.5rem", speed: 0.26, font: "mono" },
+  { icon: KeyboardIcon, top: "52%", left: "91%", size: "2rem", speed: 0.44, opacity: 0.2 },
+  { symbol: "export", top: "70%", left: "7%", size: "1.1rem", speed: 0.32, font: "mono" },
+  { symbol: "++", top: "90%", left: "80%", size: "2rem", speed: 0.2, font: "mono" },
 ];
 
 export function Skills() {

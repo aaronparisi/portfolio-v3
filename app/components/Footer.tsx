@@ -1,9 +1,12 @@
-import { PinIcon, MailIcon, PhoneIcon, ArrowUpRightIcon } from "./icons";
+import { PinIcon, MailIcon, PhoneIcon, ArrowUpRightIcon, GitBranchIcon } from "./icons";
 import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
 
 const glyphs: Glyph[] = [
-  { symbol: "</>", top: "20%", left: "8%", size: "1.75rem", speed: 0.24, font: "mono" },
-  { symbol: "git push", top: "70%", left: "88%", size: "1rem", speed: 0.36, font: "mono" },
+  { symbol: "</>", top: "18%", left: "9%", size: "1.75rem", speed: 0.24, font: "mono" },
+  { symbol: "git push", top: "78%", left: "86%", size: "1rem", speed: 0.36, font: "mono" },
+  // One last equation, quietly, behind the sign-off.
+  { symbol: "π", top: "48%", left: "44%", size: "1.5rem", speed: 0.16, font: "chalk", opacity: 0.1 },
+  { icon: GitBranchIcon, top: "82%", left: "16%", size: "1.5rem", speed: 0.3, opacity: 0.18 },
 ];
 
 export function Footer() {

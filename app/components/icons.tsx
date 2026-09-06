@@ -166,3 +166,71 @@ export function TerminalIcon({ className }: IconProps) {
     </Svg>
   );
 }
+
+export function GitBranchIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="6" cy="18" r="2" />
+      <circle cx="18" cy="10" r="2" />
+      <path d="M6 8v8" />
+      <path d="M6 14c0-3 3-4 6-4h4" />
+    </Svg>
+  );
+}
+
+export function BugIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="8" y="8" width="8" height="10" rx="4" />
+      <path d="M9.5 8a2.5 2.5 0 0 1 5 0" />
+      <path d="M12 8v10M4.5 11l3.5 1.5M19.5 11 16 12.5M4.5 18l3.5-2M19.5 18 16 16" />
+    </Svg>
+  );
+}
+
+export function DatabaseIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <ellipse cx="12" cy="5.5" rx="7" ry="2.5" />
+      <path d="M5 5.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6" />
+      <path d="M5 11.5v6c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-6" />
+    </Svg>
+  );
+}
+
+export function CloudIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M7 18h10a4 4 0 0 0 .5-7.97 5.5 5.5 0 0 0-10.4-2.03A4.5 4.5 0 0 0 7 18Z" />
+    </Svg>
+  );
+}
+
+export function KeyboardIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="2" y="6" width="20" height="12" rx="2" />
+      <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h12" />
+    </Svg>
+  );
+}
+
+export function CoffeeIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M5 9h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9Z" />
+      <path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16" />
+      <path d="M8 6c0-1 1-1 1-2S8 3 8 2M12.5 6c0-1 1-1 1-2s-1-1-1-2" />
+    </Svg>
+  );
+}
+
+export function MouseIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="7" y="3" width="10" height="18" rx="5" />
+      <path d="M12 3v6" />
+    </Svg>
+  );
+}

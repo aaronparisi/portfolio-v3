@@ -1,11 +1,15 @@
 import { Reveal } from "./Reveal";
 import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
+import { CoffeeIcon } from "./icons";
 
 const glyphs: Glyph[] = [
-  { symbol: "?", top: "15%", left: "88%", size: "3.5rem", speed: 0.34, font: "chalk", rotate: "-6deg" },
-  { symbol: "console.log", top: "78%", left: "4%", size: "1rem", speed: 0.26, font: "mono" },
-  { symbol: "{ why }", top: "50%", left: "90%", size: "1.25rem", speed: 0.44, font: "mono" },
-  { symbol: "//", top: "10%", left: "6%", size: "2.5rem", speed: 0.2, font: "mono" },
+  { symbol: "?", top: "12%", left: "86%", size: "3.5rem", speed: 0.34, font: "chalk", rotate: "-6deg" },
+  { symbol: "∞", top: "85%", left: "80%", size: "2rem", speed: 0.22, font: "chalk", rotate: "5deg" },
+  { symbol: "console.log", top: "80%", left: "5%", size: "1rem", speed: 0.26, font: "mono" },
+  { symbol: "//", top: "8%", left: "7%", size: "2.5rem", speed: 0.2, font: "mono" },
+  { icon: CoffeeIcon, top: "62%", left: "12%", size: "1.75rem", speed: 0.3, rotate: "-8deg", opacity: 0.22 },
+  // Drifts right through the quote, kept very faint so it stays readable.
+  { symbol: "{ why }", top: "40%", left: "48%", size: "1.25rem", speed: 0.44, font: "mono", opacity: 0.1 },
 ];
 
 export function About() {
