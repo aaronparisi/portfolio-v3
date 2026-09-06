@@ -27,6 +27,11 @@
   --blue: #268bd2;
   --cyan: #2aa198;
   --green: #859900;
+
+  /* Blue darkened toward base03 for use as button text-on-fill — the
+     plain accent blue only clears ~3.4:1 against base3 body text, short
+     of WCAG AA's 4.5:1 for normal-weight text. */
+  --blue-deep: color-mix(in oklab, var(--blue) 72%, var(--base03) 28%);
 }
 
 :root[data-theme="light"] {
@@ -36,6 +41,10 @@
   --text-muted: var(--base1);
   --text-strong: var(--base01);
   --border: color-mix(in srgb, var(--base01) 25%, transparent);
+  /* Orange only clears ~4.3:1 against the button's base3 text, short of
+     WCAG AA's 4.5:1 for normal-weight text on the pale light background —
+     the deepened blue clears ~5:1. */
+  --accent-cta: var(--blue-deep);
   color-scheme: light;
 }
 
@@ -46,6 +55,7 @@
   --text-muted: var(--base01);
   --text-strong: var(--base1);
   --border: color-mix(in srgb, var(--base1) 20%, transparent);
+  --accent-cta: var(--orange);
   color-scheme: dark;
 }
 

@@ -32,20 +32,24 @@ export function Hero() {
         <h1 className="text-5xl font-bold tracking-tight text-[var(--text-strong)] sm:text-7xl">
           Aaron Parisi
         </h1>
-        <p className="mt-6 flex flex-wrap items-center justify-center gap-3 text-2xl sm:text-3xl">
-          <span className="font-chalk text-[var(--orange)]">Calculus Teacher</span>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3 font-mono text-lg sm:text-2xl">
+          <span className="rounded-lg bg-[var(--yellow)]/10 px-4 py-2 text-[var(--yellow)] decoration-2 line-through">
+            ∫ f(x) dx
+          </span>
           <span className="text-[var(--text-muted)]">→</span>
-          <span className="font-mono text-[var(--cyan)]">Frontend Developer</span>
-        </p>
+          <span className="rounded-lg bg-[var(--cyan)]/10 px-4 py-2 text-[var(--cyan)]">
+            const solve = (x) =&gt; {"{ ... }"}
+          </span>
+        </div>
         <p className="mx-auto mt-6 max-w-xl text-balance text-base leading-relaxed text-[var(--text)]">
-          Self-taught web developer with expertise in SQL, React, TypeScript, Node.js, and
-          Recharts. Hungry to deepen my knowledge of frontend tools and the infrastructure behind
-          them — the kind of kid who kept asking, &ldquo;Why?&rdquo;
+          Calculus teacher turned self-taught web developer with expertise in SQL, React,
+          TypeScript, Node.js, and Recharts. Hungry to deepen my knowledge of frontend tools and
+          the infrastructure behind them.
         </p>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
             href="#journey"
-            className="rounded-full bg-[var(--blue)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
+            className="rounded-full bg-[var(--accent-cta)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
           >
             See My Journey
           </a>

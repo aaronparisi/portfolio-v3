@@ -55,7 +55,7 @@ export function Footer() {
         </div>
 
         <p className="mt-12 font-mono text-xs text-[var(--text-muted)]">
-          © {year} Aaron Parisi — built with React Router, TypeScript &amp; Tailwind, styled in
+          © {year} Aaron Parisi. Built with React Router, TypeScript &amp; Tailwind, styled in
           Solarized.
         </p>
       </div>

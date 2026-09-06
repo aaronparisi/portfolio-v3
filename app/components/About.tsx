@@ -23,7 +23,7 @@ export function About() {
             &ldquo;The kind of kid who kept asking, <span className="text-[var(--orange)]">why?</span>&rdquo;
           </blockquote>
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--text)]">
-            I taught AP Calculus before I ever wrote a line of code — and it turns out curiosity
+            I taught AP Calculus before I ever wrote a line of code; it turns out curiosity
             translates well. These days I bring that same instinct to the frontend: seeking roles
             that involve extensive collaboration with product and design, and always digging one
             layer deeper into the tools and infrastructure behind them.

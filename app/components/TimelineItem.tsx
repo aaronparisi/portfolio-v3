@@ -41,8 +41,8 @@ export function TimelineItem({ entry, t }: { entry: TimelineEntry; t: number }) 
       <p className="font-mono text-sm text-[var(--blue)]">{entry.org}</p>
       <ul className="mt-2 space-y-1.5">
         {entry.bullets.map((bullet, idx) => (
-          <li key={idx} className="flex gap-2 text-sm text-[var(--text)]">
-            <span className="mt-1 text-[var(--text-muted)]">–</span>
+          <li key={idx} className="flex items-start gap-2.5 text-sm text-[var(--text)]">
+            <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-muted)]" />
             <span>{bullet}</span>
           </li>
         ))}

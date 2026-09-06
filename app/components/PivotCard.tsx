@@ -18,24 +18,22 @@ export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
           <span className="font-mono text-xs text-[var(--text-muted)]">{entry.range}</span>
         </div>
 
-        <h3 className="mt-2 text-xl font-semibold text-[var(--text-strong)]">
-          {entry.title} — {entry.org}
-        </h3>
+        <h3 className="mt-2 text-xl font-semibold text-[var(--text-strong)]">{entry.title}</h3>
+        <p className="font-mono text-sm text-[var(--blue)]">{entry.org}</p>
 
-        <div className="mt-4 flex flex-wrap items-center gap-3 font-mono text-sm">
-          <span className="rounded-md bg-[var(--yellow)]/10 px-3 py-1.5 text-[var(--yellow)] decoration-2 line-through">
-            ∫ f(x) dx
-          </span>
-          <span className="text-[var(--text-muted)]">→</span>
-          <span className="rounded-md bg-[var(--cyan)]/10 px-3 py-1.5 text-[var(--cyan)]">
-            const solve = (x) =&gt; {"{ ... }"}
-          </span>
-        </div>
+        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+          At 1031 Services, transactions were tracked on a whiteboard and a stack of hand-written
+          calendars. Functional, but barely. I taught myself enough Visual Basic to build a
+          calendar application in Excel. I could see exactly what I needed to do for each day of
+          the week, for each transaction, and it worked. Watching something I&rsquo;d built
+          actually make my day easier was the hook: I quit the job and spent the next year at my
+          kitchen table, studying full time, determined to make this my career.
+        </p>
 
         <ul className="mt-4 space-y-1.5">
           {entry.bullets.map((bullet, idx) => (
-            <li key={idx} className="flex gap-2 text-sm text-[var(--text)]">
-              <span className="mt-1 text-[var(--text-muted)]">–</span>
+            <li key={idx} className="flex items-start gap-2.5 text-sm text-[var(--text)]">
+              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-muted)]" />
               <span>{bullet}</span>
             </li>
           ))}
