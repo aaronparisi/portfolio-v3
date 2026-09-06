@@ -49,7 +49,7 @@ export function Hero() {
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
             href="#journey"
-            className="rounded-full bg-[var(--blue-deep)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
+            className="rounded-full bg-[var(--accent-cta)] px-6 py-3 font-medium text-[var(--base3)] transition-transform hover:scale-105"
           >
             See My Journey
           </a>

@@ -41,6 +41,10 @@
   --text-muted: var(--base1);
   --text-strong: var(--base01);
   --border: color-mix(in srgb, var(--base01) 25%, transparent);
+  /* Orange only clears ~4.3:1 against the button's base3 text, short of
+     WCAG AA's 4.5:1 for normal-weight text on the pale light background —
+     the deepened blue clears ~5:1. */
+  --accent-cta: var(--blue-deep);
   color-scheme: light;
 }
 
@@ -51,6 +55,7 @@
   --text-muted: var(--base01);
   --text-strong: var(--base1);
   --border: color-mix(in srgb, var(--base1) 20%, transparent);
+  --accent-cta: var(--orange);
   color-scheme: dark;
 }
 
