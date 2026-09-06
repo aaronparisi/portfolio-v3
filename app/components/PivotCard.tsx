@@ -34,8 +34,8 @@ export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
 
         <ul className="mt-4 space-y-1.5">
           {entry.bullets.map((bullet, idx) => (
-            <li key={idx} className="flex gap-2 text-sm text-[var(--text)]">
-              <span className="mt-1 text-[var(--text-muted)]">–</span>
+            <li key={idx} className="flex items-start gap-2.5 text-sm text-[var(--text)]">
+              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-muted)]" />
               <span>{bullet}</span>
             </li>
           ))}
