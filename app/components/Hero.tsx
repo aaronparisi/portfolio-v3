@@ -2,20 +2,20 @@ import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
 import { ChevronDownIcon } from "./icons";
 
 const mathGlyphs: Glyph[] = [
-  { symbol: "∫", top: "12%", left: "8%", size: "3rem", speed: 0.12, rotate: "-8deg" },
-  { symbol: "Σ", top: "22%", left: "80%", size: "2.5rem", speed: 0.2, rotate: "6deg" },
-  { symbol: "π", top: "68%", left: "12%", size: "2rem", speed: 0.08, rotate: "4deg" },
-  { symbol: "Δ", top: "78%", left: "66%", size: "2.25rem", speed: 0.16, rotate: "-4deg" },
-  { symbol: "√x", top: "40%", left: "4%", size: "1.75rem", speed: 0.1 },
-  { symbol: "lim", top: "8%", left: "52%", size: "1.5rem", speed: 0.06 },
+  { symbol: "∫", top: "12%", left: "8%", size: "3rem", speed: 0.3, rotate: "-8deg" },
+  { symbol: "Σ", top: "22%", left: "80%", size: "2.5rem", speed: 0.48, rotate: "6deg" },
+  { symbol: "π", top: "68%", left: "12%", size: "2rem", speed: 0.2, rotate: "4deg" },
+  { symbol: "Δ", top: "78%", left: "66%", size: "2.25rem", speed: 0.4, rotate: "-4deg" },
+  { symbol: "√x", top: "40%", left: "4%", size: "1.75rem", speed: 0.26 },
+  { symbol: "lim", top: "8%", left: "52%", size: "1.5rem", speed: 0.16 },
 ];
 
 const codeGlyphs: Glyph[] = [
-  { symbol: "</>", top: "18%", left: "68%", size: "2.25rem", speed: 0.22, font: "mono" },
-  { symbol: "{ }", top: "60%", left: "84%", size: "2.5rem", speed: 0.14, font: "mono" },
-  { symbol: "=>", top: "82%", left: "20%", size: "1.75rem", speed: 0.1, font: "mono" },
-  { symbol: "const", top: "50%", left: "6%", size: "1.25rem", speed: 0.18, font: "mono" },
-  { symbol: ";", top: "30%", left: "92%", size: "2.5rem", speed: 0.08, font: "mono" },
+  { symbol: "</>", top: "18%", left: "68%", size: "2.25rem", speed: 0.52, font: "mono" },
+  { symbol: "{ }", top: "60%", left: "84%", size: "2.5rem", speed: 0.32, font: "mono" },
+  { symbol: "=>", top: "82%", left: "20%", size: "1.75rem", speed: 0.24, font: "mono" },
+  { symbol: "const", top: "50%", left: "6%", size: "1.25rem", speed: 0.42, font: "mono" },
+  { symbol: ";", top: "30%", left: "92%", size: "2.5rem", speed: 0.18, font: "mono" },
 ];
 
 export function Hero() {

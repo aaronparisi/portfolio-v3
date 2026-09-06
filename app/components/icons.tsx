@@ -38,6 +38,25 @@ export function MoonIcon({ className }: IconProps) {
   );
 }
 
+export function WavesIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.5 8.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+      <path d="M2.5 14.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+      <path d="M2.5 20.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+    </Svg>
+  );
+}
+
+export function WavesOffIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.5 12c1.5 0 3 0 4.5 0s3 0 4.5 0 3 0 4.5 0 3 0 4.5 0" />
+      <path d="M3 3l18 18" />
+    </Svg>
+  );
+}
+
 export function PinIcon({ className }: IconProps) {
   return (
     <Svg className={className}>

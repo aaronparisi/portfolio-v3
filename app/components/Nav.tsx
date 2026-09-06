@@ -1,4 +1,5 @@
 import { ThemeToggle } from "./ThemeToggle";
+import { MotionToggle } from "./MotionToggle";
 
 const links = [
   { href: "#about", label: "About" },
@@ -21,7 +22,10 @@ export function Nav() {
             </a>
           ))}
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <MotionToggle />
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

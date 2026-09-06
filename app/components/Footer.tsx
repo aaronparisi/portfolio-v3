@@ -1,11 +1,22 @@
 import { PinIcon, MailIcon, PhoneIcon, ArrowUpRightIcon } from "./icons";
+import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
+
+const glyphs: Glyph[] = [
+  { symbol: "</>", top: "20%", left: "8%", size: "1.75rem", speed: 0.24, font: "mono" },
+  { symbol: "git push", top: "70%", left: "88%", size: "1rem", speed: 0.36, font: "mono" },
+];
 
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="contact" className="relative border-t border-[var(--border)] bg-[var(--bg-alt)] px-6 py-20">
-      <div className="mx-auto max-w-2xl text-center">
+    <footer
+      id="contact"
+      className="relative overflow-hidden border-t border-[var(--border)] bg-[var(--bg-alt)] px-6 py-20"
+    >
+      <FloatingGlyphs glyphs={glyphs} className="text-[var(--text-muted)]" />
+
+      <div className="relative z-10 mx-auto max-w-2xl text-center">
         <p className="font-mono text-sm text-[var(--cyan)]">// contact</p>
         <h2 className="mt-2 text-3xl font-bold text-[var(--text-strong)] sm:text-4xl">
           Let&rsquo;s Build Something

@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 
 export interface Glyph {
   symbol: string;
@@ -13,8 +13,10 @@ export interface Glyph {
 
 /**
  * A layer of decorative symbols that drift at their own speed as the page
- * scrolls (driven by the `--scroll-y` custom property from
- * useScrollProgress), giving the background a sense of depth.
+ * scrolls, giving the background a sense of depth. Movement is computed
+ * relative to each layer's own position in the document (via `--layer-origin`)
+ * rather than raw page scroll — so the effect stays equally dramatic whether
+ * the layer sits in the hero or two thousand pixels further down the page.
  */
 export function FloatingGlyphs({
   glyphs,
@@ -23,8 +25,25 @@ export function FloatingGlyphs({
   glyphs: Glyph[];
   className?: string;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const measure = () => {
+      const origin = el.getBoundingClientRect().top + window.scrollY;
+      el.style.setProperty("--layer-origin", String(origin));
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
   return (
     <div
+      ref={ref}
       aria-hidden="true"
       className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
     >

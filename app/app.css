@@ -83,6 +83,14 @@ footer[id] {
   display: none;
 }
 
+/* Same trick for the parallax/motion toggle. */
+[data-motion="on"] .motion-icon-off {
+  display: none;
+}
+[data-motion="off"] .motion-icon-on {
+  display: none;
+}
+
 /* Career-trajectory accent: mixes from "chalk" yellow to "code" cyan
    based on a per-item --t custom property (0 = earliest, 1 = latest). */
 .timeline-node {
@@ -93,12 +101,17 @@ footer[id] {
   );
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .parallax {
-    transform: translate3d(0, calc(var(--scroll-y, 0) * var(--parallax-speed, 0) * -1px), 0)
-      rotate(var(--parallax-rotate, 0deg));
-    will-change: transform;
-  }
+/* Parallax is on by default unless the visitor's OS asks for reduced
+   motion (decided once, in root.tsx's init script) — and always
+   overridable via the on-page toggle, which just flips this attribute. */
+[data-motion="on"] .parallax {
+  transform: translate3d(
+      0,
+      calc((var(--scroll-y, 0) - var(--layer-origin, 0)) * var(--parallax-speed, 0) * -1px),
+      0
+    )
+    rotate(var(--parallax-rotate, 0deg));
+  will-change: transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
