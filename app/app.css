@@ -148,6 +148,13 @@ footer[id] {
   animation: caret-blink 1s steps(1, end) infinite;
 }
 
+/* Suppresses every transition inside the animated equation for the one
+   frame it resets to blank, so that reset is a hard cut rather than a
+   visible (backwards-looking) unwind of whatever was on screen before. */
+.anim-instant * {
+  transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .typing-caret {
     animation: none;

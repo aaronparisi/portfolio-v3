@@ -11,6 +11,15 @@ function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
+// Waits for a frame to actually paint. Used to force a no-transition reset
+// to be committed to the screen before transitions are switched back on,
+// so the reset itself never plays as a (backwards-looking) animation.
+function nextPaint() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
 /**
  * The "calculus teacher → developer" visual, animated: the integral
  * writes itself in, gets crossed out, and hands off to a hand-typed
@@ -26,6 +35,10 @@ export function AnimatedEquation() {
   const [arrowShown, setArrowShown] = useState(true);
   const [codeRevealed, setCodeRevealed] = useState(CODE_TEXT.length);
   const [caretOn, setCaretOn] = useState(false);
+  // True only for the instant a loop (re)starts and resets to blank — every
+  // transition is suppressed while it's on, so that reset can never itself
+  // play as a visible (backwards-looking) animation.
+  const [instant, setInstant] = useState(false);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -46,13 +59,24 @@ export function AnimatedEquation() {
     async function loop(myGen: number) {
       const stopped = () => state.cancelled || state.generation !== myGen;
 
+      // Reset to a totally blank slate with transitions suppressed, so
+      // this reset is a hard cut rather than a visible "unwind" of
+      // whatever was on screen a moment ago (e.g. the resolved static
+      // state shown before this effect had a chance to run).
+      setInstant(true);
       setMathRevealed(0);
       setCrossedOut(false);
       setArrowShown(false);
       setCodeRevealed(0);
       setCaretOn(false);
+      await nextPaint();
+      if (stopped()) return;
+      setInstant(false);
 
       while (!stopped()) {
+        // A beat on the blank page before anything starts.
+        await sleep(500);
+
         // Write the integral in, one character at a time, like it's being
         // sketched onto a chalkboard.
         for (let i = 1; i <= MATH_CHARS.length; i++) {
@@ -62,23 +86,24 @@ export function AnimatedEquation() {
         }
 
         if (stopped()) return;
-        await sleep(300);
+        await sleep(500);
 
         // Draw the strike-through.
-        if (stopped()) return;
         setCrossedOut(true);
         await sleep(600);
 
         if (stopped()) return;
-        await sleep(180);
-        setArrowShown(true);
-        await sleep(300);
+        await sleep(350);
 
-        // The cursor wipes in only once the arrow has settled — it's the
-        // code's cursor, so it shouldn't be around during the math part.
+        // The arrow, then the cursor a beat after — it's the code's
+        // cursor, so it shouldn't show up until the code is about to start.
+        setArrowShown(true);
+        await sleep(450);
+
         if (stopped()) return;
         setCaretOn(true);
-        await sleep(280);
+        await sleep(300); // let the wipe-in finish
+        await sleep(1600); // blink once or twice before typing begins
 
         // Type the replacement out unevenly, like a person actually typing:
         // mostly quick, occasional hesitation, a beat longer after spaces.
@@ -103,19 +128,23 @@ export function AnimatedEquation() {
           await sleep(randomBetween(20, 46));
         }
 
-        // Wipe the cursor down before the arrow (and the code) fade away.
         if (stopped()) return;
-        await sleep(180);
+        await sleep(1600); // blink once or twice before the cursor leaves
+
         setCaretOn(false);
-        await sleep(280);
+        await sleep(300); // let the wipe-down finish
 
         if (stopped()) return;
+        await sleep(350);
         setArrowShown(false);
-        await sleep(300);
+        await sleep(450);
 
         if (stopped()) return;
         setCrossedOut(false);
         await sleep(600);
+
+        if (stopped()) return;
+        await sleep(500);
 
         // Erase the integral the same way it was written, in reverse.
         for (let i = MATH_CHARS.length - 1; i >= 0; i--) {
@@ -161,7 +190,10 @@ export function AnimatedEquation() {
 
   return (
     <div
-      className="mt-6 flex flex-wrap items-center justify-center gap-3 font-mono text-lg sm:text-2xl"
+      className={
+        "mt-6 flex flex-wrap items-center justify-center gap-3 font-mono text-lg sm:text-2xl" +
+        (instant ? " anim-instant" : "")
+      }
       aria-hidden="true"
     >
       <span className="relative inline-block whitespace-pre rounded-lg bg-[var(--yellow)]/10 px-4 py-2 text-[var(--yellow)]">
