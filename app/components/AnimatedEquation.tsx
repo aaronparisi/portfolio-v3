@@ -58,21 +58,21 @@ export function AnimatedEquation() {
         for (let i = 1; i <= MATH_CHARS.length; i++) {
           if (stopped()) return;
           setMathRevealed(i);
-          await sleep(randomBetween(55, 120));
+          await sleep(randomBetween(80, 170));
         }
 
         if (stopped()) return;
-        await sleep(250);
+        await sleep(350);
 
         // Draw the strike-through.
         if (stopped()) return;
         setCrossedOut(true);
-        await sleep(500);
+        await sleep(700);
 
         if (stopped()) return;
-        await sleep(150);
+        await sleep(220);
         setArrowShown(true);
-        await sleep(250);
+        await sleep(350);
 
         // Type the replacement out unevenly, like a person actually typing:
         // mostly quick, occasional hesitation, a beat longer after spaces.
@@ -80,41 +80,41 @@ export function AnimatedEquation() {
           if (stopped()) return;
           setCodeRevealed(i);
           const typedChar = CODE_TEXT[i - 1];
-          let delay = randomBetween(35, 130);
-          if (typedChar === " ") delay += randomBetween(20, 90);
-          if (Math.random() < 0.1) delay += randomBetween(150, 340);
+          let delay = randomBetween(50, 190);
+          if (typedChar === " ") delay += randomBetween(30, 130);
+          if (Math.random() < 0.1) delay += randomBetween(220, 480);
           await sleep(delay);
         }
 
         if (stopped()) return;
-        await sleep(3000);
+        await sleep(3800);
 
         // Backspace it away — faster and more even than typing, the way
         // deleting actually feels.
         for (let i = CODE_TEXT.length - 1; i >= 0; i--) {
           if (stopped()) return;
           setCodeRevealed(i);
-          await sleep(randomBetween(16, 38));
+          await sleep(randomBetween(24, 55));
         }
 
         if (stopped()) return;
-        await sleep(150);
+        await sleep(220);
         setArrowShown(false);
-        await sleep(250);
+        await sleep(350);
 
         if (stopped()) return;
         setCrossedOut(false);
-        await sleep(500);
+        await sleep(700);
 
         // Erase the integral the same way it was written, in reverse.
         for (let i = MATH_CHARS.length - 1; i >= 0; i--) {
           if (stopped()) return;
           setMathRevealed(i);
-          await sleep(randomBetween(30, 65));
+          await sleep(randomBetween(45, 95));
         }
 
         if (stopped()) return;
-        await sleep(700);
+        await sleep(1000);
       }
     }
 
@@ -167,7 +167,7 @@ export function AnimatedEquation() {
           </span>
         ))}
         <span
-          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-500 ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
+          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-700 ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
           style={{ ["--cross-scale" as string]: mathComplete && crossedOut ? 1 : 0 }}
         />
       </span>
@@ -187,12 +187,10 @@ export function AnimatedEquation() {
           {codeText}
           <span
             className={
-              "typing-caret ml-px inline-block w-[2px] translate-y-[0.1em] bg-[var(--cyan)] align-middle " +
-              (caretOn ? "opacity-100" : "opacity-0")
+              "typing-caret ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle " +
+              (caretOn ? "opacity-90" : "opacity-0")
             }
-          >
-            &nbsp;
-          </span>
+          />
         </span>
       </span>
 
