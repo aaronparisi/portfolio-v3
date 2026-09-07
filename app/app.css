@@ -129,3 +129,34 @@ footer[id] {
     scroll-behavior: auto;
   }
 }
+
+/* Blinking text-cursor for the Hero's typing animation. Only ever mounted
+   when motion is on (gated in AnimatedEquation.tsx), but the reduced-motion
+   fallback here is cheap insurance against it lingering into a static view. */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.typing-caret {
+  animation: caret-blink 1s steps(1, end) infinite;
+}
+
+/* Suppresses every transition inside the animated equation for the one
+   frame it resets to blank, so that reset is a hard cut rather than a
+   visible (backwards-looking) unwind of whatever was on screen before. */
+.anim-instant * {
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typing-caret {
+    animation: none;
+  }
+}
