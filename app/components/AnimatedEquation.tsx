@@ -30,11 +30,17 @@ function nextPaint() {
  * never animates at all.
  */
 export function AnimatedEquation() {
-  const [mathRevealed, setMathRevealed] = useState(MATH_CHARS.length);
-  const [crossedOut, setCrossedOut] = useState(true);
-  const [arrowShown, setArrowShown] = useState(true);
-  const [codeRevealed, setCodeRevealed] = useState(CODE_TEXT.length);
-  const [caretOn, setCaretOn] = useState(false);
+  // Starts from nothing — both because that's the first frame of the
+  // animated sequence, and because it means there's no "resolved" flash to
+  // clean up before the real first paint even for motion-off visitors
+  // (showResolved below still snaps them to the finished state, just from
+  // blank rather than from a flash of it).
+  const [mathRevealed, setMathRevealed] = useState(0);
+  const [crossedOut, setCrossedOut] = useState(false);
+  const [arrowShown, setArrowShown] = useState(false);
+  const [codeRevealed, setCodeRevealed] = useState(0);
+  const [caretShape, setCaretShape] = useState<"hidden" | "underscore" | "block">("hidden");
+  const [caretBlinking, setCaretBlinking] = useState(false);
   // True only for the instant a loop (re)starts and resets to blank — every
   // transition is suppressed while it's on, so that reset can never itself
   // play as a visible (backwards-looking) animation.
@@ -49,11 +55,16 @@ export function AnimatedEquation() {
     }
 
     function showResolved() {
+      // Snaps straight to the finished state with transitions suppressed —
+      // reduced-motion visitors should never see so much as a fade.
+      setInstant(true);
       setMathRevealed(MATH_CHARS.length);
       setCrossedOut(true);
       setArrowShown(true);
       setCodeRevealed(CODE_TEXT.length);
-      setCaretOn(false);
+      setCaretShape("hidden");
+      setCaretBlinking(false);
+      void nextPaint().then(() => setInstant(false));
     }
 
     async function loop(myGen: number) {
@@ -68,7 +79,8 @@ export function AnimatedEquation() {
       setCrossedOut(false);
       setArrowShown(false);
       setCodeRevealed(0);
-      setCaretOn(false);
+      setCaretShape("hidden");
+      setCaretBlinking(false);
       await nextPaint();
       if (stopped()) return;
       setInstant(false);
@@ -100,10 +112,21 @@ export function AnimatedEquation() {
         setArrowShown(true);
         await sleep(450);
 
+        // The cursor warms up like a real terminal one: pops in as a thin
+        // underscore, sits for a moment, then grows into a full block
+        // before it starts blinking.
         if (stopped()) return;
-        setCaretOn(true);
-        await sleep(300); // let the wipe-in finish
-        await sleep(1600); // blink once or twice before typing begins
+        setCaretShape("underscore");
+        await sleep(150); // pop in
+        await sleep(420); // sit as an underscore for a moment
+
+        if (stopped()) return;
+        setCaretShape("block");
+        await sleep(260); // let it expand
+
+        if (stopped()) return;
+        setCaretBlinking(true);
+        await sleep(1500); // blink once or twice before typing begins
 
         // Type the replacement out unevenly, like a person actually typing:
         // mostly quick, occasional hesitation, a beat longer after spaces.
@@ -129,10 +152,11 @@ export function AnimatedEquation() {
         }
 
         if (stopped()) return;
-        await sleep(1600); // blink once or twice before the cursor leaves
+        await sleep(1500); // blink once or twice before the cursor leaves
 
-        setCaretOn(false);
-        await sleep(300); // let the wipe-down finish
+        setCaretBlinking(false);
+        setCaretShape("hidden");
+        await sleep(300); // let it retract
 
         if (stopped()) return;
         await sleep(350);
@@ -234,8 +258,18 @@ export function AnimatedEquation() {
         <span className="whitespace-pre [grid-area:1/1]">
           {codeText}
           <span
-            className="typing-caret ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle transition-[clip-path] duration-300 ease-in-out"
-            style={{ clipPath: caretOn ? "inset(0% 0 0 0)" : "inset(100% 0 0 0)" }}
+            className={
+              "ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle transition-[clip-path] duration-200 ease-out" +
+              (caretBlinking ? " typing-caret" : "")
+            }
+            style={{
+              clipPath:
+                caretShape === "block"
+                  ? "inset(0% 0 0 0)"
+                  : caretShape === "underscore"
+                    ? "inset(85% 0 0 0)"
+                    : "inset(100% 0 0 0)",
+            }}
           />
         </span>
       </span>
