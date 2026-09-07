@@ -41,6 +41,9 @@ export function AnimatedEquation() {
   const [codeRevealed, setCodeRevealed] = useState(0);
   const [caretShape, setCaretShape] = useState<"hidden" | "underscore" | "block">("hidden");
   const [caretBlinking, setCaretBlinking] = useState(false);
+  // The code pill itself "boots up" and "powers down" like an old monitor,
+  // independent of what's happening inside it.
+  const [boxPower, setBoxPower] = useState<"off" | "on">("off");
   // True only for the instant a loop (re)starts and resets to blank — every
   // transition is suppressed while it's on, so that reset can never itself
   // play as a visible (backwards-looking) animation.
@@ -61,6 +64,7 @@ export function AnimatedEquation() {
       setMathRevealed(MATH_CHARS.length);
       setCrossedOut(true);
       setArrowShown(true);
+      setBoxPower("on");
       setCodeRevealed(CODE_TEXT.length);
       setCaretShape("hidden");
       setCaretBlinking(false);
@@ -78,6 +82,7 @@ export function AnimatedEquation() {
       setMathRevealed(0);
       setCrossedOut(false);
       setArrowShown(false);
+      setBoxPower("off");
       setCodeRevealed(0);
       setCaretShape("hidden");
       setCaretBlinking(false);
@@ -107,10 +112,14 @@ export function AnimatedEquation() {
         if (stopped()) return;
         await sleep(350);
 
-        // The arrow, then the cursor a beat after — it's the code's
-        // cursor, so it shouldn't show up until the code is about to start.
+        // The arrow, then the screen boots up, then the cursor — each one
+        // waits for the last to settle before it shows up.
         setArrowShown(true);
-        await sleep(450);
+        await sleep(350);
+
+        if (stopped()) return;
+        setBoxPower("on");
+        await sleep(420); // let the screen finish booting up
 
         // The cursor warms up like a real terminal one: pops in as a thin
         // underscore, sits for a moment, then grows into a full block
@@ -159,7 +168,11 @@ export function AnimatedEquation() {
         await sleep(300); // let it retract
 
         if (stopped()) return;
-        await sleep(350);
+        await sleep(250);
+        setBoxPower("off");
+        await sleep(320); // let the screen finish powering down
+
+        if (stopped()) return;
         setArrowShown(false);
         await sleep(450);
 
@@ -246,7 +259,16 @@ export function AnimatedEquation() {
         →
       </span>
 
-      <span className="relative inline-grid rounded-lg bg-[var(--cyan)]/10 px-4 py-2 text-left text-[var(--cyan)]">
+      <span
+        className={
+          "relative inline-grid rounded-lg bg-[var(--cyan)]/10 px-4 py-2 text-left text-[var(--cyan)] " +
+          (boxPower === "on"
+            ? "duration-[420ms] [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)]"
+            : "duration-[260ms] ease-in") +
+          " transition-transform"
+        }
+        style={{ transform: boxPower === "on" ? "scaleY(1)" : "scaleY(0)" }}
+      >
         {/* Invisible full-length text plus a same-sized caret spacer
             reserves the box's final width/height up front, so typing never
             reflows the layout and the box doesn't grow when the caret
@@ -259,16 +281,12 @@ export function AnimatedEquation() {
           {codeText}
           <span
             className={
-              "ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle transition-[clip-path] duration-200 ease-out" +
+              "ml-0.5 inline-block h-[1em] w-[0.55em] bg-[var(--cyan)] align-middle will-change-transform transition-transform duration-200 ease-out [transform-origin:bottom] [transform:translateY(-0.15em)_scaleY(var(--caret-scale,0))]" +
               (caretBlinking ? " typing-caret" : "")
             }
             style={{
-              clipPath:
-                caretShape === "block"
-                  ? "inset(0% 0 0 0)"
-                  : caretShape === "underscore"
-                    ? "inset(85% 0 0 0)"
-                    : "inset(100% 0 0 0)",
+              ["--caret-scale" as string]:
+                caretShape === "block" ? 1 : caretShape === "underscore" ? 0.15 : 0,
             }}
           />
         </span>
