@@ -58,21 +58,21 @@ export function AnimatedEquation() {
         for (let i = 1; i <= MATH_CHARS.length; i++) {
           if (stopped()) return;
           setMathRevealed(i);
-          await sleep(randomBetween(80, 170));
+          await sleep(randomBetween(65, 140));
         }
 
         if (stopped()) return;
-        await sleep(350);
+        await sleep(300);
 
         // Draw the strike-through.
         if (stopped()) return;
         setCrossedOut(true);
-        await sleep(700);
+        await sleep(600);
 
         if (stopped()) return;
-        await sleep(220);
+        await sleep(180);
         setArrowShown(true);
-        await sleep(350);
+        await sleep(300);
 
         // Type the replacement out unevenly, like a person actually typing:
         // mostly quick, occasional hesitation, a beat longer after spaces.
@@ -80,41 +80,41 @@ export function AnimatedEquation() {
           if (stopped()) return;
           setCodeRevealed(i);
           const typedChar = CODE_TEXT[i - 1];
-          let delay = randomBetween(50, 190);
-          if (typedChar === " ") delay += randomBetween(30, 130);
-          if (Math.random() < 0.1) delay += randomBetween(220, 480);
+          let delay = randomBetween(42, 160);
+          if (typedChar === " ") delay += randomBetween(25, 110);
+          if (Math.random() < 0.1) delay += randomBetween(190, 410);
           await sleep(delay);
         }
 
         if (stopped()) return;
-        await sleep(3800);
+        await sleep(3400);
 
         // Backspace it away — faster and more even than typing, the way
         // deleting actually feels.
         for (let i = CODE_TEXT.length - 1; i >= 0; i--) {
           if (stopped()) return;
           setCodeRevealed(i);
-          await sleep(randomBetween(24, 55));
+          await sleep(randomBetween(20, 46));
         }
 
         if (stopped()) return;
-        await sleep(220);
+        await sleep(180);
         setArrowShown(false);
-        await sleep(350);
+        await sleep(300);
 
         if (stopped()) return;
         setCrossedOut(false);
-        await sleep(700);
+        await sleep(600);
 
         // Erase the integral the same way it was written, in reverse.
         for (let i = MATH_CHARS.length - 1; i >= 0; i--) {
           if (stopped()) return;
           setMathRevealed(i);
-          await sleep(randomBetween(45, 95));
+          await sleep(randomBetween(38, 80));
         }
 
         if (stopped()) return;
-        await sleep(1000);
+        await sleep(850);
       }
     }
 
@@ -167,7 +167,7 @@ export function AnimatedEquation() {
           </span>
         ))}
         <span
-          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-700 ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
+          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-[600ms] ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
           style={{ ["--cross-scale" as string]: mathComplete && crossedOut ? 1 : 0 }}
         />
       </span>
@@ -179,10 +179,15 @@ export function AnimatedEquation() {
         →
       </span>
 
-      <span className="relative inline-grid rounded-lg bg-[var(--cyan)]/10 px-4 py-2 text-[var(--cyan)]">
-        {/* Invisible full-length text reserves the box's width/height so
-            typing never reflows the layout around it. */}
-        <span className="invisible whitespace-pre [grid-area:1/1]">{CODE_TEXT}</span>
+      <span className="relative inline-grid rounded-lg bg-[var(--cyan)]/10 px-4 py-2 text-left text-[var(--cyan)]">
+        {/* Invisible full-length text plus a same-sized caret spacer
+            reserves the box's final width/height up front, so typing never
+            reflows the layout and the box doesn't grow when the caret
+            appears at the end. */}
+        <span className="invisible whitespace-pre [grid-area:1/1]">
+          {CODE_TEXT}
+          <span className="ml-0.5 inline-block h-[1em] w-[0.55em] align-middle" />
+        </span>
         <span className="whitespace-pre [grid-area:1/1]">
           {codeText}
           <span
