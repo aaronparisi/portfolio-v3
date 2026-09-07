@@ -24,8 +24,8 @@ export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
         <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
           At 1031 Services, transactions were tracked on a whiteboard and a stack of hand-written
           calendars. Functional, but barely. I taught myself enough Visual Basic to build a
-          calendar application in Excel. I could see exactly what I needed to do for each day of
-          the week, for each transaction, and it worked. Watching something I&rsquo;d built
+          calendar application in Excel. I could see exactly what I needed to do for each transation,
+          each day of the week - and it worked! Watching something I&rsquo;d built
           actually make my day easier was the hook: I quit the job and spent the next year at my
           kitchen table, studying full time, determined to make this my career.
         </p>
