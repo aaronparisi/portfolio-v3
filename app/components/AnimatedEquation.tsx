@@ -50,7 +50,7 @@ export function AnimatedEquation() {
       setCrossedOut(false);
       setArrowShown(false);
       setCodeRevealed(0);
-      setCaretOn(true);
+      setCaretOn(false);
 
       while (!stopped()) {
         // Write the integral in, one character at a time, like it's being
@@ -73,6 +73,12 @@ export function AnimatedEquation() {
         await sleep(180);
         setArrowShown(true);
         await sleep(300);
+
+        // The cursor wipes in only once the arrow has settled — it's the
+        // code's cursor, so it shouldn't be around during the math part.
+        if (stopped()) return;
+        setCaretOn(true);
+        await sleep(280);
 
         // Type the replacement out unevenly, like a person actually typing:
         // mostly quick, occasional hesitation, a beat longer after spaces.
@@ -97,8 +103,13 @@ export function AnimatedEquation() {
           await sleep(randomBetween(20, 46));
         }
 
+        // Wipe the cursor down before the arrow (and the code) fade away.
         if (stopped()) return;
         await sleep(180);
+        setCaretOn(false);
+        await sleep(280);
+
+        if (stopped()) return;
         setArrowShown(false);
         await sleep(300);
 
@@ -191,10 +202,8 @@ export function AnimatedEquation() {
         <span className="whitespace-pre [grid-area:1/1]">
           {codeText}
           <span
-            className={
-              "typing-caret ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle " +
-              (caretOn ? "opacity-90" : "opacity-0")
-            }
+            className="typing-caret ml-0.5 inline-block h-[1em] w-[0.55em] -translate-y-[0.15em] bg-[var(--cyan)] align-middle transition-[clip-path] duration-300 ease-in-out"
+            style={{ clipPath: caretOn ? "inset(0% 0 0 0)" : "inset(100% 0 0 0)" }}
           />
         </span>
       </span>
