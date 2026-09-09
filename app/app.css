@@ -5,9 +5,9 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-chalk: "Caveat", cursive;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  /* Reserved for HUD-style accents — the hero name, the nav mark, the "//"
-     section labels — never body copy, where its blocky caps get tiring. */
-  --font-display: "Orbitron", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  /* Reserved for HUD-style accents — the hero name and the nav mark —
+     never body copy, where its condensed caps get tiring. */
+  --font-display: "Chakra Petch", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
@@ -42,10 +42,11 @@
   --lime: #7ed321;
   --pink: #ff5fa8;
 
-  /* Darkened the same way as --blue-deep above, for use as button
-     text-on-fill (base3 on top clears ~5.7:1 and ~5.9:1 respectively). */
-  --lime-deep: color-mix(in oklab, var(--lime) 40%, var(--base03) 60%);
-  --pink-deep: color-mix(in oklab, var(--pink) 55%, var(--base03) 45%);
+  /* A hair past base03 — the color the page settles into once it's fully
+     "outer space", theme-independent since deep space is deep space
+     either way. Used only at the very bottom of the page-length gradient
+     below, and by the dashboard panel that sits on top of it. */
+  --deep-space: color-mix(in oklab, var(--base03) 85%, black 15%);
 }
 
 :root[data-theme="light"] {
@@ -55,19 +56,25 @@
   --text-muted: var(--base1);
   --text-strong: var(--base01);
   --border: color-mix(in srgb, var(--base01) 25%, transparent);
-  /* Deepened pink for button text-on-fill — the plain accent only clears
-     ~2.6:1 against base3 text, well short of WCAG AA's 4.5:1; --pink-deep
-     clears ~5.9:1. */
-  --accent-cta: var(--pink-deep);
-  /* Text-use variants of --lime/--pink, darkened toward base03 the same
-     way as the CTA above — the plain accents only clear ~1.7:1 / ~2.6:1
-     against base3, unreadable as hover/label text on this background. */
+  /* Orange only clears ~4.3:1 against the button's base3 text, short of
+     WCAG AA's 4.5:1 for normal-weight text on the pale light background —
+     the deepened blue clears ~5:1. */
+  --accent-cta: var(--blue-deep);
+  /* Text-use variants of --lime/--pink, darkened toward base03 — the
+     plain accents only clear ~1.7:1 / ~2.6:1 against base3, unreadable
+     as hover/label text on this background. */
   --lime-text: color-mix(in oklab, var(--lime) 45%, var(--base03) 55%);
   --pink-text: color-mix(in oklab, var(--pink) 50%, var(--base03) 50%);
-  --stars: radial-gradient(1px 1px at 20% 30%, color-mix(in srgb, var(--base01) 55%, transparent), transparent),
-    radial-gradient(1px 1px at 62% 74%, color-mix(in srgb, var(--base01) 45%, transparent), transparent),
-    radial-gradient(1.5px 1.5px at 82% 18%, color-mix(in srgb, var(--pink) 35%, transparent), transparent),
-    radial-gradient(1px 1px at 38% 92%, color-mix(in srgb, var(--base01) 40%, transparent), transparent);
+  /* The page-length background gradient starts here — dusty chalk-dust
+     cream, the palest the page ever gets — before sinking toward
+     --deep-space by the footer. */
+  --gradient-top: var(--base3);
+  --stars: radial-gradient(1.3px 1.3px at 20% 30%, color-mix(in srgb, var(--base01) 70%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 62% 74%, color-mix(in srgb, var(--base01) 60%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--pink) 50%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 38% 92%, color-mix(in srgb, var(--base01) 55%, transparent), transparent),
+    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--lime) 45%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 92% 55%, color-mix(in srgb, var(--base01) 55%, transparent), transparent);
   color-scheme: light;
 }
 
@@ -78,18 +85,22 @@
   --text-muted: var(--base01);
   --text-strong: var(--base1);
   --border: color-mix(in srgb, var(--base1) 20%, transparent);
-  /* Deepened lime for button text-on-fill — the plain accent only clears
-     ~1.7:1 against base3 text; --lime-deep clears ~5.7:1. */
-  --accent-cta: var(--lime-deep);
+  --accent-cta: var(--orange);
   /* On the dark background the plain accents are already high-contrast
      (~8:1 / ~5.3:1 against base03), so text-use is just the raw color. */
   --lime-text: var(--lime);
   --pink-text: var(--pink);
-  --stars: radial-gradient(1px 1px at 20% 30%, color-mix(in srgb, var(--base1) 70%, transparent), transparent),
-    radial-gradient(1px 1px at 62% 74%, color-mix(in srgb, var(--base1) 55%, transparent), transparent),
-    radial-gradient(1.5px 1.5px at 82% 18%, color-mix(in srgb, var(--lime) 55%, transparent), transparent),
-    radial-gradient(1.5px 1.5px at 46% 52%, color-mix(in srgb, var(--pink) 50%, transparent), transparent),
-    radial-gradient(1px 1px at 38% 92%, color-mix(in srgb, var(--base1) 60%, transparent), transparent);
+  /* Dark mode's "chalk" is the board itself, not the dust — a slate
+     green-black a shade lighter than the page's usual --bg, so there's
+     still a visible (if subtler) climb down into --deep-space below. */
+  --gradient-top: var(--base02);
+  --stars: radial-gradient(1.3px 1.3px at 20% 30%, color-mix(in srgb, var(--base1) 85%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 62% 74%, color-mix(in srgb, var(--base1) 70%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--lime) 70%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 46% 52%, color-mix(in srgb, var(--pink) 65%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 38% 92%, color-mix(in srgb, var(--base1) 75%, transparent), transparent),
+    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--cyan) 65%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 92% 55%, color-mix(in srgb, var(--base1) 70%, transparent), transparent);
   color-scheme: dark;
 }
 
@@ -99,23 +110,54 @@ body {
   color: var(--text);
 }
 
+/* The page's whole vertical "journey": a chalky, dusty classroom at the
+   top settling into deep outer space by the footer. This is a plain
+   (non-fixed) background on body, so the three stops space themselves
+   out across the full document height, not the viewport — the gradient
+   always starts at the very top of the page and finishes at the very
+   bottom, however long the page turns out to be. The middle stop is just
+   the theme's own everyday --bg, so About/early-Timeline still reads as
+   a normal light or dark page for a while before the descent starts. */
 body {
   position: relative;
+  /* Without this, `position: relative` alone doesn't create a stacking
+     context, so the starfield's `z-index: -1` below sinks all the way to
+     the bottom of the *page's* paint order instead of just behind body's
+     own children — invisible behind whatever the root paints. */
+  isolation: isolate;
   overflow-x: hidden;
   font-family: var(--font-sans);
+  background-image: linear-gradient(
+    to bottom,
+    var(--gradient-top) 0%,
+    var(--bg) 30%,
+    var(--deep-space) 100%
+  );
 }
 
-/* A quiet starfield behind the whole page — a fixed tiled layer of dots
-   mixed in the theme's own colors (plus a couple of lime/pink ones in
-   dark mode) so it reads as "night sky" without fighting either theme. */
+/* A quiet starfield behind the whole page — a tiled layer of dots mixed
+   in the theme's own colors (plus a couple of lime/pink ones in dark
+   mode). Masked out near the top, where it's still "chalkboard" rather
+   than sky, and fully revealed by the time the page has sunk into
+   --deep-space — the same non-fixed, full-document sizing as the
+   gradient above, so the reveal lines up with it regardless of page
+   length. */
 body::before {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: -1;
   background-image: var(--stars);
   background-repeat: repeat;
-  background-size: 180px 180px;
+  background-size: 130px 130px;
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 32%, black 65%, black 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 32%,
+    black 65%,
+    black 100%
+  );
   pointer-events: none;
 }
 
@@ -172,18 +214,32 @@ footer[id] {
   display: none;
 }
 
-/* Career-trajectory accent: mixes from "chalk" yellow to "code" cyan
-   based on a per-item --t custom property (0 = earliest, 1 = latest). */
+/* Career-trajectory accent: mixes from "chalk" yellow to a cyan pushed a
+   little toward neon lime, based on a per-item --t custom property (0 =
+   earliest, 1 = latest) — the same journey the whole page is on, in
+   miniature, landing somewhere a bit more cyber than plain "code cyan". */
 .timeline-node {
   --node-color: color-mix(
     in oklab,
     var(--yellow) calc((1 - var(--t, 0)) * 100%),
-    var(--cyan) calc(var(--t, 0) * 100%)
+    color-mix(in oklab, var(--cyan) 70%, var(--lime) 30%) calc(var(--t, 0) * 100%)
   );
   background: var(--node-color);
   /* A faint running-lights glow along the trajectory, in the node's own
-     color — brightest at the very end, where the story lands on "now". */
-  box-shadow: 0 0 calc(var(--t, 0) * 14px) var(--node-color);
+     color — brightest at the very end, where the story lands on "now" —
+     plus an optional pink highlight ring (see .pivot-ring below), off by
+     default. */
+  box-shadow:
+    0 0 calc(var(--t, 0) * 14px) var(--node-color),
+    var(--pivot-ring, 0 0 transparent);
+}
+
+/* Marks the one node the whole story hinges on — a standing pink ring,
+   not tied to --t like everything else here, so it reads as a deliberate
+   highlight rather than a step in the yellow-to-cyan progression. */
+.pivot-ring {
+  --pivot-ring: 0 0 0 3px color-mix(in oklab, var(--pink) 55%, transparent),
+    0 0 16px color-mix(in oklab, var(--pink) 45%, transparent);
 }
 
 /* Parallax is on by default unless the visitor's OS asks for reduced
@@ -233,5 +289,101 @@ footer[id] {
 @media (prefers-reduced-motion: reduce) {
   .typing-caret {
     animation: none;
+  }
+}
+
+/* The footer as a control panel: a deep-space slab (regardless of theme
+   — by the time the page gets here it's already sunk into --deep-space)
+   with a lit seam along the top edge. Text color is set explicitly to
+   the solarized "light on dark" tones rather than the theme-flipping
+   --text/--text-strong, since this panel is always dark even in light
+   mode. */
+.dashboard-panel {
+  position: relative;
+  background: color-mix(in oklab, var(--deep-space) 85%, var(--cyan) 15%);
+  color: var(--base1);
+}
+.dashboard-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(to right, var(--lime), var(--cyan), var(--pink));
+  box-shadow: 0 0 16px color-mix(in oklab, var(--cyan) 55%, transparent);
+}
+
+/* A little strip of decorative dashboard hardware for the footer —
+   scenery, not controls (the real theme/motion toggles live in the
+   nav). Each instance is colored and (for the knob) angled via
+   --dash-color / --dash-angle set inline per element. */
+.dash-knob {
+  position: relative;
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle at 35% 30%,
+    color-mix(in oklab, var(--dash-color, var(--cyan)) 30%, var(--bg-alt) 70%),
+    var(--bg-alt) 75%
+  );
+  border: 1px solid color-mix(in oklab, var(--dash-color, var(--cyan)) 40%, var(--border) 60%);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--dash-color, var(--cyan)) 55%, transparent);
+}
+.dash-knob::after {
+  content: "";
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  width: 2px;
+  height: 35%;
+  border-radius: 1px;
+  background: var(--dash-color, var(--cyan));
+  box-shadow: 0 0 4px var(--dash-color, var(--cyan));
+  transform: translateX(-50%) rotate(var(--dash-angle, 0deg));
+  transform-origin: 50% 100%;
+}
+
+.dash-switch {
+  display: inline-flex;
+  align-items: center;
+  width: 1.75rem;
+  height: 0.875rem;
+  border-radius: 9999px;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  padding: 2px;
+  box-shadow: inset 0 1px 2px color-mix(in oklab, black 35%, transparent);
+}
+.dash-switch::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-left: auto;
+  border-radius: 9999px;
+  background: var(--dash-color, var(--lime));
+  box-shadow: 0 0 6px var(--dash-color, var(--lime));
+}
+
+.dash-led {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 9999px;
+  background: var(--dash-color, var(--pink));
+  box-shadow: 0 0 8px var(--dash-color, var(--pink));
+}
+/* Blinking is gated on the same [data-motion] attribute as everything
+   else animated on the page, not a second reduced-motion check. */
+[data-motion="on"] .dash-led {
+  animation: led-blink 2.4s ease-in-out infinite;
+}
+@keyframes led-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
   }
 }

@@ -21,8 +21,11 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
   useScrollProgress();
 
+  // No background of its own — this lets the page-length chalk-to-space
+  // gradient on <body> (see app.css) show through every section that
+  // doesn't paint an opaque background of its own (Nav and Footer do).
   return (
-    <div id="top" className="min-h-screen bg-[var(--bg)] text-[var(--text)]">
+    <div id="top" className="min-h-screen text-[var(--text)]">
       <Nav />
       <main>
         <Hero />
