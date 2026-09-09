@@ -292,7 +292,7 @@ export function AnimatedEquation() {
       }
       aria-hidden="true"
     >
-      <span className="relative inline-block whitespace-pre rounded-lg bg-[var(--yellow)]/10 px-4 py-2 text-[var(--yellow)]">
+      <span className="chalkboard relative inline-block whitespace-pre rounded-lg px-4 py-2 text-[var(--base2)]">
         {MATH_CHARS.map((char, i) => (
           <span
             key={i}
@@ -306,9 +306,19 @@ export function AnimatedEquation() {
           </span>
         ))}
         <span
-          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-[600ms] ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
+          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--base2)] transition-transform duration-[600ms] ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
           style={{ ["--cross-scale" as string]: mathComplete && crossedOut ? 1 : 0 }}
         />
+
+        {/* The eraser tray — pure scenery, hanging off the bottom edge. */}
+        <span
+          aria-hidden="true"
+          className="chalk-tray pointer-events-none absolute -bottom-2.5 left-2 right-2 h-2 rounded-[1px]"
+        >
+          <span className="absolute -top-1.5 left-1.5 h-1.5 w-4 rounded-[1px] bg-[var(--chalk-stick)]" />
+          <span className="absolute -top-1.5 left-6 h-1.5 w-4 rounded-[1px] bg-[var(--chalk-stick)]" />
+          <span className="absolute -top-2 right-1.5 h-2 w-5 rounded-[1px] bg-[var(--chalk-eraser)]" />
+        </span>
       </span>
 
       <span

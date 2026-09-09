@@ -25,7 +25,11 @@ function mulberry32(seed: number) {
   };
 }
 
-const COLORS = ["var(--lime)", "var(--pink)", "var(--cyan)"];
+// Theme-aware: dark mode gets the raw, bright accents (high-contrast on
+// a near-black sky); light mode gets the darkened -text variants (see
+// app.css) plus plain cyan, since a pale sky needs dark, saturated
+// specks rather than bright-on-black ones to actually show up.
+const COLORS = ["var(--star-lime)", "var(--star-pink)", "var(--star-cyan)"];
 // Three different irregular flicker curves (see app.css) — cycling
 // through them, rather than everything sharing one animation, is most of
 // what keeps a whole field of these from reading as one synchronized

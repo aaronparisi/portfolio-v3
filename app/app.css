@@ -47,6 +47,15 @@
      either way. Used only at the very bottom of the page-length gradient
      below, and by the dashboard panel that sits on top of it. */
   --deep-space: color-mix(in oklab, var(--base03) 85%, black 15%);
+
+  /* The hero's equation box is styled like an actual chalkboard rather
+     than a tinted pill — always this dark, regardless of theme, the way
+     a real chalkboard doesn't get lighter in a bright room. */
+  --chalkboard: color-mix(in oklab, var(--base02) 80%, black 20%);
+  --chalk-wood: #6b4a2b;
+  --chalk-wood-light: #8a6a45;
+  --chalk-stick: #efe9dc;
+  --chalk-eraser: #8a8378;
 }
 
 :root[data-theme="light"] {
@@ -62,19 +71,37 @@
   --accent-cta: var(--blue-deep);
   /* Text-use variants of --lime/--pink, darkened toward base03 — the
      plain accents only clear ~1.7:1 / ~2.6:1 against base3, unreadable
-     as hover/label text on this background. */
+     as hover/label text on this background. Doubling as this theme's
+     "star" colors below — a pale sky needs dark, saturated specks,
+     not the bright-on-black ones dark mode uses. */
   --lime-text: color-mix(in oklab, var(--lime) 45%, var(--base03) 55%);
   --pink-text: color-mix(in oklab, var(--pink) 50%, var(--base03) 50%);
+  --star-lime: var(--lime-text);
+  --star-pink: var(--pink-text);
+  --star-cyan: var(--cyan);
   /* The page-length background gradient starts here — dusty chalk-dust
      cream, the palest the page ever gets — before sinking toward
-     --deep-space by the footer. */
+     --gradient-bottom by the footer. */
   --gradient-top: var(--base3);
+  /* Light mode's "outer space" stays light — a pale violet dusk rather
+     than sinking to --deep-space like dark mode does. Two reasons: a
+     dark-mode-style black would make every ordinary --text/--text-strong
+     paragraph past this point illegible (those tokens assume a light
+     background, unlike dark mode's, which are already light-on-dark),
+     and a wash of near-black behind Timeline/Skills would fight the
+     "daytime" identity light mode is supposed to have anyway. 8% keeps
+     --text's contrast close to its ~4.1:1 baseline against plain --bg
+     (checked against real browser-rendered color-mix output, not just
+     the numbers here) — more violet reads as more "dusk" but measurably
+     degrades body-text contrast past this point. */
+  --gradient-bottom: color-mix(in oklab, var(--violet) 8%, var(--base3) 92%);
   --stars: radial-gradient(1.3px 1.3px at 20% 30%, color-mix(in srgb, var(--base01) 70%, transparent), transparent),
     radial-gradient(1.3px 1.3px at 62% 74%, color-mix(in srgb, var(--base01) 60%, transparent), transparent),
-    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--pink) 50%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--star-pink) 60%, transparent), transparent),
     radial-gradient(1.3px 1.3px at 38% 92%, color-mix(in srgb, var(--base01) 55%, transparent), transparent),
-    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--lime) 45%, transparent), transparent),
-    radial-gradient(1.3px 1.3px at 92% 55%, color-mix(in srgb, var(--base01) 55%, transparent), transparent);
+    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--star-lime) 55%, transparent), transparent),
+    radial-gradient(1.3px 1.3px at 92% 55%, color-mix(in srgb, var(--base01) 55%, transparent), transparent),
+    radial-gradient(1.6px 1.6px at 55% 40%, color-mix(in srgb, var(--star-cyan) 60%, transparent), transparent);
   color-scheme: light;
 }
 
@@ -87,19 +114,25 @@
   --border: color-mix(in srgb, var(--base1) 20%, transparent);
   --accent-cta: var(--orange);
   /* On the dark background the plain accents are already high-contrast
-     (~8:1 / ~5.3:1 against base03), so text-use is just the raw color. */
+     (~8:1 / ~5.3:1 against base03), so text-use — and star-use below —
+     is just the raw, bright color. */
   --lime-text: var(--lime);
   --pink-text: var(--pink);
+  --star-lime: var(--lime);
+  --star-pink: var(--pink);
+  --star-cyan: var(--cyan);
   /* Dark mode's "chalk" is the board itself, not the dust — a slate
      green-black a shade lighter than the page's usual --bg, so there's
-     still a visible (if subtler) climb down into --deep-space below. */
+     still a visible (if subtler) climb down into --gradient-bottom
+     below. */
   --gradient-top: var(--base02);
+  --gradient-bottom: var(--deep-space);
   --stars: radial-gradient(1.3px 1.3px at 20% 30%, color-mix(in srgb, var(--base1) 85%, transparent), transparent),
     radial-gradient(1.3px 1.3px at 62% 74%, color-mix(in srgb, var(--base1) 70%, transparent), transparent),
-    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--lime) 70%, transparent), transparent),
-    radial-gradient(1.8px 1.8px at 46% 52%, color-mix(in srgb, var(--pink) 65%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 82% 18%, color-mix(in srgb, var(--star-lime) 70%, transparent), transparent),
+    radial-gradient(1.8px 1.8px at 46% 52%, color-mix(in srgb, var(--star-pink) 65%, transparent), transparent),
     radial-gradient(1.3px 1.3px at 38% 92%, color-mix(in srgb, var(--base1) 75%, transparent), transparent),
-    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--cyan) 65%, transparent), transparent),
+    radial-gradient(1.6px 1.6px at 10% 60%, color-mix(in srgb, var(--star-cyan) 65%, transparent), transparent),
     radial-gradient(1.3px 1.3px at 92% 55%, color-mix(in srgb, var(--base1) 70%, transparent), transparent);
   color-scheme: dark;
 }
@@ -126,13 +159,16 @@ body {
 }
 
 /* The page's whole vertical "journey": a chalky, dusty classroom at the
-   top settling into deep outer space by the footer. This is a plain
-   (non-fixed) background on body, so the three stops space themselves
-   out across the full document height, not the viewport — the gradient
-   always starts at the very top of the page and finishes at the very
-   bottom, however long the page turns out to be. The middle stop is just
-   the theme's own everyday --bg, so About/early-Timeline still reads as
-   a normal light or dark page for a while before the descent starts. */
+   top settling into --gradient-bottom by the footer — true deep-space
+   black in dark mode, a pale violet dusk in light mode (see the
+   `--gradient-bottom` comment in the light theme block for why). This is
+   a plain (non-fixed) background on body, so the three stops space
+   themselves out across the full document height, not the viewport —
+   the gradient always starts at the very top of the page and finishes
+   at the very bottom, however long the page turns out to be. The middle
+   stop is just the theme's own everyday --bg, so About/early-Timeline
+   still reads as a normal light or dark page for a while before the
+   descent starts. */
 body {
   position: relative;
   /* Without this, `position: relative` alone doesn't create a stacking
@@ -146,7 +182,7 @@ body {
     to bottom,
     var(--gradient-top) 0%,
     var(--bg) 30%,
-    var(--deep-space) 100%
+    var(--gradient-bottom) 100%
   );
 }
 
@@ -174,6 +210,35 @@ body::before {
     black 100%
   );
   pointer-events: none;
+}
+
+/* The hero equation's math side, styled as an actual chalkboard: a dark
+   slate fill, a scatter of chalk-dust specks (small pale radial-gradient
+   flecks, the same trick as the starfield above but tiled much finer),
+   and a soft inset vignette so it reads as worn slate rather than a flat
+   color swatch. --chalkboard/base02-ish regardless of theme — see the
+   --chalkboard comment in :root. */
+.chalkboard {
+  background-color: var(--chalkboard);
+  background-image:
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 65% 60%, rgba(255, 255, 255, 0.22), transparent),
+    radial-gradient(1.4px 1.4px at 40% 82%, rgba(255, 255, 255, 0.26), transparent),
+    radial-gradient(1px 1px at 85% 32%, rgba(255, 255, 255, 0.18), transparent),
+    radial-gradient(1px 1px at 25% 55%, rgba(255, 255, 255, 0.2), transparent),
+    radial-gradient(1.2px 1.2px at 55% 15%, rgba(255, 255, 255, 0.18), transparent),
+    radial-gradient(1px 1px at 92% 75%, rgba(255, 255, 255, 0.16), transparent);
+  background-size: 42px 42px;
+  box-shadow:
+    inset 0 0 14px rgba(0, 0, 0, 0.45),
+    inset 0 0 2px rgba(0, 0, 0, 0.5);
+}
+
+/* The wooden eraser tray hanging off the bottom of the chalkboard, with
+   a couple of chalk sticks and an eraser resting on it — pure scenery. */
+.chalk-tray {
+  background: linear-gradient(to bottom, var(--chalk-wood-light), var(--chalk-wood));
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
 }
 
 html {
