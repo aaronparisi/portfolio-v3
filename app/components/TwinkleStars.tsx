@@ -7,6 +7,7 @@ interface TwinkleStar {
   color: string;
   delay: string;
   duration: string;
+  variant: string;
 }
 
 // Deterministic PRNG (mulberry32), not Math.random() — this page is
@@ -25,13 +26,17 @@ function mulberry32(seed: number) {
 }
 
 const COLORS = ["var(--lime)", "var(--pink)", "var(--cyan)"];
+// Three different irregular flicker curves (see app.css) — cycling
+// through them, rather than everything sharing one animation, is most of
+// what keeps a whole field of these from reading as one synchronized
+// blinking panel.
+const VARIANTS = ["", "variant-b", "variant-c"];
 
 // A sprinkle of brighter stars layered over the ambient starfield (see
-// --stars in app.css), each pulsing in brightness on its own schedule
-// rather than in lockstep. Generated rather than hand-typed so there can
-// be enough of them to actually read as "a good portion of the stars"
-// per screen — but from a fixed seed, so the layout is identical on
-// every render rather than reshuffling.
+// --stars in app.css), each flickering on its own schedule. Generated
+// rather than hand-typed so there can be enough of them to actually read
+// as "a good portion of the stars" per screen — but from a fixed seed,
+// so the layout is identical on every render rather than reshuffling.
 function makeTwinkleStars(count: number): TwinkleStar[] {
   const random = mulberry32(0x50a2e5);
   const stars: TwinkleStar[] = [];
@@ -39,18 +44,19 @@ function makeTwinkleStars(count: number): TwinkleStar[] {
     stars.push({
       top: `${(34 + random() * 64).toFixed(1)}%`,
       left: `${(2 + random() * 95).toFixed(1)}%`,
-      size: `${(2 + random() * 1.6).toFixed(1)}px`,
+      size: `${(1.8 + random() * 1.8).toFixed(1)}px`,
       color: COLORS[Math.floor(random() * COLORS.length)],
-      delay: `${(random() * 3).toFixed(2)}s`,
-      duration: `${(2.2 + random() * 2).toFixed(2)}s`,
+      delay: `${(random() * 6).toFixed(2)}s`,
+      duration: `${(2 + random() * 4.5).toFixed(2)}s`,
+      variant: VARIANTS[Math.floor(random() * VARIANTS.length)],
     });
   }
   return stars;
 }
 
-// About a third of a screen's worth of ambient dust ends up bright and
-// shimmering at this count and scatter.
-const TWINKLE_STARS = makeTwinkleStars(55);
+// Enough that a real, noticeable fraction of what's on screen at once is
+// mid-flicker, rather than one or two you have to go looking for.
+const TWINKLE_STARS = makeTwinkleStars(100);
 
 export function TwinkleStars() {
   return (
@@ -58,7 +64,7 @@ export function TwinkleStars() {
       {TWINKLE_STARS.map((s, i) => (
         <span
           key={i}
-          className="twinkle-star absolute rounded-full"
+          className={`twinkle-star absolute rounded-full ${s.variant}`}
           style={
             {
               top: s.top,

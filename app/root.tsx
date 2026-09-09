@@ -1,11 +1,4 @@
-import {
-  isRouteErrorResponse,
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
-} from "react-router";
+import { isRouteErrorResponse, Links, Meta, Outlet, Scripts } from "react-router";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -25,8 +18,24 @@ export const links: Route.LinksFunction = () => [
 
 // Applied before hydration so the correct Solarized variant, and the
 // correct parallax on/off state, are in place for the very first paint.
+//
+// Also turns off the browser's own automatic scroll restoration. This is
+// a single-route, all-anchor-links page (no <ScrollRestoration> — React
+// Router's version is for restoring position across client-side route
+// transitions, and its injected pre-hydration script was the actual bug:
+// it unconditionally re-scrolls to whatever Y offset was last recorded
+// for this history entry, which is exactly "refreshing on #top scrolls
+// back down to wherever I was". With the browser's own auto-restore off
+// and nothing re-applying an old offset, a reload just falls back to the
+// browser's normal load behavior: jump to the URL's #hash, or the top if
+// there isn't one.
 const themeInitScript = `
 (function () {
+  try {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  } catch (e) {}
   var root = document.documentElement;
   try {
     var storedTheme = localStorage.getItem("theme");
@@ -51,6 +60,24 @@ const themeInitScript = `
 })();
 `;
 
+// Placed after the SSR'd content below, so by the time it runs every
+// section element already exists in the DOM (no need to wait for
+// hydration). Explicitly jumps to the URL's #hash on load — rather than
+// leaning on the browser's own native jump-to-fragment behavior, which
+// (at least in Chromium) turned out not to reliably fire on a plain
+// reload the way it does on a fresh navigation, once scrollRestoration
+// is "manual". Doing it ourselves works the same way every time:
+// reload, fresh nav, or otherwise.
+const scrollToHashScript = `
+(function () {
+  try {
+    if (!window.location.hash) return;
+    var el = document.getElementById(window.location.hash.slice(1));
+    if (el) el.scrollIntoView({ block: "start", behavior: "instant" });
+  } catch (e) {}
+})();
+`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     // data-theme / data-motion are set by the inline script above before
@@ -66,7 +93,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <ScrollRestoration />
+        <script dangerouslySetInnerHTML={{ __html: scrollToHashScript }} />
         <Scripts />
       </body>
     </html>

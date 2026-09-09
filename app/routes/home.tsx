@@ -7,6 +7,7 @@ import { Skills } from "~/components/Skills";
 import { Footer } from "~/components/Footer";
 import { TwinkleStars } from "~/components/TwinkleStars";
 import { useScrollProgress } from "~/hooks/useScrollProgress";
+import { useActiveSectionHash } from "~/hooks/useActiveSectionHash";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -21,6 +22,7 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   useScrollProgress();
+  useActiveSectionHash();
 
   // No background of its own — this lets the page-length chalk-to-space
   // gradient on <body> (see app.css) show through every section that

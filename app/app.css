@@ -379,22 +379,110 @@ footer[id] {
     black 100%
   );
 }
+/* Three different irregular flicker patterns (assigned round-robin in
+   TwinkleStars.tsx) rather than one shared curve — real starlight
+   scintillates in jagged, asymmetric bursts, not a smooth uniform
+   breathe-in-breathe-out, which is what reads as a blinking indicator
+   light rather than a star. Brightness-only (no scale/size change) for
+   the same reason — real twinkle is a flicker in brightness, not a dot
+   visibly growing and shrinking. */
 .twinkle-star {
-  animation: twinkle 3s ease-in-out infinite;
+  animation-name: twinkle-a;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+.twinkle-star.variant-b {
+  animation-name: twinkle-b;
+}
+.twinkle-star.variant-c {
+  animation-name: twinkle-c;
 }
 [data-motion="off"] .twinkle-star {
   animation: none;
   opacity: 0.85;
 }
-@keyframes twinkle {
-  0%,
-  100% {
+@keyframes twinkle-a {
+  0% {
+    opacity: 0.25;
+  }
+  8% {
+    opacity: 0.85;
+  }
+  19% {
     opacity: 0.35;
-    transform: scale(0.8);
+  }
+  33% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 0.3;
+  }
+  61% {
+    opacity: 0.7;
+  }
+  70% {
+    opacity: 0.25;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0.25;
+  }
+}
+@keyframes twinkle-b {
+  0% {
+    opacity: 0.3;
+  }
+  12% {
+    opacity: 0.4;
+  }
+  24% {
+    opacity: 1;
+  }
+  31% {
+    opacity: 0.4;
   }
   50% {
+    opacity: 0.6;
+  }
+  58% {
+    opacity: 0.2;
+  }
+  77% {
+    opacity: 0.9;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}
+@keyframes twinkle-c {
+  0% {
+    opacity: 0.4;
+  }
+  15% {
+    opacity: 0.2;
+  }
+  30% {
+    opacity: 0.75;
+  }
+  45% {
+    opacity: 0.3;
+  }
+  55% {
     opacity: 1;
-    transform: scale(1.15);
+  }
+  70% {
+    opacity: 0.35;
+  }
+  88% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.4;
   }
 }
 @media (prefers-reduced-motion: reduce) {
