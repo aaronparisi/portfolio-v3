@@ -360,26 +360,47 @@ footer[id] {
   filter: drop-shadow(0 0 5px currentcolor);
 }
 
-/* The nav's theme/motion toggle buttons get the same "lit control" look
-   as the hero CTA: a resting glow in their own accent color (set via
-   --dash-color per button) that brightens on hover. */
+/* The nav's "logo": a flat-top hexagon (a clip-path, not an SVG) filled
+   with the site's cyan/lime/pink accents and lit with a two-color glow —
+   one drop-shadow per hue, since filter: drop-shadow() only takes a
+   single flat color and the hex's own fill is a gradient. */
+.brand-hex {
+  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
+  background: linear-gradient(135deg, var(--cyan), var(--lime) 50%, var(--pink));
+  filter: drop-shadow(0 0 4px color-mix(in oklab, var(--cyan) 55%, transparent))
+    drop-shadow(0 0 8px color-mix(in oklab, var(--pink) 45%, transparent));
+  transition: filter 200ms ease-out;
+}
+.brand-mark {
+  transition: transform 200ms ease-out;
+}
+.brand-mark:hover {
+  transform: scale(1.08);
+}
+.brand-mark:hover .brand-hex {
+  filter: drop-shadow(0 0 7px color-mix(in oklab, var(--cyan) 70%, transparent))
+    drop-shadow(0 0 13px color-mix(in oklab, var(--pink) 60%, transparent));
+}
+.brand-letters {
+  /* Dark against the gradient's lime midpoint, with a light halo to stay
+     readable against its darker cyan/pink ends too. */
+  color: var(--base03);
+  text-shadow: 0 0 3px color-mix(in oklab, var(--base3) 65%, transparent);
+}
+
+/* The nav's theme/motion toggle buttons get a resting glow in their own
+   accent color (set via --dash-color per button) that brightens on
+   hover — flat color, no gradient sheen or inset highlight, so the glow
+   reads as a lit ring around a flat disc rather than a glossy 3D button. */
 .hud-toggle {
-  background: radial-gradient(
-    circle at 35% 30%,
-    color-mix(in oklab, var(--dash-color, var(--cyan)) 20%, var(--bg-alt) 80%),
-    var(--bg-alt) 80%
-  );
-  box-shadow:
-    0 0 8px color-mix(in oklab, var(--dash-color, var(--cyan)) 45%, transparent),
-    inset 0 1px 1px color-mix(in oklab, white 20%, transparent);
+  background: var(--bg-alt);
+  box-shadow: 0 0 8px color-mix(in oklab, var(--dash-color, var(--cyan)) 45%, transparent);
   transition:
     box-shadow 200ms ease-out,
     transform 200ms ease-out;
 }
 .hud-toggle:hover {
-  box-shadow:
-    0 0 18px color-mix(in oklab, var(--dash-color, var(--cyan)) 70%, transparent),
-    inset 0 1px 1px color-mix(in oklab, white 20%, transparent);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--dash-color, var(--cyan)) 70%, transparent);
   transform: scale(1.08);
 }
 
@@ -445,60 +466,77 @@ footer[id] {
   opacity: 0.88;
   --flare-blur: 4px;
 }
+/* Each flare now holds at full brightness for a beat (two adjacent
+   100%-opacity stops) instead of just touching it for an instant — with
+   easing, a single-point peak barely registers before the curve is
+   already sliding back down. Baseline is lower and the blur jump bigger
+   than before, for more contrast between "resting" and "flaring". */
 @keyframes twinkle-a {
   0%,
-  62% {
-    opacity: 0.72;
+  58% {
+    opacity: 0.5;
     --flare-blur: 4px;
   }
-  67% {
+  63% {
     opacity: 1;
-    --flare-blur: 12px;
+    --flare-blur: 18px;
   }
-  74% {
-    opacity: 0.72;
+  71% {
+    opacity: 1;
+    --flare-blur: 18px;
+  }
+  79% {
+    opacity: 0.5;
     --flare-blur: 4px;
   }
   100% {
-    opacity: 0.72;
+    opacity: 0.5;
     --flare-blur: 4px;
   }
 }
 @keyframes twinkle-b {
   0%,
-  28% {
-    opacity: 0.68;
+  24% {
+    opacity: 0.45;
     --flare-blur: 4px;
   }
-  33% {
+  29% {
     opacity: 1;
-    --flare-blur: 13px;
+    --flare-blur: 19px;
   }
-  40% {
-    opacity: 0.68;
+  37% {
+    opacity: 1;
+    --flare-blur: 19px;
+  }
+  45% {
+    opacity: 0.45;
     --flare-blur: 4px;
   }
   100% {
-    opacity: 0.68;
+    opacity: 0.45;
     --flare-blur: 4px;
   }
 }
 @keyframes twinkle-c {
   0%,
-  85% {
-    opacity: 0.75;
+  76% {
+    opacity: 0.55;
     --flare-blur: 4px;
   }
-  90% {
+  81% {
     opacity: 1;
-    --flare-blur: 12px;
+    --flare-blur: 18px;
   }
-  96% {
-    opacity: 0.75;
+  89% {
+    opacity: 1;
+    --flare-blur: 18px;
+  }
+  97% {
+    opacity: 0.55;
     --flare-blur: 4px;
   }
   100% {
-    opacity: 0.75;
+    opacity: 0.55;
     --flare-blur: 4px;
   }
 }
