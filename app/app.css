@@ -304,9 +304,12 @@ footer[id] {
   color: var(--base1);
 }
 /* The seam is a wide, repeating lime → cyan → pink → lime band that
-   scrolls itself left to right — background-position moves through
-   exactly one image-width per cycle, so the wrap from 100% back to 0%
-   is seamless (both ends land on "lime"). Gated on [data-motion] like
+   holds still, then wipes left to right in one quick beat, then holds
+   again: flat for the first 5s of the 6s cycle, then the whole 1s
+   remainder covers the actual move — background-position travels
+   exactly one image-width during that beat, so the wrap back to the
+   start is seamless (both ends land on "lime") and the following hold
+   looks identical to the one before it. Gated on [data-motion] like
    everything else animated on the page; motion-off/reduced-motion just
    gets the gradient parked at its start position. */
 .dashboard-panel::before {
@@ -319,13 +322,14 @@ footer[id] {
   box-shadow: 0 0 16px color-mix(in oklab, var(--cyan) 55%, transparent);
 }
 [data-motion="on"] .dashboard-panel::before {
-  animation: seam-wipe 7s linear infinite;
+  animation: seam-wipe 6s ease-in-out infinite;
 }
 @keyframes seam-wipe {
-  from {
+  0%,
+  83.333% {
     background-position: 0% 0%;
   }
-  to {
+  100% {
     background-position: -200% 0%;
   }
 }
@@ -379,17 +383,25 @@ footer[id] {
     black 100%
   );
 }
-/* Three different irregular flicker patterns (assigned round-robin in
-   TwinkleStars.tsx) rather than one shared curve — real starlight
-   scintillates in jagged, asymmetric bursts, not a smooth uniform
-   breathe-in-breathe-out, which is what reads as a blinking indicator
-   light rather than a star. Brightness-only (no scale/size change) for
-   the same reason — real twinkle is a flicker in brightness, not a dot
-   visibly growing and shrinking. */
+/* These sit stable and clearly bright — not competing with the ambient
+   dust for attention on a slow fade — and every so often flare even
+   brighter for about half a second before dropping right back to that
+   same stable level. Three variants (round-robin assigned in
+   TwinkleStars.tsx) put that flare at a different point in each star's
+   own cycle, so across a whole field of them the flares land scattered
+   over time rather than all firing at once. Brightness-only (no scale)
+   — a star's apparent size doesn't change when it twinkles, only how
+   bright it looks. */
 .twinkle-star {
   animation-name: twinkle-a;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
+  /* Without this, every star sits at opacity: 1 (the property's plain
+     CSS default) for the length of its own animation-delay, since
+     nothing else sets a base opacity and there's nothing yet to fill
+     backward from the keyframes — so most stars would start "flared"
+     and only drop to their real stable level once the delay elapsed. */
+  animation-fill-mode: backwards;
 }
 .twinkle-star.variant-b {
   animation-name: twinkle-b;
@@ -399,95 +411,56 @@ footer[id] {
 }
 [data-motion="off"] .twinkle-star {
   animation: none;
-  opacity: 0.85;
+  opacity: 0.88;
 }
 @keyframes twinkle-a {
-  0% {
-    opacity: 0.25;
-  }
-  8% {
+  0%,
+  62% {
     opacity: 0.85;
   }
-  19% {
-    opacity: 0.35;
+  67% {
+    opacity: 1;
+  }
+  74% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.85;
+  }
+}
+@keyframes twinkle-b {
+  0%,
+  28% {
+    opacity: 0.82;
   }
   33% {
     opacity: 1;
   }
-  47% {
-    opacity: 0.3;
-  }
-  61% {
-    opacity: 0.7;
-  }
-  70% {
-    opacity: 0.25;
-  }
-  85% {
-    opacity: 0.55;
+  40% {
+    opacity: 0.82;
   }
   100% {
-    opacity: 0.25;
-  }
-}
-@keyframes twinkle-b {
-  0% {
-    opacity: 0.3;
-  }
-  12% {
-    opacity: 0.4;
-  }
-  24% {
-    opacity: 1;
-  }
-  31% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  58% {
-    opacity: 0.2;
-  }
-  77% {
-    opacity: 0.9;
-  }
-  90% {
-    opacity: 0.3;
-  }
-  100% {
-    opacity: 0.3;
+    opacity: 0.82;
   }
 }
 @keyframes twinkle-c {
-  0% {
-    opacity: 0.4;
+  0%,
+  85% {
+    opacity: 0.88;
   }
-  15% {
-    opacity: 0.2;
-  }
-  30% {
-    opacity: 0.75;
-  }
-  45% {
-    opacity: 0.3;
-  }
-  55% {
+  90% {
     opacity: 1;
   }
-  70% {
-    opacity: 0.35;
-  }
-  88% {
-    opacity: 0.6;
+  96% {
+    opacity: 0.88;
   }
   100% {
-    opacity: 0.4;
+    opacity: 0.88;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .twinkle-star {
     animation: none;
-    opacity: 0.85;
+    opacity: 0.88;
   }
 }

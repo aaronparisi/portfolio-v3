@@ -32,11 +32,13 @@ const COLORS = ["var(--lime)", "var(--pink)", "var(--cyan)"];
 // blinking panel.
 const VARIANTS = ["", "variant-b", "variant-c"];
 
-// A sprinkle of brighter stars layered over the ambient starfield (see
-// --stars in app.css), each flickering on its own schedule. Generated
-// rather than hand-typed so there can be enough of them to actually read
-// as "a good portion of the stars" per screen — but from a fixed seed,
-// so the layout is identical on every render rather than reshuffling.
+// A sprinkle of stars layered over the ambient starfield (see --stars in
+// app.css), stable and noticeably brighter than the ambient dust, each
+// flaring even brighter for about half a second every so often, on its
+// own schedule. Generated rather than hand-typed so there can be enough
+// of them to actually read as "a good portion of the stars" per screen —
+// but from a fixed seed, so the layout is identical on every render
+// rather than reshuffling.
 function makeTwinkleStars(count: number): TwinkleStar[] {
   const random = mulberry32(0x50a2e5);
   const stars: TwinkleStar[] = [];
@@ -46,8 +48,12 @@ function makeTwinkleStars(count: number): TwinkleStar[] {
       left: `${(2 + random() * 95).toFixed(1)}%`,
       size: `${(1.8 + random() * 1.8).toFixed(1)}px`,
       color: COLORS[Math.floor(random() * COLORS.length)],
-      delay: `${(random() * 6).toFixed(2)}s`,
-      duration: `${(2 + random() * 4.5).toFixed(2)}s`,
+      delay: `${(random() * 5).toFixed(2)}s`,
+      // The flare itself is a fixed ~10-12% slice of each keyframe (see
+      // app.css) — keeping the overall cycle in this range is what keeps
+      // that slice reading as "about half a second" rather than a full
+      // second at the long end.
+      duration: `${(3 + random() * 3).toFixed(2)}s`,
       variant: VARIANTS[Math.floor(random() * VARIANTS.length)],
     });
   }
