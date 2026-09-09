@@ -34,13 +34,13 @@ export function Footer() {
           </span>
           <a
             href="mailto:parisi.aaron@gmail.com"
-            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--blue)]"
+            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--violet)]"
           >
             <MailIcon className="h-4 w-4 text-[var(--text-muted)]" /> parisi.aaron@gmail.com
           </a>
           <a
             href="tel:+15185733522"
-            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--blue)]"
+            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--violet)]"
           >
             <PhoneIcon className="h-4 w-4 text-[var(--text-muted)]" /> 518-573-3522
           </a>
@@ -48,7 +48,7 @@ export function Footer() {
             href="https://linkedin.com/in/aaron-parisi"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--blue)]"
+            className="flex items-center gap-2 text-[var(--text)] transition-colors hover:text-[var(--violet)]"
           >
             LinkedIn <ArrowUpRightIcon className="h-3.5 w-3.5" />
           </a>
