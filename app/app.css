@@ -303,87 +303,103 @@ footer[id] {
   background: color-mix(in oklab, var(--deep-space) 85%, var(--cyan) 15%);
   color: var(--base1);
 }
+/* The seam is a wide, repeating lime → cyan → pink → lime band that
+   scrolls itself left to right — background-position moves through
+   exactly one image-width per cycle, so the wrap from 100% back to 0%
+   is seamless (both ends land on "lime"). Gated on [data-motion] like
+   everything else animated on the page; motion-off/reduced-motion just
+   gets the gradient parked at its start position. */
 .dashboard-panel::before {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
   height: 3px;
-  background: linear-gradient(to right, var(--lime), var(--cyan), var(--pink));
+  background-image: linear-gradient(to right, var(--lime), var(--cyan), var(--pink), var(--lime));
+  background-size: 200% 100%;
   box-shadow: 0 0 16px color-mix(in oklab, var(--cyan) 55%, transparent);
 }
+[data-motion="on"] .dashboard-panel::before {
+  animation: seam-wipe 7s linear infinite;
+}
+@keyframes seam-wipe {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: -200% 0%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-panel::before {
+    animation: none;
+  }
+}
 
-/* A little strip of decorative dashboard hardware for the footer —
-   scenery, not controls (the real theme/motion toggles live in the
-   nav). Each instance is colored and (for the knob) angled via
-   --dash-color / --dash-angle set inline per element. */
-.dash-knob {
-  position: relative;
-  display: inline-block;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 9999px;
+/* Turns an icon's own (stroke) currentColor into a matching glow —
+   text-shadow doesn't paint on SVG strokes, but drop-shadow does. */
+.icon-glow {
+  filter: drop-shadow(0 0 5px currentcolor);
+}
+
+/* The nav's theme/motion toggle buttons get the same "lit control" look
+   as the hero CTA: a resting glow in their own accent color (set via
+   --dash-color per button) that brightens on hover. */
+.hud-toggle {
   background: radial-gradient(
     circle at 35% 30%,
-    color-mix(in oklab, var(--dash-color, var(--cyan)) 30%, var(--bg-alt) 70%),
-    var(--bg-alt) 75%
+    color-mix(in oklab, var(--dash-color, var(--cyan)) 20%, var(--bg-alt) 80%),
+    var(--bg-alt) 80%
   );
-  border: 1px solid color-mix(in oklab, var(--dash-color, var(--cyan)) 40%, var(--border) 60%);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--dash-color, var(--cyan)) 55%, transparent);
+  box-shadow:
+    0 0 8px color-mix(in oklab, var(--dash-color, var(--cyan)) 45%, transparent),
+    inset 0 1px 1px color-mix(in oklab, white 20%, transparent);
+  transition:
+    box-shadow 200ms ease-out,
+    transform 200ms ease-out;
 }
-.dash-knob::after {
-  content: "";
-  position: absolute;
-  top: 15%;
-  left: 50%;
-  width: 2px;
-  height: 35%;
-  border-radius: 1px;
-  background: var(--dash-color, var(--cyan));
-  box-shadow: 0 0 4px var(--dash-color, var(--cyan));
-  transform: translateX(-50%) rotate(var(--dash-angle, 0deg));
-  transform-origin: 50% 100%;
+.hud-toggle:hover {
+  box-shadow:
+    0 0 18px color-mix(in oklab, var(--dash-color, var(--cyan)) 70%, transparent),
+    inset 0 1px 1px color-mix(in oklab, white 20%, transparent);
+  transform: scale(1.08);
 }
 
-.dash-switch {
-  display: inline-flex;
-  align-items: center;
-  width: 1.75rem;
-  height: 0.875rem;
-  border-radius: 9999px;
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  padding: 2px;
-  box-shadow: inset 0 1px 2px color-mix(in oklab, black 35%, transparent);
+/* A sprinkle of brighter stars (see TwinkleStars.tsx) layered over the
+   ambient starfield, independently pulsing in brightness. Masked the
+   same way as the ambient dust — invisible until the page has sunk far
+   enough into "space" — since it lives inside a wrapper sized to the
+   whole document, not the viewport. */
+.twinkle-stars {
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 32%, black 65%, black 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 32%,
+    black 65%,
+    black 100%
+  );
 }
-.dash-switch::after {
-  content: "";
-  width: 0.55rem;
-  height: 0.55rem;
-  margin-left: auto;
-  border-radius: 9999px;
-  background: var(--dash-color, var(--lime));
-  box-shadow: 0 0 6px var(--dash-color, var(--lime));
+.twinkle-star {
+  animation: twinkle 3s ease-in-out infinite;
 }
-
-.dash-led {
-  display: inline-block;
-  width: 0.4rem;
-  height: 0.4rem;
-  border-radius: 9999px;
-  background: var(--dash-color, var(--pink));
-  box-shadow: 0 0 8px var(--dash-color, var(--pink));
+[data-motion="off"] .twinkle-star {
+  animation: none;
+  opacity: 0.85;
 }
-/* Blinking is gated on the same [data-motion] attribute as everything
-   else animated on the page, not a second reduced-motion check. */
-[data-motion="on"] .dash-led {
-  animation: led-blink 2.4s ease-in-out infinite;
-}
-@keyframes led-blink {
+@keyframes twinkle {
   0%,
   100% {
-    opacity: 1;
+    opacity: 0.35;
+    transform: scale(0.8);
   }
   50% {
-    opacity: 0.35;
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .twinkle-star {
+    animation: none;
+    opacity: 0.85;
   }
 }
