@@ -319,14 +319,14 @@ footer[id] {
   color: var(--base1);
 }
 /* The seam is a wide, repeating lime → cyan → pink → lime band that
-   holds still, then wipes left to right in one quick beat, then holds
-   again: flat for the first 5s of the 6s cycle, then the whole 1s
-   remainder covers the actual move — background-position travels
-   exactly one image-width during that beat, so the wrap back to the
-   start is seamless (both ends land on "lime") and the following hold
-   looks identical to the one before it. Gated on [data-motion] like
-   everything else animated on the page; motion-off/reduced-motion just
-   gets the gradient parked at its start position. */
+   holds still, then wipes left to right, then holds again: flat for the
+   first 5s of the 7s cycle, then the whole 2s remainder covers the
+   actual move — background-position travels exactly one image-width
+   during that stretch, so the wrap back to the start is seamless (both
+   ends land on "lime") and the following hold looks identical to the
+   one before it. Gated on [data-motion] like everything else animated
+   on the page; motion-off/reduced-motion just gets the gradient parked
+   at its start position. */
 .dashboard-panel::before {
   content: "";
   position: absolute;
@@ -337,11 +337,11 @@ footer[id] {
   box-shadow: 0 0 16px color-mix(in oklab, var(--cyan) 55%, transparent);
 }
 [data-motion="on"] .dashboard-panel::before {
-  animation: seam-wipe 6s ease-in-out infinite;
+  animation: seam-wipe 7s ease-in-out infinite;
 }
 @keyframes seam-wipe {
   0%,
-  83.333% {
+  71.4286% {
     background-position: 0% 0%;
   }
   100% {
@@ -360,13 +360,13 @@ footer[id] {
   filter: drop-shadow(0 0 5px currentcolor);
 }
 
-/* The nav's "logo": a flat-top hexagon (a clip-path, not an SVG) filled
-   with the site's cyan/lime/pink accents and lit with a two-color glow —
-   one drop-shadow per hue, since filter: drop-shadow() only takes a
-   single flat color and the hex's own fill is a gradient. */
+/* The nav's "logo": an outlined hexagon (an SVG polygon with fill:
+   none — a plain CSS clip-path can only ever produce a filled shape,
+   not a see-through one) glowing in the site's cyan/lime/pink accents
+   via a two-color drop-shadow, since filter: drop-shadow() only takes a
+   single flat color and the stroke itself is a gradient. Same resting
+   glow → bigger glow + scale-up on hover as the nav's toggle buttons. */
 .brand-hex {
-  clip-path: polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%);
-  background: linear-gradient(135deg, var(--cyan), var(--lime) 50%, var(--pink));
   filter: drop-shadow(0 0 4px color-mix(in oklab, var(--cyan) 55%, transparent))
     drop-shadow(0 0 8px color-mix(in oklab, var(--pink) 45%, transparent));
   transition: filter 200ms ease-out;
@@ -382,10 +382,19 @@ footer[id] {
     drop-shadow(0 0 13px color-mix(in oklab, var(--pink) 60%, transparent));
 }
 .brand-letters {
-  /* Dark against the gradient's lime midpoint, with a light halo to stay
-     readable against its darker cyan/pink ends too. */
-  color: var(--base03);
-  text-shadow: 0 0 3px color-mix(in oklab, var(--base3) 65%, transparent);
+  /* The same gradient as the hex outline, painted onto the letters via
+     background-clip rather than a flat color, so the mark reads as one
+     glowing gradient object rather than an outline plus a separately
+     colored label. */
+  background: linear-gradient(135deg, var(--cyan), var(--lime) 50%, var(--pink));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 3px color-mix(in oklab, var(--pink) 45%, transparent));
+  transition: filter 200ms ease-out;
+}
+.brand-mark:hover .brand-letters {
+  filter: drop-shadow(0 0 5px color-mix(in oklab, var(--pink) 60%, transparent));
 }
 
 /* The nav's theme/motion toggle buttons get a resting glow in their own
