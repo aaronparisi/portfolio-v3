@@ -9,25 +9,48 @@ interface TwinkleStar {
   duration: string;
 }
 
+// Deterministic PRNG (mulberry32), not Math.random() — this page is
+// server-rendered, so whatever lays these stars out has to produce the
+// exact same sequence on the server and in the client bundle, or React
+// throws a hydration mismatch the moment it diffs the two trees. A fixed
+// seed makes the "random" scatter below perfectly reproducible.
+function mulberry32(seed: number) {
+  return function random() {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const COLORS = ["var(--lime)", "var(--pink)", "var(--cyan)"];
+
 // A sprinkle of brighter stars layered over the ambient starfield (see
-// --stars in app.css) — roughly a tenth as many, each pulsing in
-// brightness on its own schedule rather than in lockstep. Positions are
-// fixed rather than randomized so server and client render identically
-// (this is rendered inside an SSR'd page); delays/durations are varied
-// by hand instead for the same non-synced-sparkle effect.
-const TWINKLE_STARS: TwinkleStar[] = [
-  { top: "38%", left: "12%", size: "3px", color: "var(--lime)", delay: "0s", duration: "3.2s" },
-  { top: "44%", left: "72%", size: "2.5px", color: "var(--pink)", delay: "1.1s", duration: "2.6s" },
-  { top: "52%", left: "40%", size: "3px", color: "var(--cyan)", delay: "0.4s", duration: "3.6s" },
-  { top: "58%", left: "88%", size: "2.5px", color: "var(--pink)", delay: "2s", duration: "3s" },
-  { top: "64%", left: "20%", size: "3px", color: "var(--lime)", delay: "0.8s", duration: "2.8s" },
-  { top: "70%", left: "60%", size: "2.5px", color: "var(--cyan)", delay: "1.6s", duration: "3.4s" },
-  { top: "76%", left: "8%", size: "3px", color: "var(--pink)", delay: "0.2s", duration: "3s" },
-  { top: "82%", left: "48%", size: "2.5px", color: "var(--lime)", delay: "2.4s", duration: "2.6s" },
-  { top: "88%", left: "78%", size: "3px", color: "var(--cyan)", delay: "1.3s", duration: "3.8s" },
-  { top: "93%", left: "30%", size: "2.5px", color: "var(--pink)", delay: "0.6s", duration: "3.2s" },
-  { top: "97%", left: "65%", size: "3px", color: "var(--lime)", delay: "1.9s", duration: "2.9s" },
-];
+// --stars in app.css), each pulsing in brightness on its own schedule
+// rather than in lockstep. Generated rather than hand-typed so there can
+// be enough of them to actually read as "a good portion of the stars"
+// per screen — but from a fixed seed, so the layout is identical on
+// every render rather than reshuffling.
+function makeTwinkleStars(count: number): TwinkleStar[] {
+  const random = mulberry32(0x50a2e5);
+  const stars: TwinkleStar[] = [];
+  for (let i = 0; i < count; i++) {
+    stars.push({
+      top: `${(34 + random() * 64).toFixed(1)}%`,
+      left: `${(2 + random() * 95).toFixed(1)}%`,
+      size: `${(2 + random() * 1.6).toFixed(1)}px`,
+      color: COLORS[Math.floor(random() * COLORS.length)],
+      delay: `${(random() * 3).toFixed(2)}s`,
+      duration: `${(2.2 + random() * 2).toFixed(2)}s`,
+    });
+  }
+  return stars;
+}
+
+// About a third of a screen's worth of ambient dust ends up bright and
+// shimmering at this count and scatter.
+const TWINKLE_STARS = makeTwinkleStars(55);
 
 export function TwinkleStars() {
   return (
@@ -43,7 +66,7 @@ export function TwinkleStars() {
               width: s.size,
               height: s.size,
               background: s.color,
-              boxShadow: `0 0 6px ${s.color}`,
+              boxShadow: `0 0 5px ${s.color}`,
               animationDelay: s.delay,
               animationDuration: s.duration,
             } as CSSProperties
