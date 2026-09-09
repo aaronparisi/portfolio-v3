@@ -78,7 +78,11 @@ export function TwinkleStars() {
               width: s.size,
               height: s.size,
               background: s.color,
-              boxShadow: `0 0 5px ${s.color}`,
+              // --flare-blur is animated in app.css's twinkle-a/b/c
+              // keyframes (registered via @property so it actually
+              // interpolates) — referencing it here means the glow itself
+              // blooms during a flare, not just the dot's opacity.
+              boxShadow: `0 0 var(--flare-blur, 4px) ${s.color}`,
               animationDelay: s.delay,
               animationDuration: s.duration,
             } as CSSProperties

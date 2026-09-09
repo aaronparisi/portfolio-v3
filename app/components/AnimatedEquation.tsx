@@ -117,21 +117,23 @@ export function AnimatedEquation() {
         setArrowShown(true);
         await sleep(350);
 
-        if (stopped()) return;
-        setBoxPower("on");
-        await sleep(420); // let the screen finish booting up
-
-        // The cursor warms up like a real terminal one: pops in as a thin
-        // underscore, sits for a moment, then grows into a full block
+        // The cursor warms up like a real terminal one: it's already a
+        // thin underscore by the time the screen starts booting up (the
+        // way a prompt is already there as an old monitor comes on, not
+        // something that pops in only once the screen has finished), sits
+        // for a moment once booted, then quickly grows into a full block
         // before it starts blinking.
         if (stopped()) return;
         setCaretShape("underscore");
-        await sleep(150); // pop in
-        await sleep(420); // sit as an underscore for a moment
+        setBoxPower("on");
+        await sleep(420); // let the screen finish booting up
+
+        if (stopped()) return;
+        await sleep(200); // sit as an underscore a moment longer
 
         if (stopped()) return;
         setCaretShape("block");
-        await sleep(260); // let it expand
+        await sleep(140); // let it expand — quick
 
         if (stopped()) return;
         setCaretBlinking(true);
@@ -281,7 +283,7 @@ export function AnimatedEquation() {
           {codeText}
           <span
             className={
-              "ml-0.5 inline-block h-[1em] w-[0.55em] bg-[var(--cyan)] align-middle will-change-transform transition-transform duration-200 ease-out [transform-origin:bottom] [transform:translateY(-0.15em)_scaleY(var(--caret-scale,0))]" +
+              "ml-0.5 inline-block h-[1em] w-[0.55em] bg-[var(--cyan)] align-middle will-change-transform transition-transform duration-125 ease-out [transform-origin:bottom] [transform:translateY(-0.15em)_scaleY(var(--caret-scale,0))]" +
               (caretBlinking ? " typing-caret" : "")
             }
             style={{

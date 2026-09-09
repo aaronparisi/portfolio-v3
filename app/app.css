@@ -110,6 +110,21 @@ body {
   color: var(--text);
 }
 
+/* Many monospace fonts (JetBrains Mono included) ship contextual
+   alternates that reshape runs like "..." or "=>" into a single glyph
+   with its own (different) advance width — great for a static code
+   block, but it means text set in this font visibly jumps in width the
+   instant such a run completes or breaks, which is exactly what
+   happens once per character while the hero's code snippet is typed or
+   deleted one character at a time. Disabling ligatures/contextual
+   alternates keeps every character's width fixed and independent. */
+.font-mono {
+  font-variant-ligatures: none;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0;
+}
+
 /* The page's whole vertical "journey": a chalky, dusty classroom at the
    top settling into deep outer space by the footer. This is a plain
    (non-fixed) background on body, so the three stops space themselves
@@ -383,15 +398,31 @@ footer[id] {
     black 100%
   );
 }
+/* Registered so the browser actually interpolates --flare-blur through
+   the keyframes below, instead of just snapping between values — plain
+   (unregistered) custom properties are untyped and don't animate. */
+@property --flare-blur {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 4px;
+}
+
 /* These sit stable and clearly bright — not competing with the ambient
    dust for attention on a slow fade — and every so often flare even
    brighter for about half a second before dropping right back to that
-   same stable level. Three variants (round-robin assigned in
-   TwinkleStars.tsx) put that flare at a different point in each star's
-   own cycle, so across a whole field of them the flares land scattered
-   over time rather than all firing at once. Brightness-only (no scale)
-   — a star's apparent size doesn't change when it twinkles, only how
-   bright it looks. */
+   same stable level. The flare is a real, deliberately large jump (not
+   just a subtle brightness bump — at high opacity there's barely any
+   perceptible difference between e.g. 85% and 100%) in both opacity and
+   glow radius, the latter via --flare-blur, referenced from the inline
+   box-shadow in TwinkleStars.tsx. Three variants (round-robin assigned
+   there) put the flare at a different point in each star's own cycle,
+   so across a whole field of them they land scattered over time rather
+   than all firing at once. No scale — a star's apparent size doesn't
+   change when it twinkles, only how bright/glowy it looks.
+   Gated purely on [data-motion], same as the rest of the page's
+   animation — not an independent prefers-reduced-motion query, which
+   would silently block it even after a visitor explicitly opts back
+   into motion for this site via the on-page toggle. */
 .twinkle-star {
   animation-name: twinkle-a;
   animation-timing-function: ease-in-out;
@@ -412,55 +443,62 @@ footer[id] {
 [data-motion="off"] .twinkle-star {
   animation: none;
   opacity: 0.88;
+  --flare-blur: 4px;
 }
 @keyframes twinkle-a {
   0%,
   62% {
-    opacity: 0.85;
+    opacity: 0.72;
+    --flare-blur: 4px;
   }
   67% {
     opacity: 1;
+    --flare-blur: 12px;
   }
   74% {
-    opacity: 0.85;
+    opacity: 0.72;
+    --flare-blur: 4px;
   }
   100% {
-    opacity: 0.85;
+    opacity: 0.72;
+    --flare-blur: 4px;
   }
 }
 @keyframes twinkle-b {
   0%,
   28% {
-    opacity: 0.82;
+    opacity: 0.68;
+    --flare-blur: 4px;
   }
   33% {
     opacity: 1;
+    --flare-blur: 13px;
   }
   40% {
-    opacity: 0.82;
+    opacity: 0.68;
+    --flare-blur: 4px;
   }
   100% {
-    opacity: 0.82;
+    opacity: 0.68;
+    --flare-blur: 4px;
   }
 }
 @keyframes twinkle-c {
   0%,
   85% {
-    opacity: 0.88;
+    opacity: 0.75;
+    --flare-blur: 4px;
   }
   90% {
     opacity: 1;
+    --flare-blur: 12px;
   }
   96% {
-    opacity: 0.88;
+    opacity: 0.75;
+    --flare-blur: 4px;
   }
   100% {
-    opacity: 0.88;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .twinkle-star {
-    animation: none;
-    opacity: 0.88;
+    opacity: 0.75;
+    --flare-blur: 4px;
   }
 }
