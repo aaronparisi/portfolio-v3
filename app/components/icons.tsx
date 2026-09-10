@@ -38,6 +38,25 @@ export function MoonIcon({ className }: IconProps) {
   );
 }
 
+export function WavesIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.5 8.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+      <path d="M2.5 14.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+      <path d="M2.5 20.5c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0 3 2 4.5 0" />
+    </Svg>
+  );
+}
+
+export function WavesOffIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M2.5 12c1.5 0 3 0 4.5 0s3 0 4.5 0 3 0 4.5 0 3 0 4.5 0" />
+      <path d="M3 3l18 18" />
+    </Svg>
+  );
+}
+
 export function PinIcon({ className }: IconProps) {
   return (
     <Svg className={className}>
@@ -212,6 +231,79 @@ export function MouseIcon({ className }: IconProps) {
     <Svg className={className}>
       <rect x="7" y="3" width="10" height="18" rx="5" />
       <path d="M12 3v6" />
+    </Svg>
+  );
+}
+
+export function CodeIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="m9 8-4 4 4 4M15 8l4 4-4 4" />
+    </Svg>
+  );
+}
+
+export function AtomIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="1.5" />
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" />
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(60 12 12)" />
+      <ellipse cx="12" cy="12" rx="9" ry="3.5" transform="rotate(120 12 12)" />
+    </Svg>
+  );
+}
+
+export function PaletteIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.8-.9 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.8 1.8-1.8H16a4 4 0 0 0 4-4c0-4.4-3.6-8-8-8Z" />
+      <circle cx="7.5" cy="10.5" r="1" />
+      <circle cx="12" cy="7.5" r="1" />
+      <circle cx="16.5" cy="10.5" r="1" />
+    </Svg>
+  );
+}
+
+export function HexagonIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M12 2.5 20.5 7.5V16.5L12 21.5 3.5 16.5V7.5Z" />
+    </Svg>
+  );
+}
+
+export function BookIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z" />
+      <path d="M4 5.5v15" />
+    </Svg>
+  );
+}
+
+export function FlaskIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M10 2h4M10 2v6l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.5L14 8V2" />
+      <path d="M8 15h8" />
+    </Svg>
+  );
+}
+
+export function LockIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M7.5 10V7a4.5 4.5 0 0 1 9 0v3" />
+    </Svg>
+  );
+}
+
+export function BoltIcon({ className }: IconProps) {
+  return (
+    <Svg className={className}>
+      <path d="M12.5 2 4 14h6.5L11 22 20 10h-6.5Z" />
     </Svg>
   );
 }

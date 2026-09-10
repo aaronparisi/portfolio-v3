@@ -1,20 +1,26 @@
 import { useEffect, useState } from "react";
 
 /**
- * Tracks the OS-level reduced-motion preference reactively (it can
- * change while the page is open). Every spring animation in this app
- * reads this and swaps to `immediate: true` rather than skipping motion
- * via a second, independent on-page toggle.
+ * Whether animation should be suppressed right now. Driven by the
+ * `data-motion` attribute on <html> (see root.tsx's init script and
+ * MotionToggle) rather than the prefers-reduced-motion media query
+ * directly — data-motion already starts from that media query, but can
+ * be explicitly overridden in either direction by the visitor via the
+ * on-page toggle, and this hook needs to reflect that override too.
+ * Every spring in this app reads this and sets `immediate: true` rather
+ * than checking the OS preference a second, independent way.
  */
 export function usePrefersReducedMotion() {
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
-    const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReduced(mql.matches);
-    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
+    const root = document.documentElement;
+    const update = () => setReduced(root.getAttribute("data-motion") === "off");
+    update();
+
+    const observer = new MutationObserver(update);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-motion"] });
+    return () => observer.disconnect();
   }, []);
 
   return reduced;

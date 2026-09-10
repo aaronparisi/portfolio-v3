@@ -16,12 +16,12 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-// Applied before hydration so the correct theme is in place for the very
-// first paint, and so the browser's own automatic scroll restoration is
-// off before it gets a chance to run. This is a single-route, all-
-// anchor-links page — a hard reload should always land wherever the
-// URL's #hash points (or the top, if there isn't one), never wherever
-// the visitor happened to have scrolled to last time.
+// Applied before hydration so the correct theme and motion state are in
+// place for the very first paint, and so the browser's own automatic
+// scroll restoration is off before it gets a chance to run. This is a
+// single-route, all-anchor-links page — a hard reload should always land
+// wherever the URL's #hash points (or the top, if there isn't one),
+// never wherever the visitor happened to have scrolled to last time.
 const themeInitScript = `
 (function () {
   try {
@@ -39,6 +39,16 @@ const themeInitScript = `
         ? "dark"
         : "light";
     root.setAttribute("data-theme", theme);
+  } catch (e) {}
+  try {
+    var storedMotion = localStorage.getItem("motion");
+    var motion =
+      storedMotion === "on" || storedMotion === "off"
+        ? storedMotion
+        : window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "off"
+        : "on";
+    root.setAttribute("data-motion", motion);
   } catch (e) {}
 })();
 `;

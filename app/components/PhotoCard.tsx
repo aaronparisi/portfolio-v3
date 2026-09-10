@@ -34,22 +34,27 @@ export function PhotoCard() {
     config: { tension: 260, friction: 18 },
   }));
 
-  // A continuous, very small bob — the card feels alive even before you
-  // touch it. Runs independently of the tilt spring above so hovering
+  // A continuous, very small drift — the card feels alive even before
+  // you touch it. Visits four waypoints in a loose loop (rather than
+  // bobbing straight up and down) so it wanders in every direction
+  // instead of along one axis — closer to how something actually
+  // floats. Runs independently of the tilt spring above so hovering
   // doesn't have to fight it or reset it.
-  const [float, floatApi] = useSpring(() => ({ y: 0 }));
+  const [float, floatApi] = useSpring(() => ({ x: 0, y: 0 }));
   useEffect(() => {
     if (reduced) return;
     void floatApi.start({
-      from: { y: -5 },
+      from: { x: 0, y: -6 },
       to: async (next) => {
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          await next({ y: 5 });
-          await next({ y: -5 });
+          await next({ x: 6, y: 0 });
+          await next({ x: 0, y: 6 });
+          await next({ x: -6, y: 0 });
+          await next({ x: 0, y: -6 });
         }
       },
-      config: { duration: 2800 },
+      config: { duration: 2600 },
     });
     return () => {
       floatApi.stop();
@@ -85,9 +90,9 @@ export function PhotoCard() {
           mounted
             ? {
                 transform: to(
-                  [style.rx, style.ry, style.scale, float.y],
-                  (rx, ry, s, fy) =>
-                    `translate3d(0, ${fy}px, 0) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})`,
+                  [style.rx, style.ry, style.scale, float.x, float.y],
+                  (rx, ry, s, fx, fy) =>
+                    `translate3d(${fx}px, ${fy}px, 0) rotateX(${rx}deg) rotateY(${ry}deg) scale(${s})`,
                 ),
                 transformStyle: "preserve-3d",
               }

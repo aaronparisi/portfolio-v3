@@ -60,7 +60,7 @@ export function Hero() {
             className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
           >
             Calculus teacher turned self-taught developer. I build interfaces with React,
-            TypeScript, and a habit of digging one layer deeper than I need to.
+            TypeScript, and a habit of digging one layer deeper.
           </animated.p>
 
           <animated.div style={riseStyle(trail[3])} className="mt-8 flex justify-center lg:justify-start">
