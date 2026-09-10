@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { SunIcon, MoonIcon } from "./icons";
 
 export function ThemeToggle() {
@@ -18,7 +19,8 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="Toggle color theme"
-      className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] text-[var(--text)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+      className="hud-toggle flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] text-[var(--text)] transition-colors hover:border-[var(--pink-text)] hover:text-[var(--pink-text)]"
+      style={{ "--dash-color": "var(--pink)" } as CSSProperties}
     >
       <SunIcon className="theme-icon-sun h-5 w-5" />
       <MoonIcon className="theme-icon-moon h-5 w-5" />

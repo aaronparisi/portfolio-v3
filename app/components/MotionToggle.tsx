@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { WavesIcon, WavesOffIcon } from "./icons";
 
 export function MotionToggle() {
@@ -19,7 +20,8 @@ export function MotionToggle() {
       onClick={toggle}
       aria-label="Toggle parallax motion"
       title="Toggle parallax"
-      className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] text-[var(--text)] transition-colors hover:border-[var(--blue)] hover:text-[var(--blue)]"
+      className="hud-toggle flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-[var(--border)] text-[var(--text)] transition-colors hover:border-[var(--lime-text)] hover:text-[var(--lime-text)]"
+      style={{ "--dash-color": "var(--lime)" } as CSSProperties}
     >
       <WavesIcon className="motion-icon-on h-5 w-5" />
       <WavesOffIcon className="motion-icon-off h-5 w-5" />

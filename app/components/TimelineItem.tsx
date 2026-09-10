@@ -33,7 +33,10 @@ export function TimelineItem({ entry, t }: { entry: TimelineEntry; t: number }) 
         <h3 className="text-lg font-semibold text-[var(--text-strong)]">
           {entry.title}
           {entry.current && (
-            <span className="ml-2 inline-block h-2 w-2 rounded-full bg-[var(--green)] align-middle" title="Current role" />
+            <span
+              className="ml-2 inline-block h-2 w-2 rounded-full bg-[var(--green)] align-middle shadow-[0_0_6px_var(--green)]"
+              title="Current role"
+            />
           )}
         </h3>
         <span className="font-mono text-xs text-[var(--text-muted)]">{entry.range}</span>

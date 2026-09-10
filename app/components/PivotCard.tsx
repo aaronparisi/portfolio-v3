@@ -6,7 +6,7 @@ import { TerminalIcon } from "./icons";
 export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
   return (
     <li className="relative" style={{ "--t": t } as CSSProperties}>
-      <span className="timeline-node absolute -left-8 top-0 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-[var(--base3)] shadow-md sm:-left-10">
+      <span className="timeline-node pivot-ring absolute -left-8 top-0 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-[var(--base3)] shadow-md sm:-left-10">
         <TerminalIcon className="h-5 w-5" />
       </span>
 

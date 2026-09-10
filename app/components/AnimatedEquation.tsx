@@ -39,6 +39,10 @@ export function AnimatedEquation() {
   const [crossedOut, setCrossedOut] = useState(false);
   const [arrowShown, setArrowShown] = useState(false);
   const [codeRevealed, setCodeRevealed] = useState(0);
+  // Set only during the occasional typo dance below, to show text that
+  // isn't a prefix of CODE_TEXT (e.g. "cosnt"). null the rest of the
+  // time, when codeRevealed's slice of CODE_TEXT is what's shown.
+  const [codeOverride, setCodeOverride] = useState<string | null>(null);
   const [caretShape, setCaretShape] = useState<"hidden" | "underscore" | "block">("hidden");
   const [caretBlinking, setCaretBlinking] = useState(false);
   // The code pill itself "boots up" and "powers down" like an old monitor,
@@ -66,6 +70,7 @@ export function AnimatedEquation() {
       setArrowShown(true);
       setBoxPower("on");
       setCodeRevealed(CODE_TEXT.length);
+      setCodeOverride(null);
       setCaretShape("hidden");
       setCaretBlinking(false);
       void nextPaint().then(() => setInstant(false));
@@ -73,6 +78,38 @@ export function AnimatedEquation() {
 
     async function loop(myGen: number) {
       const stopped = () => state.cancelled || state.generation !== myGen;
+
+      // Types through a mistake ("cosnt" — "n" and "s" transposed),
+      // pauses as if noticing it, backspaces to the wrong point, and
+      // retypes correctly, the way an actual typo actually happens
+      // rather than simply never occurring. Returns the CODE_TEXT index
+      // to resume normal typing from (codeRevealed is already correct up
+      // to that point), or null if the animation was stopped mid-typo.
+      async function typeConstTypo(): Promise<number | null> {
+        const typo = "cosnt";
+        for (let i = 1; i <= typo.length; i++) {
+          if (stopped()) return null;
+          setCodeOverride(typo.slice(0, i));
+          await sleep(randomBetween(25, 96));
+        }
+
+        if (stopped()) return null;
+        await sleep(randomBetween(280, 480)); // notice the mistake
+
+        // Backspace back to "co" — where it actually went wrong.
+        for (let i = typo.length - 1; i >= 2; i--) {
+          if (stopped()) return null;
+          setCodeOverride(typo.slice(0, i));
+          await sleep(randomBetween(20, 46));
+        }
+
+        if (stopped()) return null;
+        await sleep(randomBetween(150, 300)); // beat before retyping
+
+        setCodeOverride(null);
+        setCodeRevealed(2); // "co" already matches CODE_TEXT's real prefix
+        return 3; // resume normal typing from the 3rd character onward
+      }
 
       // Reset to a totally blank slate with transitions suppressed, so
       // this reset is a hard cut rather than a visible "unwind" of
@@ -84,11 +121,17 @@ export function AnimatedEquation() {
       setArrowShown(false);
       setBoxPower("off");
       setCodeRevealed(0);
+      setCodeOverride(null);
       setCaretShape("hidden");
       setCaretBlinking(false);
       await nextPaint();
       if (stopped()) return;
       setInstant(false);
+
+      // Every third run (including the very first) plays out a small
+      // typo in "const" — caught and corrected — rather than typing
+      // clean every time.
+      let runIndex = 0;
 
       while (!stopped()) {
         // A beat on the blank page before anything starts.
@@ -117,37 +160,53 @@ export function AnimatedEquation() {
         setArrowShown(true);
         await sleep(350);
 
-        if (stopped()) return;
-        setBoxPower("on");
-        await sleep(420); // let the screen finish booting up
-
-        // The cursor warms up like a real terminal one: pops in as a thin
-        // underscore, sits for a moment, then grows into a full block
+        // The cursor warms up like a real terminal one: it's already a
+        // thin underscore by the time the screen starts booting up (the
+        // way a prompt is already there as an old monitor comes on, not
+        // something that pops in only once the screen has finished), sits
+        // for a moment once booted, then quickly grows into a full block
         // before it starts blinking.
         if (stopped()) return;
         setCaretShape("underscore");
-        await sleep(150); // pop in
-        await sleep(420); // sit as an underscore for a moment
+        setBoxPower("on");
+        await sleep(420); // let the screen finish booting up
+
+        if (stopped()) return;
+        await sleep(200); // sit as an underscore a moment longer
 
         if (stopped()) return;
         setCaretShape("block");
-        await sleep(260); // let it expand
+        await sleep(140); // let it expand — quick
 
         if (stopped()) return;
         setCaretBlinking(true);
         await sleep(1500); // blink once or twice before typing begins
 
-        // Type the replacement out unevenly, like a person actually typing:
-        // mostly quick, occasional hesitation, a beat longer after spaces.
-        for (let i = 1; i <= CODE_TEXT.length; i++) {
+        // Type the replacement out unevenly, like someone typing with all
+        // ten fingers rather than two: mostly quick, occasional
+        // hesitation, a beat longer after spaces. Every third run (this
+        // one included, when runIndex is 0) opens with a real typo —
+        // "cosnt" caught and corrected back to "const" — before typing
+        // continues normally.
+        let typeFrom = 1;
+        if (runIndex % 3 === 0) {
+          if (stopped()) return;
+          const resumeFrom = await typeConstTypo();
+          if (resumeFrom === null) return; // stopped mid-typo
+          typeFrom = resumeFrom;
+        }
+
+        for (let i = typeFrom; i <= CODE_TEXT.length; i++) {
           if (stopped()) return;
           setCodeRevealed(i);
           const typedChar = CODE_TEXT[i - 1];
-          let delay = randomBetween(42, 160);
-          if (typedChar === " ") delay += randomBetween(25, 110);
-          if (Math.random() < 0.1) delay += randomBetween(190, 410);
+          let delay = randomBetween(25, 96);
+          if (typedChar === " ") delay += randomBetween(15, 66);
+          if (Math.random() < 0.1) delay += randomBetween(115, 245);
           await sleep(delay);
         }
+
+        runIndex += 1;
 
         if (stopped()) return;
         await sleep(3400);
@@ -223,7 +282,7 @@ export function AnimatedEquation() {
   }, []);
 
   const mathComplete = mathRevealed === MATH_CHARS.length;
-  const codeText = CODE_TEXT.slice(0, codeRevealed);
+  const codeText = codeOverride ?? CODE_TEXT.slice(0, codeRevealed);
 
   return (
     <div
@@ -233,7 +292,7 @@ export function AnimatedEquation() {
       }
       aria-hidden="true"
     >
-      <span className="relative inline-block whitespace-pre rounded-lg bg-[var(--yellow)]/10 px-4 py-2 text-[var(--yellow)]">
+      <span className="chalkboard relative inline-block whitespace-pre rounded-lg px-4 py-2 text-[var(--base2)]">
         {MATH_CHARS.map((char, i) => (
           <span
             key={i}
@@ -247,9 +306,19 @@ export function AnimatedEquation() {
           </span>
         ))}
         <span
-          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--yellow)] transition-transform duration-[600ms] ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
+          className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px] bg-[var(--base2)] transition-transform duration-[600ms] ease-in-out [transform:translateY(-50%)_scaleX(var(--cross-scale,0))] [transform-origin:left_center]"
           style={{ ["--cross-scale" as string]: mathComplete && crossedOut ? 1 : 0 }}
         />
+
+        {/* The eraser tray — pure scenery, hanging off the bottom edge. */}
+        <span
+          aria-hidden="true"
+          className="chalk-tray pointer-events-none absolute -bottom-2.5 left-2 right-2 h-2 rounded-[1px]"
+        >
+          <span className="absolute -top-1.5 left-1.5 h-1.5 w-4 rounded-[1px] bg-[var(--chalk-stick)]" />
+          <span className="absolute -top-1.5 left-6 h-1.5 w-4 rounded-[1px] bg-[var(--chalk-stick)]" />
+          <span className="absolute -top-2 right-1.5 h-2 w-5 rounded-[1px] bg-[var(--chalk-eraser)]" />
+        </span>
       </span>
 
       <span
@@ -281,7 +350,7 @@ export function AnimatedEquation() {
           {codeText}
           <span
             className={
-              "ml-0.5 inline-block h-[1em] w-[0.55em] bg-[var(--cyan)] align-middle will-change-transform transition-transform duration-200 ease-out [transform-origin:bottom] [transform:translateY(-0.15em)_scaleY(var(--caret-scale,0))]" +
+              "ml-0.5 inline-block h-[1em] w-[0.55em] bg-[var(--cyan)] align-middle will-change-transform transition-transform duration-125 ease-out [transform-origin:bottom] [transform:translateY(-0.15em)_scaleY(var(--caret-scale,0))]" +
               (caretBlinking ? " typing-caret" : "")
             }
             style={{
