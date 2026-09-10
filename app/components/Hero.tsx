@@ -1,86 +1,111 @@
-import { AnimatedEquation } from "./AnimatedEquation";
-import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
-import { ChevronDownIcon, TerminalIcon, LaptopIcon } from "./icons";
+import type { ReactNode } from "react";
+import { animated, useSpring, useTrail } from "@react-spring/web";
+import { PhotoCard } from "./PhotoCard";
+import { ChevronDownIcon } from "./icons";
+import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const mathGlyphs: Glyph[] = [
-  { symbol: "∫", top: "12%", left: "8%", size: "3rem", speed: 0.3, rotate: "-8deg" },
-  { symbol: "Σ", top: "22%", left: "80%", size: "2.5rem", speed: 0.48, rotate: "6deg" },
-  { symbol: "π", top: "68%", left: "14%", size: "2rem", speed: 0.2, rotate: "4deg" },
-  { symbol: "Δ", top: "78%", left: "66%", size: "2.25rem", speed: 0.4, rotate: "-4deg" },
-  { symbol: "√x", top: "38%", left: "5%", size: "1.75rem", speed: 0.26 },
-  { symbol: "lim", top: "8%", left: "54%", size: "1.5rem", speed: 0.16 },
-  // Drifts directly behind the headline — kept faint so the text stays crisp.
-  { symbol: "∞", top: "50%", left: "40%", size: "2rem", speed: 0.34, opacity: 0.12 },
-];
-
-const codeGlyphs: Glyph[] = [
-  { symbol: "</>", top: "18%", left: "70%", size: "2.25rem", speed: 0.52, font: "mono" },
-  { symbol: "{ }", top: "62%", left: "86%", size: "2.5rem", speed: 0.32, font: "mono" },
-  { symbol: "=>", top: "84%", left: "22%", size: "1.75rem", speed: 0.24, font: "mono" },
-  { symbol: "const", top: "50%", left: "8%", size: "1.25rem", speed: 0.42, font: "mono" },
-  { symbol: ";", top: "28%", left: "92%", size: "2.5rem", speed: 0.18, font: "mono" },
-  { icon: TerminalIcon, top: "46%", left: "60%", size: "1.75rem", speed: 0.3, opacity: 0.12 },
-  { icon: LaptopIcon, top: "89%", left: "48%", size: "2rem", speed: 0.22, opacity: 0.22 },
-];
-
-// A third, purely cosmic layer — small marks with no math/code meaning of
-// their own, drifting in the lime/pink/violet accents so the hero reads a
-// little more like a viewport than a whiteboard. Split across three
-// single-color layers since each FloatingGlyphs layer takes one color.
-const spaceGlyphsLime: Glyph[] = [
-  { symbol: "✦", top: "15%", left: "40%", size: "1rem", speed: 0.6, opacity: 0.35 },
-  { symbol: "✦", top: "90%", left: "60%", size: "0.7rem", speed: 0.5, opacity: 0.3 },
-];
-const spaceGlyphsPink: Glyph[] = [
-  { symbol: "✧", top: "72%", left: "88%", size: "0.8rem", speed: 0.45, opacity: 0.3 },
-  { symbol: "✧", top: "6%", left: "88%", size: "0.9rem", speed: 0.38, opacity: 0.35 },
-];
-const spaceGlyphsViolet: Glyph[] = [
-  { symbol: "○", top: "30%", left: "20%", size: "0.6rem", speed: 0.7, opacity: 0.4 },
-];
+const TRAIL_ITEMS = 4; // eyebrow, heading, bio, cta row
 
 export function Hero() {
-  return (
-    <section className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
-      <FloatingGlyphs glyphs={mathGlyphs} className="text-[var(--yellow)]" />
-      <FloatingGlyphs glyphs={codeGlyphs} className="text-[var(--cyan)]" />
-      <FloatingGlyphs glyphs={spaceGlyphsLime} className="text-[var(--lime)]" />
-      <FloatingGlyphs glyphs={spaceGlyphsPink} className="text-[var(--pink)]" />
-      <FloatingGlyphs glyphs={spaceGlyphsViolet} className="text-[var(--violet)]" />
+  const reduced = usePrefersReducedMotion();
 
-      <div className="relative z-10 mx-auto max-w-3xl px-6 text-center">
-        <h1 className="text-glow font-display text-4xl tracking-wide text-[var(--text-strong)] sm:text-6xl">
-          Aaron Parisi
-        </h1>
-        <AnimatedEquation />
-        <p className="mx-auto mt-6 max-w-xl text-balance text-base leading-relaxed text-[var(--text)]">
-          Calculus teacher turned self-taught web developer with expertise in SQL, React,
-          TypeScript, Node.js, and Recharts. Hungry to deepen my knowledge of frontend tools and
-          the infrastructure behind them.
-        </p>
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-          <a
-            href="#journey"
-            className="spaceship-glow rounded-full bg-[var(--accent-cta)] px-6 py-3 font-medium text-[var(--base3)]"
+  const trail = useTrail(TRAIL_ITEMS, {
+    from: { opacity: 0, y: 24 },
+    to: { opacity: 1, y: 0 },
+    immediate: reduced,
+    config: { tension: 190, friction: 22 },
+  });
+
+  const photoSpring = useSpring({
+    from: { opacity: 0, y: 32, scale: 0.96 },
+    to: { opacity: 1, y: 0, scale: 1 },
+    delay: reduced ? 0 : 180,
+    immediate: reduced,
+    config: { tension: 170, friction: 22 },
+  });
+
+  return (
+    <section className="relative overflow-hidden pb-24 pt-28 sm:pb-32 sm:pt-36">
+      <div className="mx-auto grid max-w-5xl gap-16 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-8">
+        <div className="text-center lg:text-left">
+          <animated.p
+            style={trail[0]}
+            className="eyebrow mb-5 flex items-center justify-center gap-2 lg:justify-start"
           >
-            See My Journey
-          </a>
-          <a
-            href="#contact"
-            className="rounded-full border border-[var(--border)] px-6 py-3 font-medium text-[var(--text)] transition-colors hover:border-[var(--violet)] hover:text-[var(--violet)]"
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
+            </span>
+            Frontend Developer @ Turngate
+          </animated.p>
+
+          <animated.h1
+            style={trail[1]}
+            className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
           >
-            Get In Touch
-          </a>
+            Aaron <em className="text-[var(--accent)]">Parisi</em>
+          </animated.h1>
+
+          <animated.p
+            style={trail[2]}
+            className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
+          >
+            Calculus teacher turned self-taught developer. I build interfaces with React,
+            TypeScript, and a habit of digging one layer deeper than I need to.
+          </animated.p>
+
+          <animated.div
+            style={trail[3]}
+            className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
+          >
+            <HeroButton href="#journey" variant="primary">
+              See my journey
+            </HeroButton>
+            <HeroButton href="#contact" variant="secondary">
+              Get in touch
+            </HeroButton>
+          </animated.div>
         </div>
+
+        <animated.div style={photoSpring}>
+          <PhotoCard />
+        </animated.div>
       </div>
 
       <a
         href="#about"
         aria-label="Scroll down"
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-[var(--text-muted)]"
+        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] sm:block"
       >
-        <ChevronDownIcon className="h-6 w-6" />
+        <ChevronDownIcon className="h-5 w-5 animate-bounce" />
       </a>
     </section>
+  );
+}
+
+function HeroButton({
+  href,
+  variant,
+  children,
+}: {
+  href: string;
+  variant: "primary" | "secondary";
+  children: ReactNode;
+}) {
+  const reduced = usePrefersReducedMotion();
+  const [style, api] = useSpring(() => ({ scale: 1, config: { tension: 380, friction: 14 } }));
+
+  return (
+    <animated.a
+      href={href}
+      onPointerEnter={() => !reduced && void api.start({ scale: 1.05 })}
+      onPointerLeave={() => void api.start({ scale: 1 })}
+      onPointerDown={() => !reduced && void api.start({ scale: 0.96 })}
+      onPointerUp={() => !reduced && void api.start({ scale: 1.05 })}
+      style={{ transform: style.scale.to((s) => `scale(${s})`) }}
+      className={`rounded-full px-6 py-3 font-medium ${variant === "primary" ? "btn-primary" : "btn-secondary"}`}
+    >
+      {children}
+    </animated.a>
   );
 }

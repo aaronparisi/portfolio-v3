@@ -2,6 +2,10 @@
 .env
 /node_modules/
 
+# Original full-resolution photo — the optimized copies actually used by
+# the site live in public/images/.
+/aaron_photo.jpeg
+
 # React Router
 /.react-router/
 /build/
