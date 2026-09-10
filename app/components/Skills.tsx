@@ -112,6 +112,11 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
     magnetApi.start((i) => {
       const el = itemRefs.current[i];
       if (!el) return {};
+      // Measured from the outer wrapper, not the pill that actually
+      // moves — a transform never changes an element's own layout box,
+      // but re-measuring the *moving* element here would mean each
+      // frame's rect reflects the previous frame's displacement,
+      // compounding drift instead of settling.
       const rect = el.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
@@ -141,20 +146,29 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
           const Icon = items[i].icon;
           const iconColor = i % 2 === 0 ? "text-[var(--accent)]" : "text-[var(--accent-warm)]";
           return (
+            // Outer: entrance only (fade + rise as it scrolls into
+            // view). Never moves once settled, which is exactly why the
+            // magnet's own distance calculation measures *this* element
+            // rather than the pill below.
             <animated.span
               key={items[i].label}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
               style={{
                 opacity: style.opacity,
                 transform: style.y.to((y) => `translate3d(0, ${y}px, 0)`),
                 scale: style.scale,
               }}
-              className="pill rounded-full px-4 py-1.5 text-sm"
             >
+              {/* Middle: the actual pill — background, border, and the
+                  magnet transform all live here, so the whole button
+                  (not just its label) is what moves toward the cursor.
+                  Resting at (0, 0, scale 1) is a visual no-op, so —
+                  same reasoning as PhotoCard/BrandMark — it's withheld
+                  until after mount rather than rendered through SSR. */}
               <animated.span
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                }}
-                className="inline-flex items-center gap-1.5"
+                className="pill inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm"
                 style={
                   mounted
                     ? {
@@ -166,6 +180,9 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
                     : undefined
                 }
               >
+                {/* Inner: icon + label, no transform of their own — they
+                    ride along rigidly with the pill instead of sliding
+                    around independently inside it. */}
                 <Icon className={`h-3.5 w-3.5 ${iconColor}`} />
                 {items[i].label}
               </animated.span>
