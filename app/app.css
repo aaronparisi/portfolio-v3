@@ -148,6 +148,12 @@ footer[id] {
   color: var(--ink-soft);
 }
 
+/* The brand mark's hover glow — see the comment in BrandMark.tsx for why
+   its color lives here rather than in a JS-built box-shadow string. */
+.brand-glow {
+  box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 65%, transparent);
+}
+
 /* The decorative offset shape behind the hero photo. */
 .photo-blob {
   background: linear-gradient(

@@ -1,10 +1,19 @@
 import type { ReactNode } from "react";
-import { animated, useSpring, useTrail } from "@react-spring/web";
+import { animated, useSpring, useTrail, type SpringValue } from "@react-spring/web";
 import { PhotoCard } from "./PhotoCard";
+import { EquationMorph } from "./EquationMorph";
 import { ChevronDownIcon } from "./icons";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const TRAIL_ITEMS = 4; // eyebrow, heading, bio, cta row
+const TRAIL_ITEMS = 5; // eyebrow, heading, bio, equation morph, cta row
+
+// `y` isn't a real CSS property — binding {opacity, y} straight to
+// `style` (as an object) silently does nothing for the y part, since
+// browsers just ignore unrecognized style keys. This turns it into an
+// actual transform.
+function riseStyle({ opacity, y }: { opacity: SpringValue<number>; y: SpringValue<number> }) {
+  return { opacity, transform: y.to((v) => `translate3d(0, ${v}px, 0)`) };
+}
 
 export function Hero() {
   const reduced = usePrefersReducedMotion();
@@ -29,34 +38,38 @@ export function Hero() {
       <div className="mx-auto grid max-w-5xl gap-16 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-8">
         <div className="text-center lg:text-left">
           <animated.p
-            style={trail[0]}
+            style={riseStyle(trail[0])}
             className="eyebrow mb-5 flex items-center justify-center gap-2 lg:justify-start"
           >
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
             </span>
-            Frontend Developer @ Turngate
+            Frontend Developer
           </animated.p>
 
           <animated.h1
-            style={trail[1]}
+            style={riseStyle(trail[1])}
             className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
           >
             Aaron <em className="text-[var(--accent)]">Parisi</em>
           </animated.h1>
 
           <animated.p
-            style={trail[2]}
+            style={riseStyle(trail[2])}
             className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
           >
             Calculus teacher turned self-taught developer. I build interfaces with React,
             TypeScript, and a habit of digging one layer deeper than I need to.
           </animated.p>
 
+          <animated.div style={riseStyle(trail[3])} className="mt-6 flex justify-center lg:justify-start">
+            <EquationMorph />
+          </animated.div>
+
           <animated.div
-            style={trail[3]}
-            className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
+            style={riseStyle(trail[4])}
+            className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
           >
             <HeroButton href="#journey" variant="primary">
               See my journey
@@ -67,7 +80,13 @@ export function Hero() {
           </animated.div>
         </div>
 
-        <animated.div style={photoSpring}>
+        <animated.div
+          style={{
+            opacity: photoSpring.opacity,
+            scale: photoSpring.scale,
+            transform: photoSpring.y.to((v) => `translate3d(0, ${v}px, 0)`),
+          }}
+        >
           <PhotoCard />
         </animated.div>
       </div>
