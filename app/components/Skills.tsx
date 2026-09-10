@@ -57,8 +57,11 @@ const groups: { key: string; label: string; items: SkillItem[] }[] = [
 
 // How far (in px) a pill's pull reaches, and how far (in px) it can
 // actually travel toward the cursor at the very center of that radius.
+// Strength and the hover scale bump below are both toned down ~40% from
+// the first pass, which read as a bit much.
 const MAGNET_RADIUS = 70;
-const MAGNET_STRENGTH = 10;
+const MAGNET_STRENGTH = 6;
+const HOVER_SCALE = 1.09;
 
 function PillGroup({ label, items, startIndex }: { label: string; items: SkillItem[]; startIndex: number }) {
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -129,7 +132,7 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
       return {
         x: dist > 0 ? (dx / dist) * pull * MAGNET_STRENGTH : 0,
         y: dist > 0 ? (dy / dist) * pull * MAGNET_STRENGTH : 0,
-        scale: hovered ? 1.15 : 1,
+        scale: hovered ? HOVER_SCALE : 1,
       };
     });
   }
