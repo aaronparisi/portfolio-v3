@@ -16,7 +16,7 @@ export function Nav() {
         <BrandMark />
         <div className="hidden items-center gap-6 font-mono text-sm text-[var(--text)] sm:flex">
           {links.map((l) => (
-            <a key={l.href} href={l.href} className="transition-colors hover:text-[var(--lime-text)]">
+            <a key={l.href} href={l.href} className="transition-colors hover:text-[var(--magenta)]">
               {l.label}
             </a>
           ))}
