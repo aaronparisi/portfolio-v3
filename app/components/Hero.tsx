@@ -1,7 +1,7 @@
-import type { ReactNode } from "react";
 import { animated, useSpring, useTrail, type SpringValue } from "@react-spring/web";
 import { PhotoCard } from "./PhotoCard";
-import { EquationMorph } from "./EquationMorph";
+import { AnimatedEquation } from "./AnimatedEquation";
+import { SpringButton } from "./SpringButton";
 import { ChevronDownIcon } from "./icons";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
@@ -63,20 +63,20 @@ export function Hero() {
             TypeScript, and a habit of digging one layer deeper than I need to.
           </animated.p>
 
-          <animated.div style={riseStyle(trail[3])} className="mt-6 flex justify-center lg:justify-start">
-            <EquationMorph />
+          <animated.div style={riseStyle(trail[3])} className="mt-8 flex justify-center lg:justify-start">
+            <AnimatedEquation />
           </animated.div>
 
           <animated.div
             style={riseStyle(trail[4])}
             className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
           >
-            <HeroButton href="#journey" variant="primary">
+            <SpringButton href="#journey" className="btn-primary rounded-full px-6 py-3 font-medium">
               See my journey
-            </HeroButton>
-            <HeroButton href="#contact" variant="secondary">
+            </SpringButton>
+            <SpringButton href="#contact" className="btn-secondary rounded-full px-6 py-3 font-medium">
               Get in touch
-            </HeroButton>
+            </SpringButton>
           </animated.div>
         </div>
 
@@ -99,32 +99,5 @@ export function Hero() {
         <ChevronDownIcon className="h-5 w-5 animate-bounce" />
       </a>
     </section>
-  );
-}
-
-function HeroButton({
-  href,
-  variant,
-  children,
-}: {
-  href: string;
-  variant: "primary" | "secondary";
-  children: ReactNode;
-}) {
-  const reduced = usePrefersReducedMotion();
-  const [style, api] = useSpring(() => ({ scale: 1, config: { tension: 380, friction: 14 } }));
-
-  return (
-    <animated.a
-      href={href}
-      onPointerEnter={() => !reduced && void api.start({ scale: 1.05 })}
-      onPointerLeave={() => void api.start({ scale: 1 })}
-      onPointerDown={() => !reduced && void api.start({ scale: 0.96 })}
-      onPointerUp={() => !reduced && void api.start({ scale: 1.05 })}
-      style={{ transform: style.scale.to((s) => `scale(${s})`) }}
-      className={`rounded-full px-6 py-3 font-medium ${variant === "primary" ? "btn-primary" : "btn-secondary"}`}
-    >
-      {children}
-    </animated.a>
   );
 }

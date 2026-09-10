@@ -12,6 +12,12 @@
   --radius-lg: 1.25rem;
   --radius-md: 0.75rem;
   --shadow-color: 220 20% 10%;
+
+  /* The hero equation's two "screens" (chalkboard + CRT) are always
+     this dark, regardless of theme — a chalkboard doesn't get lighter
+     in a bright room, and a CRT doesn't either. */
+  --board: #131217;
+  --chalk: #f2efe8;
 }
 
 :root[data-theme="light"] {
@@ -152,6 +158,29 @@ footer[id] {
    its color lives here rather than in a JS-built box-shadow string. */
 .brand-glow {
   box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 65%, transparent);
+}
+
+/* The code cursor's blink — a real terminal cursor blinks as a hard
+   on/off square wave, not a smooth fade, so this is a plain CSS step
+   animation rather than a spring (a spring is the wrong tool for
+   something that isn't supposed to ease at all). */
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.typing-caret {
+  animation: caret-blink 1s steps(1, end) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing-caret {
+    animation: none;
+  }
 }
 
 /* The decorative offset shape behind the hero photo. */

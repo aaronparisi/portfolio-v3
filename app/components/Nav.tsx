@@ -1,6 +1,7 @@
 import { animated, useSpring } from "@react-spring/web";
 import { ThemeToggle } from "./ThemeToggle";
 import { BrandMark } from "./BrandMark";
+import { SpringButton } from "./SpringButton";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 const links = [
@@ -23,12 +24,12 @@ export function Nav() {
         </div>
 
         <div className="flex items-center gap-3">
-          <a
+          <SpringButton
             href="#contact"
             className="hidden rounded-full border border-[var(--border-strong)] px-4 py-2 font-mono text-sm text-[var(--ink)] transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] sm:block"
           >
             Get in touch
-          </a>
+          </SpringButton>
           <ThemeToggle />
         </div>
       </nav>
