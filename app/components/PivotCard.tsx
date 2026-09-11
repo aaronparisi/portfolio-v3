@@ -32,7 +32,15 @@ export function PivotCard({ entry }: { entry: TimelineEntry }) {
         }}
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="eyebrow text-[var(--accent-warm)]">The turning point</p>
+          {/* .eyebrow's own `color: var(--accent)` and this Tailwind
+              utility are equal-specificity class selectors, so source
+              order (not who's "more specific") decides the winner —
+              and .eyebrow, defined after Tailwind's own generated
+              utilities in app.css, was quietly winning every time. An
+              inline style always beats a class, regardless of order. */}
+          <p className="eyebrow" style={{ color: "var(--accent-warm)" }}>
+            The turning point
+          </p>
           <span className="font-mono text-xs text-[var(--ink-soft)]">{entry.range}</span>
         </div>
 

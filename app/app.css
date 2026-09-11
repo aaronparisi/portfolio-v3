@@ -27,15 +27,15 @@
   --ink-soft: #5b5765;
   --border: rgb(23 22 28 / 12%);
   --border-strong: rgb(23 22 28 / 22%);
-  /* Deep enough to carry white text at ~4.9-5:1 and to read as body-ish
+  /* Deep enough to carry white text at ~4.9-6:1 and to read as body-ish
      text itself at a similar ratio — the brighter, more "true teal" and
-     "true terracotta" tones below don't clear that on this background,
-     so they're kept for decoration (dots, tints, icons) rather than text
+     "true pink" tones below don't clear that on this background, so
+     they're kept for decoration (dots, tints, icons) rather than text
      or button fills. */
   --accent: #0b7a70;
   --accent-soft: #0f9b8e;
-  --accent-warm: #b94525;
-  --accent-warm-soft: #e8623d;
+  --accent-warm: #be185d;
+  --accent-warm-soft: #ec4899;
   --on-accent: #faf8f5;
   color-scheme: light;
 }
@@ -51,8 +51,8 @@
      fill color without a separate deepened variant. */
   --accent: #2dd4bf;
   --accent-soft: #2dd4bf;
-  --accent-warm: #ff7a54;
-  --accent-warm-soft: #ff7a54;
+  --accent-warm: #ff5fa8;
+  --accent-warm-soft: #ff7ab8;
   --on-accent: #0b0b0e;
   color-scheme: dark;
 }

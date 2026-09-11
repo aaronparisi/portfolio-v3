@@ -60,7 +60,7 @@ const groups: { key: string; label: string; items: SkillItem[] }[] = [
 // Strength and the hover scale bump below are both toned down ~40% from
 // the first pass, which read as a bit much.
 const MAGNET_RADIUS = 70;
-const MAGNET_STRENGTH = 6;
+const MAGNET_STRENGTH = 2.5;
 const HOVER_SCALE = 1.09;
 
 function PillGroup({ label, items, startIndex }: { label: string; items: SkillItem[]; startIndex: number }) {
