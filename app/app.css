@@ -2,8 +2,10 @@
 
 @theme {
   /* A warm serif for display type — big names and pull-quotes — paired
-     with a clean grotesk for everything that needs to be read quickly. */
-  --font-display: "Fraunces", "Iowan Old Style", ui-serif, Georgia, serif;
+     with a clean grotesk for everything that needs to be read quickly.
+     (Was Fraunces; its italic "k" reads as an "f" at a glance, so swapped
+     for Newsreader — similar editorial warmth, cleaner italic.) */
+  --font-display: "Newsreader", "Iowan Old Style", ui-serif, Georgia, serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
