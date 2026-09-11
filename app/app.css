@@ -15,10 +15,8 @@
   --radius-md: 0.75rem;
   --shadow-color: 220 20% 10%;
 
-  /* The hero equation's two "screens" (chalkboard + CRT) are always
-     this dark, regardless of theme — a chalkboard doesn't get lighter
-     in a bright room, and a CRT doesn't either. */
-  --board: #131217;
+  /* The hero equation's dark-mode "chalk" color — see --board/--marker
+     below, which is where each theme actually picks its own look. */
   --chalk: #f2efe8;
 }
 
@@ -40,6 +38,13 @@
   --accent-warm-soft: #ec4899;
   --on-accent: #faf8f5;
   color-scheme: light;
+
+  /* The hero equation's two "screens" in light mode: an actual
+     whiteboard (bright white surface, dark dry-erase-marker ink) and a
+     light-mode code editor / CRT window (soft off-white panel, keeping
+     the same teal accent text a dark CRT would use). */
+  --board: #ffffff;
+  --marker: #23222a;
 }
 
 :root[data-theme="dark"] {
@@ -59,6 +64,11 @@
   --accent-warm-soft: #ff8aa3;
   --on-accent: #0b0b0e;
   color-scheme: dark;
+
+  /* Dark mode: a real chalkboard and a dark CRT terminal — a chalkboard
+     doesn't get lighter in a bright room, and a CRT doesn't either. */
+  --board: #131217;
+  --marker: var(--chalk);
 }
 
 html,
@@ -110,7 +120,7 @@ footer[id] {
    this stacks with (doesn't fight) the .font-display Tailwind utility
    itself generates, since that only sets font-family. */
 .font-display {
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
 }
 
 /* Section kicker labels ("The Journey", "Contact", …). */

@@ -42,7 +42,14 @@ function EndorsementCard({ name, quote, accent }: { name: string; quote: string;
 
 export function About() {
   return (
-    <section id="about" className="py-24 sm:py-32">
+    <section className="relative py-24 sm:py-32">
+      {/* The section itself keeps its full top padding for visual rhythm
+          on a natural scroll, but jumping here from the nav link or the
+          hero's chevron should land near the actual heading, not on a
+          few rem of blank padding above it — so the #about anchor lives
+          at the padding's inner edge (matching py-24/sm:py-32 exactly),
+          not the section's outer top. */}
+      <span id="about" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-20 sm:top-32" />
       <div className="mx-auto max-w-2xl px-6 text-center">
         <Reveal>
           <p className="eyebrow mb-6">About</p>

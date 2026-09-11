@@ -254,8 +254,8 @@ export function AnimatedEquation() {
   return (
     <div className="flex flex-wrap items-center gap-3 font-mono text-lg" aria-hidden="true">
       <span
-        className="relative inline-block whitespace-pre rounded-2xl px-4 py-2"
-        style={{ background: "var(--board)", color: "var(--chalk)" }}
+        className="relative inline-block whitespace-pre rounded-2xl border border-[var(--border)] px-4 py-2"
+        style={{ background: "var(--board)", color: "var(--marker)" }}
       >
         {MATH_CHARS.map((char, i) => (
           <animated.span
@@ -272,7 +272,7 @@ export function AnimatedEquation() {
         <animated.span
           className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px]"
           style={{
-            background: "var(--chalk)",
+            background: "var(--marker)",
             transform: crossOut.scaleX.to((s) => `translateY(-50%) scaleX(${s})`),
             transformOrigin: "left center",
           }}
@@ -284,7 +284,7 @@ export function AnimatedEquation() {
       </animated.span>
 
       <animated.span
-        className="relative inline-grid rounded-2xl px-4 py-2 text-left"
+        className="relative inline-grid rounded-2xl border border-[var(--border)] px-4 py-2 text-left"
         style={{
           background: "var(--board)",
           color: "var(--accent)",
