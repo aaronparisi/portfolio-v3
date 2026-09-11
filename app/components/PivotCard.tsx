@@ -6,8 +6,11 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 /** The App Academy entry gets special treatment — it's the hinge the whole story turns on. */
 export function PivotCard({ entry }: { entry: TimelineEntry }) {
   const reduced = usePrefersReducedMotion();
+  // No y-translate here on purpose — an upward slide reads as the card
+  // "rising" up the page, not "coming toward you". Scale + a shadow that
+  // grows underneath it reads much more like the card lifting off the
+  // surface in place, without actually moving position.
   const [style, api] = useSpring(() => ({
-    y: 0,
     scale: 1,
     shadow: 0,
     config: { tension: 280, friction: 20 },
@@ -20,11 +23,10 @@ export function PivotCard({ entry }: { entry: TimelineEntry }) {
       </span>
 
       <animated.div
-        onPointerEnter={() => !reduced && void api.start({ y: -4, scale: 1.015, shadow: 1 })}
-        onPointerLeave={() => void api.start({ y: 0, scale: 1, shadow: 0 })}
+        onPointerEnter={() => !reduced && void api.start({ scale: 1.02, shadow: 1 })}
+        onPointerLeave={() => void api.start({ scale: 1, shadow: 0 })}
         className="pivot-card rounded-r-2xl bg-[var(--bg-alt)] p-6 sm:p-8"
         style={{
-          transform: style.y.to((y) => `translate3d(0, ${y}px, 0)`),
           scale: style.scale,
           boxShadow: style.shadow.to(
             (s) => `0 ${s * 20}px ${s * 30}px -${s * 10}px rgb(0 0 0 / ${s * 0.25})`,

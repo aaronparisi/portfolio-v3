@@ -142,7 +142,7 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
   }
 
   return (
-    <div ref={sectionRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+    <div ref={sectionRef} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave} className="cursor-default">
       <p className="font-mono text-xs uppercase tracking-wide text-[var(--ink-soft)]">{label}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {trail.map((style, i) => {

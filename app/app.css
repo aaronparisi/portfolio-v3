@@ -51,8 +51,10 @@
      fill color without a separate deepened variant. */
   --accent: #2dd4bf;
   --accent-soft: #2dd4bf;
-  --accent-warm: #ff5fa8;
-  --accent-warm-soft: #ff7ab8;
+  /* Shifted a bit further from magenta toward true pink (hue ~345°
+     rather than ~333°) — less blue relative to red. */
+  --accent-warm: #ff6b8f;
+  --accent-warm-soft: #ff8aa3;
   --on-accent: #0b0b0e;
   color-scheme: dark;
 }

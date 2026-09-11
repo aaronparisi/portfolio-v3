@@ -1,12 +1,44 @@
+import { animated, useSpring } from "@react-spring/web";
 import { Reveal } from "./Reveal";
+import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-// Not attributed to a name/title here, since none was given — better to
-// leave it generic than invent one. Swap in real names/roles whenever
-// you'd like the fuller attribution.
 const ENDORSEMENTS = [
-  "He asks the right questions and consistently drives bugs to their root cause instead of shipping fragile fixes.",
-  "What I appreciated most was the way he asks deeper questions, which brings clarity to problems. I saw many times where he would ask a probing question about something we all thought we understood, and in trying to answer it, we realized our assumptions were flawed.",
+  {
+    name: "Kyle",
+    quote:
+      "He asks the right questions and consistently drives bugs to their root cause instead of shipping fragile fixes.",
+  },
+  {
+    name: "Peter",
+    quote:
+      "What I appreciated most was the way he asks deeper questions, which brings clarity to problems. I saw many times where he would ask a probing question about something we all thought we understood, and in trying to answer it, we realized our assumptions were flawed.",
+  },
 ];
+
+function EndorsementCard({ name, quote, accent }: { name: string; quote: string; accent: string }) {
+  const reduced = usePrefersReducedMotion();
+  const [style, api] = useSpring(() => ({ scale: 1, shadow: 0, config: { tension: 280, friction: 20 } }));
+
+  return (
+    <animated.blockquote
+      onPointerEnter={() => !reduced && void api.start({ scale: 1.025, shadow: 1 })}
+      onPointerLeave={() => void api.start({ scale: 1, shadow: 0 })}
+      className="h-full rounded-2xl bg-[var(--bg-alt)] p-5 text-sm italic leading-relaxed text-[var(--ink-soft)]"
+      style={{
+        borderLeft: `3px solid ${accent}`,
+        scale: style.scale,
+        boxShadow: style.shadow.to(
+          (s) => `0 ${s * 20}px ${s * 30}px -${s * 10}px rgb(0 0 0 / ${s * 0.25})`,
+        ),
+      }}
+    >
+      &ldquo;{quote}&rdquo;
+      <footer className="mt-3 font-mono text-xs not-italic text-[var(--ink-soft)]">
+        — {name}, via LinkedIn
+      </footer>
+    </animated.blockquote>
+  );
+}
 
 export function About() {
   return (
@@ -27,17 +59,13 @@ export function About() {
         </Reveal>
 
         <div className="mt-10 grid gap-5 text-left sm:grid-cols-2">
-          {ENDORSEMENTS.map((quote, i) => (
-            <Reveal key={i} delay={120 + i * 100}>
-              <blockquote
-                className="h-full rounded-2xl bg-[var(--bg-alt)] p-5 text-sm italic leading-relaxed text-[var(--ink-soft)]"
-                style={{ borderLeft: `3px solid ${i % 2 === 0 ? "var(--accent)" : "var(--accent-warm)"}` }}
-              >
-                &ldquo;{quote}&rdquo;
-                <footer className="mt-3 font-mono text-xs not-italic text-[var(--ink-soft)]">
-                  — LinkedIn recommendation
-                </footer>
-              </blockquote>
+          {ENDORSEMENTS.map((entry, i) => (
+            <Reveal key={entry.name} delay={120 + i * 100}>
+              <EndorsementCard
+                name={entry.name}
+                quote={entry.quote}
+                accent={i % 2 === 0 ? "var(--accent)" : "var(--accent-warm)"}
+              />
             </Reveal>
           ))}
         </div>

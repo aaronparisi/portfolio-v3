@@ -272,7 +272,7 @@ export function AnimatedEquation() {
         <animated.span
           className="pointer-events-none absolute left-4 right-4 top-1/2 h-[2px]"
           style={{
-            background: "var(--accent-warm)",
+            background: "var(--chalk)",
             transform: crossOut.scaleX.to((s) => `translateY(-50%) scaleX(${s})`),
             transformOrigin: "left center",
           }}
