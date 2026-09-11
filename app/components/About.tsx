@@ -48,8 +48,11 @@ export function About() {
           hero's chevron should land near the actual heading, not on a
           few rem of blank padding above it — so the #about anchor lives
           at the padding's inner edge (matching py-24/sm:py-32 exactly),
-          not the section's outer top. */}
-      <span id="about" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-20 sm:top-32" />
+          not the section's outer top. scroll-margin-top is the sticky
+          nav's own height (73px) plus the same gap the eyebrow already
+          keeps below itself (mb-6, 24px) — so "About" sits exactly as
+          far from the nav as it does from the line under it. */}
+      <span id="about" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-[97px] sm:top-32" />
       <div className="mx-auto max-w-2xl px-6 text-center">
         <Reveal>
           <p className="eyebrow mb-6">About</p>
