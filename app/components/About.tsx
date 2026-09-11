@@ -51,10 +51,12 @@ export function About() {
             <span className="text-[var(--accent-warm)]">why?</span>&rdquo;
           </blockquote>
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            I taught AP Calculus before I ever wrote a line of code; it turns out curiosity
-            translates well. These days I bring that same instinct to the frontend: seeking roles
+            I taught AP Calculus before I ever wrote a line of code. Teaching advanced mathematics
+            requires more than just being smart - you have to understand complexity well enough to explain it;
+            you have to understand people well enough to connect with them.
+            Turns out this translates well: I bring those same instincts to the frontend, seeking roles
             that involve extensive collaboration with product and design, and always digging one
-            layer deeper into the tools and infrastructure behind them.
+            layer deeper into the architecture I build, and the tools I use to build it.
           </p>
           <p className="mx-auto mt-8 max-w-xl text-sm italic leading-relaxed text-[var(--ink-soft)]">
             I&rsquo;ll admit it: I don&rsquo;t have years and years of development experience.
@@ -67,17 +69,17 @@ export function About() {
             <span className="font-display text-xl italic text-[var(--accent-warm)]">Why?</span>
           </p>
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            Because I don&rsquo;t just find <em>&ldquo;a solution&rdquo;</em> —{" "}
+            Because I don&rsquo;t just find <em>&ldquo;a solution&rdquo;</em> ~ {" "}
             <strong className="font-semibold text-[var(--ink)]">
               I dig until I am confident my code is well-written.
             </strong>{" "}
-            Because I don&rsquo;t just find bugs —{" "}
+            Because I don&rsquo;t just find bugs ~{" "}
             <strong className="font-semibold text-[var(--ink)]">
               I poke and prod until I know <span className="text-[var(--accent-warm)]">WHY</span>{" "}
               the code broke, and how to fix it at the root.
             </strong>{" "}
             I can&rsquo;t grok spaghetti code, so I don&rsquo;t write it. And I have a hawkish eye
-            for inconsistencies — so when something doesn&rsquo;t make sense to me, I ask about it
+            for inconsistencies ~ so when something doesn&rsquo;t make sense to me, I ask about it
             until I do.
           </p>
           <p className="mx-auto mt-8 max-w-xl text-sm italic leading-relaxed text-[var(--ink-soft)]">
