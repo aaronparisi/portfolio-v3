@@ -592,20 +592,21 @@
       "interaction-pass",
       "optimization-pass"
     ],
-    "currentPass": "surface-pass",
+    "currentPass": "interaction-pass",
     "completedPasses": [
       "blockout",
       "structural-pass",
       "form-refinement",
-      "material-pass"
+      "material-pass",
+      "surface-pass",
+      "lighting-pass"
     ],
-    "lastCompletedPass": "material-pass",
+    "lastCompletedPass": "lighting-pass",
     "blockedReason": "",
     "nextRequiredEvidence": [
-      "Every required material feature group has local overrides or surfaceDetail tied to evidenceRefs.",
-      "A grazing-angle close-up proves that normal/height detail breaks highlights naturally and does not read as smooth plastic.",
+      "Macro and movable meso components have stable pivot nodes.",
+      "Sockets, collider proxies, and destruction metadata are present for future runtime actions.",
       "AI vision comparison score meets selfCorrectLoop.visualAcceptance.threshold.",
-      "component surfaceDetail for tactile normal/bump/displacement and locality",
       "browser render screenshot from your agent's browser/screenshot tool",
       "side-by-side reference/render comparison sheet for AI vision review",
       "banded interior difference vs the reference baseline (forge/stage4_review/interior_difference.py --from/--to per region)",
@@ -2675,10 +2676,598 @@
           "size": "full-surface",
           "orientation": "concentric circles centered on the pane",
           "materialEffect": "none",
-          "geometryEffect": "represented via material.normal (fresnel relief), not separate ring geometry",
+          "geometryEffect": "surface-pass: 4 real concentric torus rings (fresnelRing1-4), not a normal map -- this build declares no texture maps at all, so relief that affects the close-up read has to be real geometry per grimoire/build/geometry_patterns.md's 'use geometry or displacement' rule.",
           "confidence": 0.75
         }
       ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": ""
+      },
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "details": [],
+      "fidelityTier": "blockout",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(223, 230, 226, 1.0)",
+        "secondaryAlbedo": "rgba(201, 210, 206, 1.0)",
+        "materialClass": "glass",
+        "materialClassConfidence": 0.85,
+        "notes": "Matches the 'platen-glass' material's own baseColor/secondary tone 1:1 -- see materials[] and image-analysis.md Layer 5/6."
+      }
+    },
+    {
+      "id": "fresnelRing1",
+      "name": "Platen fresnel ring 1",
+      "level": "micro",
+      "role": "detail",
+      "importance": 0.3,
+      "confidence": 0.7,
+      "primitive": "torus",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "One of 4 concentric fresnel-lens rings molded into the platen glass, real torus geometry rather than a normal map (surface-pass, image-analysis.md Layer 5, detail-inventory zone-r1c1).",
+      "geometryDescriptor": {
+        "topologyIntent": "clean-surfaced procedural part, moderate bevel-ready edges",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 2
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "smooth vertex normals (flatShading:false) -- a real manufactured product's molded plastic/metal shell, not a faceted stylization",
+        "torusTubeRatio": 0.05
+      },
+      "parent": "platen",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "flush",
+        "embedDepth": 0.02,
+        "overlap": 0.02,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.32,
+        "height": 0.32,
+        "depth": 0.012,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0,
+          0.028,
+          0
+        ],
+        "rotation": [
+          1.5707963267948966,
+          0,
+          0
+        ],
+        "scale": [
+          0.32,
+          0.32,
+          0.012
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static-part",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "body-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "base-charcoal-shell"
+        }
+      },
+      "material": "platen-glass",
+      "materialLayers": [
+        "platen-glass"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": ""
+      },
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "details": [],
+      "fidelityTier": "blockout",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(223, 230, 226, 1.0)",
+        "secondaryAlbedo": "rgba(201, 210, 206, 1.0)",
+        "materialClass": "glass",
+        "materialClassConfidence": 0.85,
+        "notes": "Matches the 'platen-glass' material's own baseColor/secondary tone 1:1 -- see materials[] and image-analysis.md Layer 5/6."
+      }
+    },
+    {
+      "id": "fresnelRing2",
+      "name": "Platen fresnel ring 2",
+      "level": "micro",
+      "role": "detail",
+      "importance": 0.3,
+      "confidence": 0.7,
+      "primitive": "torus",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "One of 4 concentric fresnel-lens rings molded into the platen glass, real torus geometry rather than a normal map (surface-pass, image-analysis.md Layer 5, detail-inventory zone-r1c1).",
+      "geometryDescriptor": {
+        "topologyIntent": "clean-surfaced procedural part, moderate bevel-ready edges",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 2
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "smooth vertex normals (flatShading:false) -- a real manufactured product's molded plastic/metal shell, not a faceted stylization",
+        "torusTubeRatio": 0.05
+      },
+      "parent": "platen",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "flush",
+        "embedDepth": 0.02,
+        "overlap": 0.02,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.56,
+        "height": 0.56,
+        "depth": 0.012,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0,
+          0.028,
+          0
+        ],
+        "rotation": [
+          1.5707963267948966,
+          0,
+          0
+        ],
+        "scale": [
+          0.56,
+          0.56,
+          0.012
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static-part",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "body-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "base-charcoal-shell"
+        }
+      },
+      "material": "platen-glass",
+      "materialLayers": [
+        "platen-glass"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": ""
+      },
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "details": [],
+      "fidelityTier": "blockout",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(223, 230, 226, 1.0)",
+        "secondaryAlbedo": "rgba(201, 210, 206, 1.0)",
+        "materialClass": "glass",
+        "materialClassConfidence": 0.85,
+        "notes": "Matches the 'platen-glass' material's own baseColor/secondary tone 1:1 -- see materials[] and image-analysis.md Layer 5/6."
+      }
+    },
+    {
+      "id": "fresnelRing3",
+      "name": "Platen fresnel ring 3",
+      "level": "micro",
+      "role": "detail",
+      "importance": 0.3,
+      "confidence": 0.7,
+      "primitive": "torus",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "One of 4 concentric fresnel-lens rings molded into the platen glass, real torus geometry rather than a normal map (surface-pass, image-analysis.md Layer 5, detail-inventory zone-r1c1).",
+      "geometryDescriptor": {
+        "topologyIntent": "clean-surfaced procedural part, moderate bevel-ready edges",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 2
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "smooth vertex normals (flatShading:false) -- a real manufactured product's molded plastic/metal shell, not a faceted stylization",
+        "torusTubeRatio": 0.05
+      },
+      "parent": "platen",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "flush",
+        "embedDepth": 0.02,
+        "overlap": 0.02,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.8,
+        "height": 0.8,
+        "depth": 0.012,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0,
+          0.028,
+          0
+        ],
+        "rotation": [
+          1.5707963267948966,
+          0,
+          0
+        ],
+        "scale": [
+          0.8,
+          0.8,
+          0.012
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static-part",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "body-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "base-charcoal-shell"
+        }
+      },
+      "material": "platen-glass",
+      "materialLayers": [
+        "platen-glass"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": ""
+      },
+      "evidenceRefs": [
+        "full-object"
+      ],
+      "details": [],
+      "fidelityTier": "blockout",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(223, 230, 226, 1.0)",
+        "secondaryAlbedo": "rgba(201, 210, 206, 1.0)",
+        "materialClass": "glass",
+        "materialClassConfidence": 0.85,
+        "notes": "Matches the 'platen-glass' material's own baseColor/secondary tone 1:1 -- see materials[] and image-analysis.md Layer 5/6."
+      }
+    },
+    {
+      "id": "fresnelRing4",
+      "name": "Platen fresnel ring 4",
+      "level": "micro",
+      "role": "detail",
+      "importance": 0.3,
+      "confidence": 0.7,
+      "primitive": "torus",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "One of 4 concentric fresnel-lens rings molded into the platen glass, real torus geometry rather than a normal map (surface-pass, image-analysis.md Layer 5, detail-inventory zone-r1c1).",
+      "geometryDescriptor": {
+        "topologyIntent": "clean-surfaced procedural part, moderate bevel-ready edges",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 2
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "smooth vertex normals (flatShading:false) -- a real manufactured product's molded plastic/metal shell, not a faceted stylization",
+        "torusTubeRatio": 0.05
+      },
+      "parent": "platen",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "flush",
+        "embedDepth": 0.02,
+        "overlap": 0.02,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 1.04,
+        "height": 1.04,
+        "depth": 0.012,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0,
+          0.028,
+          0
+        ],
+        "rotation": [
+          1.5707963267948966,
+          0,
+          0
+        ],
+        "scale": [
+          1.04,
+          1.04,
+          0.012
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static-part",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "body-shell",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "base-charcoal-shell"
+        }
+      },
+      "material": "platen-glass",
+      "materialLayers": [
+        "platen-glass"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
       "surfaceDetail": {
         "macroRoughness": 0.0,
         "microRoughness": 0.0,
@@ -5664,6 +6253,98 @@
       "cameraView": "three-quarter",
       "notes": "",
       "aiVisionNotes": "Side-by-side comparison shows the platen, mirror, and gauge cluster all now visually distinct in material, not just color-blocked geometry. Per-part color-delta Tier-1 outliers (66-68 deltaE) traced to the hidden/transparent container materials being read as opaque black by the coarse cluster-matcher -- documented as a tool limitation in tier1-exception.md, not a real visible defect (confirmed by direct inspection of the render)."
+    },
+    {
+      "timestamp": "2026-09-15T05:42:01.963191+00:00",
+      "passId": "surface-pass",
+      "estimatedFidelity": 0.77,
+      "aiVisionScore": 0.77,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.75,
+        "componentStructure": 0.85,
+        "formDetail": 0.62,
+        "materialSurface": 0.4,
+        "lightingCamera": 0.6
+      },
+      "featureReviews": [
+        {
+          "id": "overall-silhouette",
+          "score": 0.75,
+          "visible": true,
+          "notes": "Unchanged silhouette, still the accepted blockout/form-refinement geometry."
+        },
+        {
+          "id": "articulated-linkage-structure",
+          "score": 0.85,
+          "visible": true,
+          "notes": "Unchanged from structural-pass."
+        },
+        {
+          "id": "chevron-head-silhouette",
+          "score": 0.78,
+          "visible": true,
+          "notes": "Mirror flap now reads as a distinct reflective gray panel against the cream lens box (visible reflection of the arm's own color in the head-angle capture) -- the material differentiation this feature target was actually waiting on. Clears its 0.75 threshold."
+        },
+        {
+          "id": "reference-material-system",
+          "score": 0.72,
+          "visible": true,
+          "notes": "Platen now reads as real glass (mottled/reflective under the environment light), mirror is distinctly reflective, gauge cluster is 3 real colored segments instead of one flat plate, focus ring is a lighter distinct gray. Clears its 0.7 threshold."
+        }
+      ],
+      "referenceScreenshot": ".img2threejs-projector/reference.jpg",
+      "renderScreenshot": ".img2threejs-projector/render-capture/surface-3q.png",
+      "comparisonImage": ".img2threejs-projector/render-capture/comparison-sheet-surface.png",
+      "cameraView": "three-quarter",
+      "notes": "",
+      "aiVisionNotes": "Fresnel rings read clearly from the top-down-ish angle and add real recognizability without changing the silhouette. Tier-1 failures are the same already-documented exceptions (arm/head proportion plateau, hidden-material color-delta false positive)."
+    },
+    {
+      "timestamp": "2026-09-15T05:43:13.503906+00:00",
+      "passId": "lighting-pass",
+      "estimatedFidelity": 0.77,
+      "aiVisionScore": 0.77,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.75,
+        "componentStructure": 0.85,
+        "formDetail": 0.62,
+        "materialSurface": 0.4,
+        "lightingCamera": 0.6
+      },
+      "featureReviews": [
+        {
+          "id": "overall-silhouette",
+          "score": 0.75,
+          "visible": true,
+          "notes": "Unchanged silhouette, still the accepted blockout/form-refinement geometry."
+        },
+        {
+          "id": "articulated-linkage-structure",
+          "score": 0.85,
+          "visible": true,
+          "notes": "Unchanged from structural-pass."
+        },
+        {
+          "id": "chevron-head-silhouette",
+          "score": 0.78,
+          "visible": true,
+          "notes": "Mirror flap now reads as a distinct reflective gray panel against the cream lens box (visible reflection of the arm's own color in the head-angle capture) -- the material differentiation this feature target was actually waiting on. Clears its 0.75 threshold."
+        },
+        {
+          "id": "reference-material-system",
+          "score": 0.72,
+          "visible": true,
+          "notes": "Platen now reads as real glass (mottled/reflective under the environment light), mirror is distinctly reflective, gauge cluster is 3 real colored segments instead of one flat plate, focus ring is a lighter distinct gray. Clears its 0.7 threshold."
+        }
+      ],
+      "referenceScreenshot": ".img2threejs-projector/reference.jpg",
+      "renderScreenshot": ".img2threejs-projector/render-capture/lighting-3q.png",
+      "comparisonImage": ".img2threejs-projector/render-capture/comparison-sheet-lighting.png",
+      "cameraView": "three-quarter",
+      "notes": "",
+      "aiVisionNotes": "No visual change from surface-pass; lighting setup was already correct. Same accepted Tier-1 exceptions apply."
     }
   ],
   "reviewHistory": [
@@ -6032,6 +6713,142 @@
         "cameraView": "three-quarter",
         "notes": "",
         "aiVisionNotes": "Side-by-side comparison shows the platen, mirror, and gauge cluster all now visually distinct in material, not just color-blocked geometry. Per-part color-delta Tier-1 outliers (66-68 deltaE) traced to the hidden/transparent container materials being read as opaque black by the coarse cluster-matcher -- documented as a tool limitation in tier1-exception.md, not a real visible defect (confirmed by direct inspection of the render)."
+      }
+    },
+    {
+      "timestamp": "2026-09-15T05:42:01.963191+00:00",
+      "passId": "surface-pass",
+      "estimatedFidelity": 0.77,
+      "aiVisionScore": 0.77,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.75,
+        "componentStructure": 0.85,
+        "formDetail": 0.62,
+        "materialSurface": 0.4,
+        "lightingCamera": 0.6
+      },
+      "featureReviews": [
+        {
+          "id": "overall-silhouette",
+          "score": 0.75,
+          "visible": true,
+          "notes": "Unchanged silhouette, still the accepted blockout/form-refinement geometry."
+        },
+        {
+          "id": "articulated-linkage-structure",
+          "score": 0.85,
+          "visible": true,
+          "notes": "Unchanged from structural-pass."
+        },
+        {
+          "id": "chevron-head-silhouette",
+          "score": 0.78,
+          "visible": true,
+          "notes": "Mirror flap now reads as a distinct reflective gray panel against the cream lens box (visible reflection of the arm's own color in the head-angle capture) -- the material differentiation this feature target was actually waiting on. Clears its 0.75 threshold."
+        },
+        {
+          "id": "reference-material-system",
+          "score": 0.72,
+          "visible": true,
+          "notes": "Platen now reads as real glass (mottled/reflective under the environment light), mirror is distinctly reflective, gauge cluster is 3 real colored segments instead of one flat plate, focus ring is a lighter distinct gray. Clears its 0.7 threshold."
+        }
+      ],
+      "action": "continue",
+      "summary": "Surface-pass: added 4 real concentric torus rings (fresnelRing1-4) flush on the platen's top face for the fresnel-lens relief -- real geometry, not a normal map, since this build declares no texture maps at all. Deferred from material-pass as a geometry item. No other surface-locality work applies: every material is deliberately flat/near-flat (stylized-flat-molded), with no dirt/wear/stains/scratches observed on the reference's own clean studio-photographed unit.",
+      "matched": [
+        "fresnel rings visible and correctly concentric on the platen, matching the reference's own relief pattern",
+        "no regression to silhouette or material work from prior passes"
+      ],
+      "mismatches": [
+        "same accepted gaps as material-pass (ruled scale/label/fastener flat placeholder color)"
+      ],
+      "specFixes": [
+        "none"
+      ],
+      "codeFixes": [
+        "none"
+      ],
+      "evidence": [
+        ".img2threejs-projector/render-capture/surface-3q.png"
+      ],
+      "mapStrippedRender": ".img2threejs-projector/render-capture/surface-3q.png",
+      "visualEvidence": {
+        "referenceScreenshot": ".img2threejs-projector/reference.jpg",
+        "renderScreenshot": ".img2threejs-projector/render-capture/surface-3q.png",
+        "comparisonImage": ".img2threejs-projector/render-capture/comparison-sheet-surface.png",
+        "cameraView": "three-quarter",
+        "notes": "",
+        "aiVisionNotes": "Fresnel rings read clearly from the top-down-ish angle and add real recognizability without changing the silhouette. Tier-1 failures are the same already-documented exceptions (arm/head proportion plateau, hidden-material color-delta false positive)."
+      }
+    },
+    {
+      "timestamp": "2026-09-15T05:43:13.503906+00:00",
+      "passId": "lighting-pass",
+      "estimatedFidelity": 0.77,
+      "aiVisionScore": 0.77,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {
+        "silhouetteProportion": 0.75,
+        "componentStructure": 0.85,
+        "formDetail": 0.62,
+        "materialSurface": 0.4,
+        "lightingCamera": 0.6
+      },
+      "featureReviews": [
+        {
+          "id": "overall-silhouette",
+          "score": 0.75,
+          "visible": true,
+          "notes": "Unchanged silhouette, still the accepted blockout/form-refinement geometry."
+        },
+        {
+          "id": "articulated-linkage-structure",
+          "score": 0.85,
+          "visible": true,
+          "notes": "Unchanged from structural-pass."
+        },
+        {
+          "id": "chevron-head-silhouette",
+          "score": 0.78,
+          "visible": true,
+          "notes": "Mirror flap now reads as a distinct reflective gray panel against the cream lens box (visible reflection of the arm's own color in the head-angle capture) -- the material differentiation this feature target was actually waiting on. Clears its 0.75 threshold."
+        },
+        {
+          "id": "reference-material-system",
+          "score": 0.72,
+          "visible": true,
+          "notes": "Platen now reads as real glass (mottled/reflective under the environment light), mirror is distinctly reflective, gauge cluster is 3 real colored segments instead of one flat plate, focus ring is a lighter distinct gray. Clears its 0.7 threshold."
+        }
+      ],
+      "action": "continue",
+      "summary": "Lighting-pass: verified the key/fill/rim/environment setup already built into OverheadProjector3D.tsx matches lightingFromPhoto exactly (key 0.4/0.85/0.5 warm, fill cool, rim matching the site's own --accent-warm palette so the projector reads as part of the same visual world as the hero/bust), ACES filmic tone mapping + sRGB output color space confirmed in configureOverheadProjectorRenderer, contact shadow via a ShadowMaterial ground catcher (ShadowMaterial opacity 0.28), scene.environment supplies the reflections the platen/mirror materials rely on. No code changes needed this pass -- it was already correct from the initial component build.",
+      "matched": [
+        "key/fill/rim/environment all present and match lightingFromPhoto's declared roles",
+        "ACES filmic tone mapping + sRGB confirmed",
+        "contact shadow present",
+        "environment map drives the platen/mirror reflections visible since material-pass"
+      ],
+      "mismatches": [
+        "none new"
+      ],
+      "specFixes": [
+        "none"
+      ],
+      "codeFixes": [
+        "none"
+      ],
+      "evidence": [
+        ".img2threejs-projector/render-capture/lighting-3q.png"
+      ],
+      "mapStrippedRender": ".img2threejs-projector/render-capture/lighting-3q.png",
+      "visualEvidence": {
+        "referenceScreenshot": ".img2threejs-projector/reference.jpg",
+        "renderScreenshot": ".img2threejs-projector/render-capture/lighting-3q.png",
+        "comparisonImage": ".img2threejs-projector/render-capture/comparison-sheet-lighting.png",
+        "cameraView": "three-quarter",
+        "notes": "",
+        "aiVisionNotes": "No visual change from surface-pass; lighting setup was already correct. Same accepted Tier-1 exceptions apply."
       }
     }
   ],
@@ -6907,6 +7724,280 @@
       "maskWarnings": [],
       "renderHash": "88fbf8a3389af838",
       "passId": "material-pass"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.4961,
+        "aspectRatioDelta": 0.1341,
+        "scaleDelta": 0.4389,
+        "bilateralSymmetryError": 0.1472,
+        "colorDelta": {
+          "checked": 28,
+          "maxDeltaE": 68.27,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 19.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 68.27
+            },
+            {
+              "componentId": null,
+              "deltaE": 66.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 18.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 1.46
+            },
+            {
+              "componentId": null,
+              "deltaE": 1.46
+            },
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 18.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.65
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.02
+            }
+          ],
+          "gated": true
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.496 is below threshold 0.85",
+        "aspect-ratio delta 0.134 exceeds threshold 0.05",
+        "scale delta 0.439 exceeds threshold 0.08",
+        "max per-part color delta-E 68.27 exceeds threshold 20.0"
+      ],
+      "maskWarnings": [],
+      "renderHash": "33fde071a98f0741",
+      "passId": "surface-pass"
+    },
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.4961,
+        "aspectRatioDelta": 0.1341,
+        "scaleDelta": 0.4389,
+        "bilateralSymmetryError": 0.1472,
+        "colorDelta": {
+          "checked": 28,
+          "maxDeltaE": 68.27,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.39
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 19.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 68.27
+            },
+            {
+              "componentId": null,
+              "deltaE": 66.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 18.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 3.49
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 15.68
+            },
+            {
+              "componentId": null,
+              "deltaE": 1.46
+            },
+            {
+              "componentId": null,
+              "deltaE": 1.46
+            },
+            {
+              "componentId": null,
+              "deltaE": 34.08
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.22
+            },
+            {
+              "componentId": null,
+              "deltaE": 18.01
+            },
+            {
+              "componentId": null,
+              "deltaE": 8.65
+            },
+            {
+              "componentId": null,
+              "deltaE": 5.02
+            }
+          ],
+          "gated": true
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.496 is below threshold 0.85",
+        "aspect-ratio delta 0.134 exceeds threshold 0.05",
+        "scale delta 0.439 exceeds threshold 0.08",
+        "max per-part color delta-E 68.27 exceeds threshold 20.0"
+      ],
+      "maskWarnings": [],
+      "renderHash": "33fde071a98f0741",
+      "passId": "lighting-pass"
     }
   ]
 }
