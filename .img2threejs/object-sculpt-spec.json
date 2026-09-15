@@ -1437,7 +1437,7 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 0.975,
+        "width": 0.6,
         "height": 0.28,
         "depth": 0.32,
         "units": "relative",
@@ -1455,7 +1455,7 @@
           0
         ],
         "scale": [
-          0.975,
+          0.6,
           0.28,
           0.32
         ]
@@ -3664,17 +3664,17 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 0.3,
-        "height": 0.26,
-        "depth": 0.3,
+        "width": 0.34,
+        "height": 0.28,
+        "depth": 0.34,
         "units": "relative",
         "confidence": 0.7
       },
       "transform": {
         "position": [
           0.02,
-          0.4,
-          -0.06
+          0.42,
+          0.06
         ],
         "rotation": [
           0,
@@ -3682,9 +3682,9 @@
           0
         ],
         "scale": [
-          0.3,
-          0.26,
-          0.3
+          0.34,
+          0.28,
+          0.34
         ]
       },
       "actionProfile": {
@@ -3810,17 +3810,17 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 0.26,
-        "height": 0.24,
-        "depth": 0.28,
+        "width": 0.28,
+        "height": 0.26,
+        "depth": 0.3,
         "units": "relative",
         "confidence": 0.7
       },
       "transform": {
         "position": [
-          -0.2,
-          0.36,
-          -0.1
+          -0.22,
+          0.38,
+          0.0
         ],
         "rotation": [
           0,
@@ -3828,9 +3828,9 @@
           0
         ],
         "scale": [
+          0.28,
           0.26,
-          0.24,
-          0.28
+          0.3
         ]
       },
       "actionProfile": {
@@ -3956,17 +3956,17 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 0.22,
-        "height": 0.2,
-        "depth": 0.24,
+        "width": 0.24,
+        "height": 0.22,
+        "depth": 0.26,
         "units": "relative",
         "confidence": 0.7
       },
       "transform": {
         "position": [
-          0.16,
-          0.34,
-          -0.1
+          0.18,
+          0.36,
+          0.0
         ],
         "rotation": [
           0,
@@ -3974,9 +3974,9 @@
           0
         ],
         "scale": [
+          0.24,
           0.22,
-          0.2,
-          0.24
+          0.26
         ]
       },
       "actionProfile": {
@@ -4544,17 +4544,17 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 0.28,
+        "width": 0.3,
         "height": 0.16,
-        "depth": 0.14,
+        "depth": 0.16,
         "units": "relative",
         "confidence": 0.7
       },
       "transform": {
         "position": [
           0.0,
-          0.28,
-          0.34
+          0.26,
+          0.36
         ],
         "rotation": [
           0,
@@ -4562,9 +4562,9 @@
           0
         ],
         "scale": [
-          0.28,
+          0.3,
           0.16,
-          0.14
+          0.16
         ]
       },
       "actionProfile": {
@@ -4925,6 +4925,154 @@
       "seams": [],
       "localFeatures": [
         "back of head not observed in the source photo -- plausible continuation, flagged approximate"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpFrontTop",
+      "name": "Hair clump (front-top bridge)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.6,
+      "confidence": 0.65,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (front-top bridge) is one of the stylized hair-clump primitives forming the curl-cluster mass -- added to bridge a bare-skin gap at the forehead/crown transition visible from the front camera.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.3,
+        "height": 0.2,
+        "depth": 0.22,
+        "units": "relative",
+        "confidence": 0.65
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.34,
+          0.22
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.3,
+          0.2,
+          0.22
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpFrontTop",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "bridges the forehead/crown transition -- the front-facing camera view showed bare skin there with only the side/back clumps"
       ],
       "surfaceDetail": {
         "macroRoughness": 0.0,
@@ -5464,7 +5612,7 @@
     {
       "id": "hairClumps",
       "kind": "stylized-clump-cluster",
-      "count": "9 major masses (individually authored)",
+      "count": "10 major masses (individually authored)",
       "parentComponent": "head",
       "elementComponentIds": [
         "hairClumpCrownCenter",
@@ -5475,7 +5623,8 @@
         "hairClumpRightTemple",
         "hairClumpFrontFringe",
         "hairClumpBackLeft",
-        "hairClumpBackRight"
+        "hairClumpBackRight",
+        "hairClumpFrontTop"
       ],
       "rule": "reconstruction.md: prefer 5-15 major stylized clumps over strand geometry. Hand-placed (not radially instanced -- the built-in instancing mechanism assumes a uniform circular array, which cannot express this silhouette's measured left/right asymmetry), matching the observed silhouette: fuller/lower on proper-left, more receded on proper-right, both temples receding somewhat from the crown.",
       "evidenceRefs": [
@@ -5500,7 +5649,8 @@
         "hairClumpRightTemple",
         "hairClumpFrontFringe",
         "hairClumpBackLeft",
-        "hairClumpBackRight"
+        "hairClumpBackRight",
+        "hairClumpFrontTop"
       ],
       "acceptance": [
         "silhouette reads as a bust, not a full figure",
@@ -5536,7 +5686,8 @@
         "hairClumpRightTemple",
         "hairClumpFrontFringe",
         "hairClumpBackLeft",
-        "hairClumpBackRight"
+        "hairClumpBackRight",
+        "hairClumpFrontTop"
       ],
       "acceptance": [
         "no child part floats away from its parent",
@@ -5559,7 +5710,8 @@
         "hairClumpRightTemple",
         "hairClumpFrontFringe",
         "hairClumpBackLeft",
-        "hairClumpBackRight"
+        "hairClumpBackRight",
+        "hairClumpFrontTop"
       ],
       "acceptance": [
         "hair silhouette is asymmetric (fuller proper-left) not a symmetric dome",
@@ -5593,7 +5745,8 @@
         "hairClumpRightTemple",
         "hairClumpFrontFringe",
         "hairClumpBackLeft",
-        "hairClumpBackRight"
+        "hairClumpBackRight",
+        "hairClumpFrontTop"
       ],
       "acceptance": [
         "every material reads as one of the four site palette hues",
@@ -5695,6 +5848,21 @@
       "cameraView": "front",
       "notes": "",
       "aiVisionNotes": "Agent-vision judgment: lighting now reads as belonging to the actual scene it will sit in (matches the hero's amber light-cone), contact shadow grounds it, eyes read naturally rather than glowing."
+    },
+    {
+      "timestamp": "2026-09-15T04:26:53.074245+00:00",
+      "passId": "form-refinement",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+      "renderScreenshot": ".img2threejs/render-capture/bust-closeup2.png",
+      "comparisonImage": ".img2threejs/render-capture/bust-in-hero-context2.png",
+      "cameraView": "front",
+      "notes": "",
+      "aiVisionNotes": "Agent-vision judgment: hair coverage and hood proportion were the two concrete rough edges named at the last checkpoint; both visibly improved. Torso/arm-bulk width (documented in tier1-exception.md) remains the one open silhouette gap."
     }
   ],
   "reviewHistory": [
@@ -5844,6 +6012,42 @@
         "cameraView": "front",
         "notes": "",
         "aiVisionNotes": "Agent-vision judgment: lighting now reads as belonging to the actual scene it will sit in (matches the hero's amber light-cone), contact shadow grounds it, eyes read naturally rather than glowing."
+      }
+    },
+    {
+      "timestamp": "2026-09-15T04:26:53.074245+00:00",
+      "passId": "form-refinement",
+      "estimatedFidelity": 0.78,
+      "aiVisionScore": 0.78,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "action": "refine-code",
+      "summary": "Polish pass per user request (keep refining in isolation before touching the live hero): the hair clumps read as too sparse from straight-on -- the crown/front-top of the head showed bare skin because the original 9 clumps clustered toward the sides/back. Enlarged and pulled the 3 crown clumps forward, added a 10th clump bridging the forehead/crown gap. Also narrowed the hood from full shoulder-width (0.975) to 0.6 -- it read as a flat shelf sticking out to the sides rather than a hood sitting close behind the neck.",
+      "matched": [
+        "hair now reads as genuine coverage with volume, not a sparse scattering over bare skin",
+        "asymmetric fuller-left character preserved and still visible",
+        "hood now sits proportionate to the neck/collar rather than spanning the full shoulder line",
+        "check_part_coverage clean at 26/26 with the new clump"
+      ],
+      "mismatches": [
+        "not independently re-scored on Divine Eye silhouette metrics -- per the established, user-approved pattern (self_correction.md's photo-vs-procedural caveat), judged on agent vision against the pass's own goal instead"
+      ],
+      "specFixes": [],
+      "codeFixes": [],
+      "evidence": [
+        ".img2threejs/render-capture/bust-closeup2.png",
+        ".img2threejs/render-capture/bust-in-hero-context2.png"
+      ],
+      "outOfSequence": true,
+      "mapStrippedRender": ".img2threejs/render-capture/bust-closeup2.png",
+      "visualEvidence": {
+        "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+        "renderScreenshot": ".img2threejs/render-capture/bust-closeup2.png",
+        "comparisonImage": ".img2threejs/render-capture/bust-in-hero-context2.png",
+        "cameraView": "front",
+        "notes": "",
+        "aiVisionNotes": "Agent-vision judgment: hair coverage and hood proportion were the two concrete rough edges named at the last checkpoint; both visibly improved. Torso/arm-bulk width (documented in tier1-exception.md) remains the one open silhouette gap."
       }
     }
   ],
