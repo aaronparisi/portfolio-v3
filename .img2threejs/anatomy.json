@@ -1,0 +1,64 @@
+{
+  "sourceImage": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/reference.png",
+  "overlayImage": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/landmarks.png",
+  "overlayLegend": {
+    "C": "center symmetry axis",
+    "1..N": "head-unit horizontal ticks (blue, dashed)",
+    "H": "hairline guide (default fraction of the first head-unit band)",
+    "E": "eye line guide",
+    "N": "nose base guide",
+    "M": "mouth line guide",
+    "S": "shoulder line guide (default fraction, adjust to observed pose)",
+    "P": "hip line guide (default fraction, adjust to observed pose)",
+    "grayDashed": "rule-of-thirds compositional grid"
+  },
+  "measurementNote": "The script's default guide lines (overlayImage) did not match this subject's observed anatomy (bulky curly hair pushes the effective hairline much lower than the generic guide, and the frame crops at mid-torso, well above the generic shoulder/hip guides). Every value below was measured directly against source pixel coordinates (1050x1400), not read off the generic overlay ticks. Head bounding box used as the normalization unit: crown y=438, chin y=745 (head height 307px), head width ~300px (x=430 to x=730 at the widest, hair included) -- consistent with public/images/hero-planes generation's independently-measured subject bbox (minY=436).",
+  "anatomy": {
+    "styleHeads": 6.0,
+    "proportions": {
+      "headUnit": 0.219,
+      "torso": null,
+      "legs": null,
+      "shoulderWidth": 1.95,
+      "hipWidth": null,
+      "note": "Bust crop: only crown-to-mid-torso is in frame (~3.13 HU visible from crown to the image's bottom crop, not a true crown-to-hip torso measurement). legs/hipWidth/torso are genuinely not observable here -- left null rather than guessing a stock adult ratio, per reconstruction.md's own instruction. shoulderWidth (1.95 HU) falls inside the doc's own realistic-build range, which cross-checks the head-unit measurement as sane."
+    },
+    "pose": {
+      "type": "frontal-neutral bust, near-camera-facing with a very slight head turn (within measurement noise -- treated as neutral)",
+      "jointAngles": {
+        "neck": [0, 0, 0],
+        "leftShoulder": [0, 0, 0],
+        "rightShoulder": [0, 0, 0],
+        "leftElbow": [0, 0, 0],
+        "rightElbow": [0, 0, 0],
+        "leftWrist": [0, 0, 0],
+        "rightWrist": [0, 0, 0],
+        "leftHip": [0, 0, 0],
+        "rightHip": [0, 0, 0],
+        "leftKnee": [0, 0, 0],
+        "rightKnee": [0, 0, 0],
+        "leftAnkle": [0, 0, 0],
+        "rightAnkle": [0, 0, 0]
+      },
+      "jointAngleConfidence": "neck/shoulders measured (frontal, level) at high confidence; elbow/wrist/hip/knee/ankle are entirely below the crop -- left at neutral rest defaults with confidence 0, not measured, per reconstruction.md's occluded-joint rule. The bust build (see spec) never instantiates arms/legs, so these defaults are inert."
+    },
+    "faceLandmarks": {
+      "hairline": 0.414,
+      "eyeLine": 0.528,
+      "eyeSpacing": 0.2,
+      "noseBase": 0.739,
+      "mouthLine": 0.853,
+      "earTop": 0.5,
+      "earBottom": 0.69,
+      "note": "hairline is well above the doc's typical 0.0-0.15 band -- a real, measured deviation from this subject's voluminous curly hair covering more of the forehead than a typical short-hair reference, not an error. eyeSpacing measured at the tighter end of the stylized 0.2-0.35 range since the target is a recognizable adult likeness, not a cute/chibi read."
+    },
+    "features": [
+      { "id": "earring-left", "type": "identity-mark", "normalizedPos": [0.28, 0.6], "note": "single hoop earring, proper-left ear only", "confidence": 0.9 },
+      { "id": "smile-asymmetry", "type": "identity-mark", "normalizedPos": [0.55, 0.86], "note": "closed-mouth smile, proper-right mouth corner raised more than left", "confidence": 0.85 },
+      { "id": "hair-volume-left", "type": "silhouette", "normalizedPos": [0.25, 0.1], "note": "hair fuller/higher on proper-left side of the part, receding slightly at both temples", "confidence": 0.85 },
+      { "id": "stubble", "type": "surface", "normalizedPos": [0.5, 0.9], "note": "light, even stubble across jaw and upper lip, not a full beard", "confidence": 0.8 }
+    ],
+    "confidence": 0.78
+  },
+  "authoringInstruction": "Open overlayImage and read the reference against its head-unit ticks, thirds grid, face-line guides, shoulder/hip lines, and center axis. Replace every null/placeholder value in anatomy with normalized coordinates or joint angles actually observed; the drawn guide lines are generic starting positions, not measurements."
+}

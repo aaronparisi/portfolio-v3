@@ -1,0 +1,191 @@
+{
+  "sourceImage": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/reference.png",
+  "zonesDir": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones",
+  "detailInventory": {
+    "scanMethod": "component-zones",
+    "targetMinDetails": 10,
+    "details": [
+      {
+        "id": "hairMass",
+        "kind": "silhouette+material",
+        "description": "Voluminous curl-cluster hair mass, fuller/higher on proper-left side of the part, receding slightly at both temples. Warm amber/gold-brown, rim-lit brighter at the crown, darker brown underneath.",
+        "region": {
+          "x": 0.41,
+          "y": 0.313,
+          "width": 0.286,
+          "height": 0.116,
+          "units": "normalized"
+        },
+        "scale": "macro",
+        "affects": "silhouette,albedo",
+        "mapsTo": {
+          "type": "component",
+          "ref": "hairMass.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/hairMass.png",
+        "confidence": 0.9
+      },
+      {
+        "id": "faceplate",
+        "kind": "feature+morph",
+        "description": "Straight moderately-thick eyebrows, medium-set eyes with visible upper-lid crease, straight nose bridge, closed asymmetric smile (proper-right corner raised more), light even stubble across jaw/upper lip.",
+        "region": {
+          "x": 0.438,
+          "y": 0.404,
+          "width": 0.229,
+          "height": 0.129,
+          "units": "normalized"
+        },
+        "scale": "meso",
+        "affects": "topology,morphIntent",
+        "mapsTo": {
+          "type": "component",
+          "ref": "faceplate.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/faceplate.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "earLeft",
+        "kind": "feature",
+        "description": "Visible ear carrying a single hoop/stud earring -- an asymmetric identity mark (right ear has no earring).",
+        "region": {
+          "x": 0.562,
+          "y": 0.414,
+          "width": 0.076,
+          "height": 0.064,
+          "units": "normalized"
+        },
+        "scale": "micro",
+        "affects": "localFeatures",
+        "mapsTo": {
+          "type": "component",
+          "ref": "earLeft.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/earLeft.png",
+        "confidence": 0.9
+      },
+      {
+        "id": "earRight",
+        "kind": "feature",
+        "description": "Ear almost fully occluded by hair in this view; build mirrored from earLeft's geometry, without the earring.",
+        "region": {
+          "x": 0.41,
+          "y": 0.414,
+          "width": 0.076,
+          "height": 0.064,
+          "units": "normalized"
+        },
+        "scale": "micro",
+        "affects": "localFeatures",
+        "mapsTo": {
+          "type": "component",
+          "ref": "earRight.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/earRight.png",
+        "confidence": 0.5
+      },
+      {
+        "id": "neck",
+        "kind": "material",
+        "description": "Neck column, same skin material as the face plate, partially occluded by the henley/hoodie collar at its base.",
+        "region": {
+          "x": 0.457,
+          "y": 0.5,
+          "width": 0.171,
+          "height": 0.064,
+          "units": "normalized"
+        },
+        "scale": "meso",
+        "affects": "albedo",
+        "mapsTo": {
+          "type": "component",
+          "ref": "neck.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/neck.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "hood",
+        "kind": "silhouette+material",
+        "description": "Hoodie's hood folded down, draped/resting on the shoulders and upper back rather than worn up -- soft-body cloth drape, not a rigid shell.",
+        "region": {
+          "x": 0.248,
+          "y": 0.543,
+          "width": 0.543,
+          "height": 0.1,
+          "units": "normalized"
+        },
+        "scale": "meso",
+        "affects": "silhouette,foldGeometry",
+        "mapsTo": {
+          "type": "component",
+          "ref": "hood.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/hood.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "zipperTrack",
+        "kind": "feature",
+        "description": "Vertical metal zipper track (teeth + pull tab), unzipped to mid-chest, flanked by two white cotton drawstrings hanging from the hood, each ending in a small metal cord-lock aglet.",
+        "region": {
+          "x": 0.476,
+          "y": 0.571,
+          "width": 0.086,
+          "height": 0.357,
+          "units": "normalized"
+        },
+        "scale": "micro",
+        "affects": "localFeatures,materialAccent",
+        "mapsTo": {
+          "type": "component",
+          "ref": "zipperTrack.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/zipperTrack.png",
+        "confidence": 0.95
+      },
+      {
+        "id": "torsoPanel",
+        "kind": "material",
+        "description": "Hoodie fleece body -- deep wine/aubergine, very high roughness (napped, matte), large soft fold/wrinkle cluster at the chest and underarms from fabric slack.",
+        "region": {
+          "x": 0.124,
+          "y": 0.557,
+          "width": 0.733,
+          "height": 0.442,
+          "units": "normalized"
+        },
+        "scale": "macro",
+        "affects": "albedo,foldGeometry",
+        "mapsTo": {
+          "type": "material",
+          "ref": "hoodieFleece.localOverrides"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/torsoPanel.png",
+        "confidence": 0.8
+      },
+      {
+        "id": "henleyCollar",
+        "kind": "feature+material",
+        "description": "Teal henley collar with 2-3 dark buttons, visible through the hoodie's unzipped V -- a distinct knit material layered beneath the hoodie fleece.",
+        "region": {
+          "x": 0.4,
+          "y": 0.571,
+          "width": 0.21,
+          "height": 0.071,
+          "units": "normalized"
+        },
+        "scale": "meso",
+        "affects": "albedo,localFeatures",
+        "mapsTo": {
+          "type": "component",
+          "ref": "henleyCollar.localFeatures"
+        },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/detail-zones/henleyCollar.png",
+        "confidence": 0.9
+      }
+    ]
+  },
+  "authoringInstruction": "Open each zone crop under zonesDir and replace every detail stub's kind, description, scale, affects, mapsTo, and confidence with what is actually observed. Add more detail entries per zone if a single zone contains multiple distinct marks; do not leave stubs unfilled or unlinked (mapsTo must reference a real component.localFeatures or material.localOverrides entry)."
+}
