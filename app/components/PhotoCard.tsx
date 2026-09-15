@@ -14,10 +14,11 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
  * intact and simply gets cropped by the lens, the way a real optical
  * instrument works, so there's no matte to get wrong.
  *
- * object-position 50% 100% was chosen empirically (see the position
- * contact-sheet in this session's history, not checked in) — it's the
- * value that puts Aaron's eye-line at roughly the top third of the circle,
- * which is where a portrait's focal point belongs.
+ * object-position was chosen empirically against a percentage-grid
+ * overlay on the source photo (see this session's history, not checked
+ * in) — 50% 88% sits the eye-line just below the top third, close to
+ * fancy-design's own 100% but backed off slightly per Gruvbox-theme
+ * feedback that it read as too high/centered.
  */
 export function PhotoCard() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,13 @@ export function PhotoCard() {
     glow: 0,
     config: { tension: 210, friction: 20 },
   }));
+
+  // The sepia-to-CRT wipe: a single progress value driving a diagonal
+  // clip-path reveal. p=0 is fully sepia, p=1 is fully "hacker" (grayscale
+  // + green phosphor tint + scanlines); react-spring for the same
+  // physical, slightly-overshooting settle every other motion on this
+  // card uses, not a linear CSS transition.
+  const [crt, crtApi] = useSpring(() => ({ p: 0, config: { tension: 20, friction: 13 } }));
 
   // A continuous, very small drift — the lens feels lit and alive even
   // before you touch it, visiting four waypoints in a loose loop rather
@@ -96,6 +104,12 @@ export function PhotoCard() {
 
   function handleLeave() {
     void lensApi.start({ rx: 0, ry: 0, mx: 0, my: 0, scale: 1, glow: 0 });
+    void crtApi.start({ p: 0 });
+  }
+
+  function handleEnter() {
+    if (reduced) return;
+    void crtApi.start({ p: 1 });
   }
 
   return (
@@ -119,6 +133,7 @@ export function PhotoCard() {
         <animated.div
           ref={wrapRef}
           onPointerMove={handleMove}
+          onPointerEnter={handleEnter}
           onPointerLeave={handleLeave}
           className="relative h-full w-full cursor-pointer touch-none rounded-full"
           style={
@@ -162,7 +177,7 @@ export function PhotoCard() {
               height={800}
               className="absolute inset-0 h-full w-full select-none object-cover"
               style={{
-                objectPosition: "50% 100%",
+                objectPosition: "50% 88%",
                 // Gruvbox-theme experiment: strong sepia (0.85, up from
                 // fancy-design's 0.4 -- see that commit) so every region,
                 // including the dark saturated jacket, gets remapped into
@@ -191,6 +206,79 @@ export function PhotoCard() {
               style={{
                 background:
                   "linear-gradient(180deg, color-mix(in oklab, var(--accent) 16%, transparent), color-mix(in oklab, var(--accent) 6%, transparent) 35%, color-mix(in oklab, var(--accent-warm) 6%, transparent) 65%, color-mix(in oklab, var(--accent-warm) 16%, transparent) 100%)",
+              }}
+            />
+
+            {/* The sepia-to-CRT wipe: hover sweeps a "hacker" layer
+                (grayscale photo + green-phosphor tint + scanlines) across
+                the lens on a diagonal clip-path, instead of the whole
+                image just cross-fading -- a wipe reads as something being
+                revealed, a cross-fade reads as a settings toggle. isolate
+                on this whole sub-tree contains its own mix-blend-mode
+                (the green tint) to itself, same reason as the wash's own
+                isolate above. */}
+            <animated.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0"
+              style={{
+                isolation: "isolate",
+                clipPath: crt.p.to((p) => {
+                  const skew = 18;
+                  const x = p * (100 + skew * 2) - skew;
+                  return `polygon(0% 0%, ${x + skew}% 0%, ${x - skew}% 100%, 0% 100%)`;
+                }),
+              }}
+            >
+              <animated.img
+                src="/images/aaron-photo-sm.jpg"
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full select-none object-cover"
+                style={{
+                  objectPosition: "50% 88%",
+                  // Grayscale first, then a solid green laid on top with
+                  // mix-blend-mode: color -- that recolors the grayscale
+                  // luminance into a true monochrome phosphor green
+                  // (hue+saturation from the top layer, lightness from
+                  // what's under it), the same trick as a photo duotone,
+                  // without needing an SVG filter.
+                  filter: "grayscale(1) contrast(1.35) brightness(1.1)",
+                  transform: to([lens.mx, lens.my], (mx, my) => `translate3d(${-mx}px, ${-my}px, 0) scale(1.12)`),
+                }}
+                draggable={false}
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: "#b8bb26", mixBlendMode: "color" }}
+              />
+              {/* Scanlines -- 2px on, 2px off reads as a CRT at this
+                  photo's actual display size; much finer just moirés. */}
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 1px, transparent 1px, transparent 3px)",
+                  mixBlendMode: "multiply",
+                }}
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ boxShadow: "inset 0 0 2.5rem rgba(0,0,0,0.55)" }}
+              />
+            </animated.div>
+
+            {/* A bright phosphor scan-beam riding the wipe's own leading
+                edge -- present only while the wipe is actually in
+                transit (a bell curve of p, zero at both rest states),
+                the flash-and-fade a real scan line leaves rather than a
+                static seam. */}
+            <animated.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 w-1"
+              style={{
+                left: crt.p.to((p) => `${p * (100 + 36) - 18}%`),
+                opacity: crt.p.to((p) => 4 * p * (1 - p)),
+                background: "#b8bb26",
+                boxShadow: "0 0 10px 2px #b8bb26, 0 0 22px 6px rgba(184, 187, 38, 0.6)",
               }}
             />
           </div>
