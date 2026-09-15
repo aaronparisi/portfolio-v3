@@ -2,6 +2,14 @@
 .env
 /node_modules/
 
+# Original full-resolution photo — the optimized copies actually used by
+# the site live in public/images/.
+/aaron_photo.jpeg
+
 # React Router
 /.react-router/
 /build/
+
+# Generated architecture diagram (archify) — a standalone project
+# artifact for reference, not site content, so it isn't committed.
+/diagrams/

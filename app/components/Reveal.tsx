@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { animated, useSpring } from "@react-spring/web";
+import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 /**
- * Fades + slides children in the first time they scroll into view.
- * Falls back to fully visible immediately when the user prefers reduced
- * motion, or before JS has hydrated.
+ * Springs children in (fade + rise) the first time they scroll into
+ * view. A real spring rather than a CSS ease-out curve — it settles with
+ * a faint, physical give rather than gliding to a stop at a fixed rate.
  */
 export function Reveal({
   children,
@@ -16,15 +18,11 @@ export function Reveal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const reduced = usePrefersReducedMotion();
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -39,15 +37,21 @@ export function Reveal({
     return () => observer.disconnect();
   }, []);
 
+  const style = useSpring({
+    opacity: visible ? 1 : 0,
+    y: visible ? 0 : 28,
+    delay: visible ? delay : 0,
+    immediate: reduced,
+    config: { tension: 190, friction: 24 },
+  });
+
   return (
-    <div
+    <animated.div
       ref={ref}
-      className={`transition-all duration-700 ease-out ${
-        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
-      } ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      className={className}
+      style={{ opacity: style.opacity, transform: style.y.to((y) => `translate3d(0, ${y}px, 0)`) }}
     >
       {children}
-    </div>
+    </animated.div>
   );
 }

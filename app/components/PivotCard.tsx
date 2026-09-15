@@ -1,44 +1,72 @@
-import type { CSSProperties } from "react";
+import { animated, useSpring } from "@react-spring/web";
 import type { TimelineEntry } from "~/data/timeline";
 import { TerminalIcon } from "./icons";
+import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 /** The App Academy entry gets special treatment — it's the hinge the whole story turns on. */
-export function PivotCard({ entry, t }: { entry: TimelineEntry; t: number }) {
+export function PivotCard({ entry }: { entry: TimelineEntry }) {
+  const reduced = usePrefersReducedMotion();
+  // No y-translate here on purpose — an upward slide reads as the card
+  // "rising" up the page, not "coming toward you". Scale + a shadow that
+  // grows underneath it reads much more like the card lifting off the
+  // surface in place, without actually moving position.
+  const [style, api] = useSpring(() => ({
+    scale: 1,
+    shadow: 0,
+    config: { tension: 280, friction: 20 },
+  }));
+
   return (
-    <li className="relative" style={{ "--t": t } as CSSProperties}>
-      <span className="timeline-node pivot-ring absolute -left-8 top-0 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full text-[var(--base3)] shadow-md sm:-left-10">
+    <li className="relative pl-16 sm:pl-20">
+      <span className="timeline-dot absolute left-0 top-0.5 flex h-11 w-11 items-center justify-center rounded-full text-[var(--accent-warm)]">
         <TerminalIcon className="h-5 w-5" />
       </span>
 
-      <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-alt)] p-6 shadow-sm sm:p-8">
+      <animated.div
+        onPointerEnter={() => !reduced && void api.start({ scale: 1.02, shadow: 1 })}
+        onPointerLeave={() => void api.start({ scale: 1, shadow: 0 })}
+        className="pivot-card rounded-r-2xl bg-[var(--bg-alt)] p-6 sm:p-8"
+        style={{
+          scale: style.scale,
+          boxShadow: style.shadow.to(
+            (s) => `0 ${s * 20}px ${s * 30}px -${s * 10}px rgb(0 0 0 / ${s * 0.25})`,
+          ),
+        }}
+      >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <p className="font-mono text-xs uppercase tracking-widest text-[var(--orange)]">
+          {/* .eyebrow's own `color: var(--accent)` and this Tailwind
+              utility are equal-specificity class selectors, so source
+              order (not who's "more specific") decides the winner —
+              and .eyebrow, defined after Tailwind's own generated
+              utilities in app.css, was quietly winning every time. An
+              inline style always beats a class, regardless of order. */}
+          <p className="eyebrow" style={{ color: "var(--accent-warm)" }}>
             The turning point
           </p>
-          <span className="font-mono text-xs text-[var(--text-muted)]">{entry.range}</span>
+          <span className="font-mono text-xs text-[var(--ink-soft)]">{entry.range}</span>
         </div>
 
-        <h3 className="mt-2 text-xl font-semibold text-[var(--text-strong)]">{entry.title}</h3>
-        <p className="font-mono text-sm text-[var(--blue)]">{entry.org}</p>
+        <h3 className="mt-2 text-xl font-semibold text-[var(--ink)]">{entry.title}</h3>
+        <p className="font-mono text-sm text-[var(--accent)]">{entry.org}</p>
 
-        <p className="mt-3 text-sm leading-relaxed text-[var(--text)]">
+        <p className="mt-3 text-sm leading-relaxed text-[var(--ink-soft)]">
           At 1031 Services, transactions were tracked on a whiteboard and a stack of hand-written
           calendars. Functional, but barely. I taught myself enough Visual Basic to build a
-          calendar application in Excel. I could see exactly what I needed to do for each transation,
-          each day of the week - and it worked! Watching something I&rsquo;d built
-          actually make my day easier was the hook: I quit the job and spent the next year at my
-          kitchen table, studying full time, determined to make this my career.
+          calendar application in Excel. I could see exactly what I needed to do for each
+          transaction, hour by hour, each day of the week - and it worked! Watching something
+          I&rsquo;d built actually make my day easier was the hook: I quit the job and spent the
+          next year at my kitchen table, studying full time, determined to make this my career.
         </p>
 
         <ul className="mt-4 space-y-1.5">
           {entry.bullets.map((bullet, idx) => (
-            <li key={idx} className="flex items-start gap-2.5 text-sm text-[var(--text)]">
-              <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--text-muted)]" />
+            <li key={idx} className="flex items-start gap-2.5 text-sm leading-relaxed text-[var(--ink-soft)]">
+              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-[var(--ink-soft)]" />
               <span>{bullet}</span>
             </li>
           ))}
         </ul>
-      </div>
+      </animated.div>
     </li>
   );
 }

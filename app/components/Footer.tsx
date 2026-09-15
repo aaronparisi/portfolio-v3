@@ -1,65 +1,63 @@
-import { PinIcon, MailIcon, PhoneIcon, ArrowUpRightIcon, GitBranchIcon } from "./icons";
-import { FloatingGlyphs, type Glyph } from "./FloatingGlyphs";
+import type { ReactNode } from "react";
+import { animated, useSpring } from "@react-spring/web";
+import { PinIcon, MailIcon, PhoneIcon, ArrowUpRightIcon } from "./icons";
+import { Reveal } from "./Reveal";
+import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const glyphs: Glyph[] = [
-  { symbol: "</>", top: "18%", left: "9%", size: "1.75rem", speed: 0.24, font: "mono" },
-  { symbol: "git push", top: "78%", left: "86%", size: "1rem", speed: 0.36, font: "mono" },
-  // One last equation, quietly, behind the sign-off.
-  { symbol: "π", top: "48%", left: "44%", size: "1.5rem", speed: 0.16, font: "chalk", opacity: 0.1 },
-  { icon: GitBranchIcon, top: "82%", left: "16%", size: "1.5rem", speed: 0.3, opacity: 0.18 },
-];
+function ContactLink({ href, icon, children }: { href: string; icon: ReactNode; children: ReactNode }) {
+  const reduced = usePrefersReducedMotion();
+  const [style, api] = useSpring(() => ({ y: 0, config: { tension: 320, friction: 18 } }));
 
-// icon-glow (see app.css) turns each contact icon's own stroke color into
-// a matching drop-shadow, so the row reads as lit dashboard indicators
-// rather than plain muted glyphs.
-const ICON_GLOW = "icon-glow h-4 w-4";
+  return (
+    <animated.a
+      href={href}
+      target={href.startsWith("http") ? "_blank" : undefined}
+      rel={href.startsWith("http") ? "noreferrer" : undefined}
+      onPointerEnter={() => !reduced && void api.start({ y: -3 })}
+      onPointerLeave={() => void api.start({ y: 0 })}
+      style={{ transform: style.y.to((y) => `translate3d(0, ${y}px, 0)`) }}
+      className="flex items-center gap-2 text-[var(--ink-soft)] transition-colors hover:text-[var(--accent)]"
+    >
+      {icon}
+      {children}
+    </animated.a>
+  );
+}
 
 export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="contact" className="dashboard-panel relative overflow-hidden px-6 py-20">
-      <FloatingGlyphs glyphs={glyphs} className="text-[var(--text-muted)]" />
+    <footer id="contact" className="border-t border-[var(--border)] px-6 py-24">
+      <div className="mx-auto max-w-2xl text-center">
+        <Reveal>
+          <p className="eyebrow">Contact</p>
+          <h2 className="mt-2 font-display text-4xl text-[var(--ink)] sm:text-5xl">
+            Let&rsquo;s build <em className="text-[var(--accent)]">something</em>
+          </h2>
+          <p className="mx-auto mt-4 max-w-md text-[var(--ink-soft)]">
+            Open to frontend roles with room to grow alongside product and design.
+          </p>
 
-      <div className="relative z-10 mx-auto max-w-2xl text-center">
-        <p className="font-mono text-sm text-[var(--cyan)]">// contact</p>
-        <h2 className="mt-2 text-3xl font-bold text-[var(--base2)] sm:text-4xl">
-          Let&rsquo;s Build Something
-        </h2>
-        <p className="mx-auto mt-4 max-w-md text-[var(--base1)]">
-          Open to frontend roles with room to grow alongside product and design.
-        </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 font-mono text-sm">
+            <span className="flex items-center gap-2 text-[var(--ink-soft)]">
+              <PinIcon className="h-4 w-4" /> Seattle, WA
+            </span>
+            <ContactLink href="mailto:parisi.aaron@gmail.com" icon={<MailIcon className="h-4 w-4" />}>
+              parisi.aaron@gmail.com
+            </ContactLink>
+            <ContactLink href="tel:+15185733522" icon={<PhoneIcon className="h-4 w-4" />}>
+              518-573-3522
+            </ContactLink>
+            <ContactLink href="https://linkedin.com/in/aaron-parisi" icon={null}>
+              LinkedIn <ArrowUpRightIcon className="h-3.5 w-3.5" />
+            </ContactLink>
+          </div>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 font-mono text-sm">
-          <span className="flex items-center gap-2 text-[var(--base1)]">
-            <PinIcon className={`${ICON_GLOW} text-[var(--cyan)]`} /> Seattle, WA
-          </span>
-          <a
-            href="mailto:parisi.aaron@gmail.com"
-            className="flex items-center gap-2 text-[var(--base1)] transition-colors hover:text-[var(--violet)]"
-          >
-            <MailIcon className={`${ICON_GLOW} text-[var(--pink)]`} /> parisi.aaron@gmail.com
-          </a>
-          <a
-            href="tel:+15185733522"
-            className="flex items-center gap-2 text-[var(--base1)] transition-colors hover:text-[var(--violet)]"
-          >
-            <PhoneIcon className={`${ICON_GLOW} text-[var(--lime)]`} /> 518-573-3522
-          </a>
-          <a
-            href="https://linkedin.com/in/aaron-parisi"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 text-[var(--base1)] transition-colors hover:text-[var(--violet)]"
-          >
-            LinkedIn <ArrowUpRightIcon className="icon-glow h-3.5 w-3.5 text-[var(--violet)]" />
-          </a>
-        </div>
-
-        <p className="mt-10 font-mono text-xs text-[var(--text-muted)]">
-          © {year} Aaron Parisi. Built with React Router, TypeScript &amp; Tailwind, styled in
-          Solarized.
-        </p>
+          <p className="mt-16 font-mono text-xs text-[var(--ink-soft)]">
+            © {year} Aaron Parisi. Built with React Router, TypeScript, Tailwind &amp; react-spring.
+          </p>
+        </Reveal>
       </div>
     </footer>
   );
