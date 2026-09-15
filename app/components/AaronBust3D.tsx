@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import {
   createAaronFacetedBustModel,
-  createAaronFacetedBustLookDevLights,
   createAaronFacetedBustEnvironment,
   frameAaronFacetedBustCamera,
   configureAaronFacetedBustRenderer,
@@ -72,11 +71,41 @@ export function AaronBust3D() {
       };
     }
 
-    const lights = createAaronFacetedBustLookDevLights("neutral");
-    scene.add(lights);
+    // The site's own key/fill/rim, not the generator's generic lookDev
+    // preset -- values match .img2threejs/object-sculpt-spec.json's
+    // lightingFromPhoto exactly, so the bust is lit by the same lamp the
+    // hero's own light-cone glows from, not a separate studio setup.
+    const key = new THREE.DirectionalLight(0xf3ece0, 1.4);
+    key.position.set(0.5, 0.8, 0.6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.bias = -0.0005;
+    scene.add(key);
+
+    const fill = new THREE.AmbientLight(0x2a264a, 0.35);
+    scene.add(fill);
+
+    const rim = new THREE.DirectionalLight(0xe8bc78, 0.6);
+    rim.position.set(-0.6, 0.5, -0.4);
+    scene.add(rim);
+
     scene.environment = createAaronFacetedBustEnvironment(renderer);
 
     frameAaronFacetedBustCamera(camera, model, { margin: 1.35, elevationDeg: 4 });
+
+    // A real contact shadow (ShadowMaterial reads only the shadow-map
+    // occlusion, so the plane itself stays invisible against the
+    // transparent canvas) -- grounds the bust in whatever it's sitting on
+    // instead of it reading as pasted over the scene.
+    const groundBox = new THREE.Box3().setFromObject(model);
+    const shadowCatcher = new THREE.Mesh(
+      new THREE.PlaneGeometry(4, 4),
+      new THREE.ShadowMaterial({ opacity: 0.28 }),
+    );
+    shadowCatcher.rotation.x = -Math.PI / 2;
+    shadowCatcher.position.y = groundBox.min.y;
+    shadowCatcher.receiveShadow = true;
+    scene.add(shadowCatcher);
 
     const controls = createAaronFacetedBustInspectControls(camera, renderer.domElement);
     controls.target.set(0, 0.45, 0);
@@ -122,6 +151,8 @@ export function AaronBust3D() {
       controls.dispose();
       renderer.dispose();
       scene.environment?.dispose();
+      shadowCatcher.geometry.dispose();
+      (shadowCatcher.material as THREE.Material).dispose();
       model.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
