@@ -160,6 +160,13 @@ export function PhotoCard() {
               className="absolute inset-0 h-full w-full select-none object-cover"
               style={{
                 objectPosition: "50% 100%",
+                // A CSS filter grade, not just a gradient laid on top — the
+                // gradient alone left the photo's own colors (the green
+                // trees, the blue-white sky sliver) sitting in obvious
+                // contrast against the page's palette. sepia+hue-rotate
+                // pulls the whole photo's cast toward amber/sienna before
+                // the gradient adds direction on top of that.
+                filter: "sepia(0.4) saturate(1.35) hue-rotate(-12deg) brightness(0.94) contrast(1.08)",
                 transform: to([lens.mx, lens.my], (mx, my) => `translate3d(${-mx}px, ${-my}px, 0) scale(1.12)`),
               }}
               draggable={false}
@@ -172,7 +179,7 @@ export function PhotoCard() {
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 32%, transparent), transparent 45%, color-mix(in oklab, var(--accent-warm) 22%, transparent) 100%)",
+                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 42%, transparent), color-mix(in oklab, var(--accent) 12%, transparent) 40%, transparent 55%, color-mix(in oklab, var(--accent-warm) 34%, transparent) 100%)",
               }}
             />
           </div>
