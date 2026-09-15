@@ -9,3 +9,7 @@
 # React Router
 /.react-router/
 /build/
+
+# Generated architecture diagram (archify) — a standalone project
+# artifact for reference, not site content, so it isn't committed.
+/diagrams/

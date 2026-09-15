@@ -13,6 +13,11 @@ const ENDORSEMENTS = [
     quote:
       "What I appreciated most was the way he asks deeper questions, which brings clarity to problems. I saw many times where he would ask a probing question about something we all thought we understood, and in trying to answer it, we realized our assumptions were flawed.",
   },
+  {
+    name: "Ken",
+    quote:
+      "Before writing code he’d ask the questions the rest of us had skipped: who is this actually for, what happens when they do the unexpected thing. More than once that changed what we built, and the product was better for it.",
+  },
 ];
 
 function EndorsementCard({ name, quote, accent }: { name: string; quote: string; accent: string }) {
