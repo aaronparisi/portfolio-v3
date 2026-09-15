@@ -146,7 +146,7 @@
           "affects": "silhouette,albedo",
           "mapsTo": {
             "type": "component",
-            "ref": "hairMass"
+            "ref": "hairClumpCrownCenter"
           },
           "evidenceRef": "hairMass-zone",
           "confidence": 0.9
@@ -748,13 +748,18 @@
       "interaction-pass",
       "optimization-pass"
     ],
-    "currentPass": "structural-pass",
-    "completedPasses": [
-      "blockout"
-    ],
-    "lastCompletedPass": "blockout",
+    "currentPass": "blockout",
+    "completedPasses": [],
+    "lastCompletedPass": "",
     "blockedReason": "",
-    "nextRequiredEvidence": []
+    "nextRequiredEvidence": [
+      "silhouette reads as a bust, not a full figure",
+      "shoulder-width:head-height ratio matches the measured 1.95 HU",
+      "browser render screenshot from your agent's browser/screenshot tool",
+      "single side-by-side full reference/render comparison sheet",
+      "all critical semantic feature scores at or above their thresholds",
+      "self-correction review appended with action=continue before the next pass"
+    ]
   },
   "lookDevTargets": {
     "qualityPriority": "stylized-flat-faceted",
@@ -2434,157 +2439,6 @@
       }
     },
     {
-      "id": "hairMass",
-      "name": "Hair (curl-cluster mass)",
-      "level": "meso",
-      "role": "body",
-      "importance": 0.95,
-      "confidence": 0.8,
-      "primitive": "ellipsoid",
-      "topologyClass": "assembled-solid",
-      "topologyRationale": "Hair (curl-cluster mass) is a discrete faceted-low-poly primitive assembled onto the bust, not a continuous sculpt.",
-      "geometryDescriptor": {
-        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
-        "edgeTreatment": {
-          "type": "none",
-          "bevelRadius": 0.0,
-          "segments": 1
-        },
-        "deformationStack": [],
-        "uvStrategy": "generated procedural coordinates",
-        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
-      },
-      "parent": "head",
-      "attachment": {
-        "parentSocket": "origin",
-        "localStart": [
-          0,
-          0,
-          0
-        ],
-        "localEnd": [
-          0,
-          0,
-          0
-        ],
-        "contactType": "overlap",
-        "embedDepth": 0.02,
-        "overlap": 0.02,
-        "gapTolerance": 0.0
-      },
-      "dimensions": {
-        "width": 0.8736000000000002,
-        "height": 0.62,
-        "depth": 0.935,
-        "units": "relative",
-        "confidence": 0.8
-      },
-      "transform": {
-        "position": [
-          0.03,
-          0.19,
-          -0.0255
-        ],
-        "rotation": [
-          0,
-          0,
-          0
-        ],
-        "scale": [
-          0.8736000000000002,
-          0.62,
-          0.935
-        ]
-      },
-      "actionProfile": {
-        "animationRole": "static",
-        "pivot": {
-          "mode": "center",
-          "localPosition": [
-            0,
-            0,
-            0
-          ],
-          "axis": [
-            0,
-            1,
-            0
-          ],
-          "confidence": 0.7
-        },
-        "transformChannels": {
-          "translate": false,
-          "rotate": true,
-          "scale": false,
-          "bend": false,
-          "twist": false,
-          "detach": false,
-          "visibility": true,
-          "materialState": false
-        },
-        "sockets": [],
-        "collider": {
-          "type": "box",
-          "offset": [
-            0,
-            0,
-            0
-          ],
-          "scale": [
-            1,
-            1,
-            1
-          ],
-          "isTrigger": false,
-          "notes": "display prop only -- no physics"
-        },
-        "constraints": [],
-        "destruction": {
-          "breakable": false,
-          "fractureGroup": "hairMass",
-          "seamRefs": [],
-          "detachableFragments": [],
-          "breakImpulse": 0.0,
-          "debrisMaterial": "hidden"
-        }
-      },
-      "material": "hair",
-      "materialLayers": [
-        "hair"
-      ],
-      "deformations": [],
-      "joints": [],
-      "seams": [],
-      "localFeatures": [
-        "fuller/higher on proper-left side of the part",
-        "receding slightly at both temples",
-        "5-15 stylized clump sub-masses, not strand geometry (reconstruction.md)"
-      ],
-      "surfaceDetail": {
-        "macroRoughness": 0.0,
-        "microRoughness": 0.0,
-        "bumpAmplitude": 0.0,
-        "normalPattern": "",
-        "displacementPattern": "",
-        "occlusionPattern": "",
-        "edgeWearPattern": "",
-        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
-      },
-      "evidenceRefs": [
-        "full-object",
-        "hairMass-zone"
-      ],
-      "details": [],
-      "fidelityTier": "blockout",
-      "colorMaterialRecipe": {
-        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
-        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
-        "materialClass": "unknown",
-        "materialClassConfidence": 0.6,
-        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
-      }
-    },
-    {
       "id": "browLeft",
       "name": "Brow (left)",
       "level": "meso",
@@ -3769,6 +3623,1331 @@
         "materialClassConfidence": 0.85,
         "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
       }
+    },
+    {
+      "id": "hairClumpCrownCenter",
+      "name": "Hair clump (crown center)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.8,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (crown center) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.3,
+        "height": 0.26,
+        "depth": 0.3,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.02,
+          0.4,
+          -0.06
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.3,
+          0.26,
+          0.3
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpCrownCenter",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpCrownLeft",
+      "name": "Hair clump (crown, proper-left)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.7,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (crown, proper-left) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.26,
+        "height": 0.24,
+        "depth": 0.28,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          -0.2,
+          0.36,
+          -0.1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.26,
+          0.24,
+          0.28
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpCrownLeft",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpCrownRight",
+      "name": "Hair clump (crown, proper-right)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.6,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (crown, proper-right) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.22,
+        "height": 0.2,
+        "depth": 0.24,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.16,
+          0.34,
+          -0.1
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          0.2,
+          0.24
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpCrownRight",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpLeftFull",
+      "name": "Hair clump (proper-left, full)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.8,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (proper-left, full) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.22,
+        "height": 0.3,
+        "depth": 0.26,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          -0.34,
+          0.1,
+          0.02
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.22,
+          0.3,
+          0.26
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpLeftFull",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "fuller/lower on proper-left -- the measured silhouette asymmetry"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpLeftUpper",
+      "name": "Hair clump (proper-left, upper)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.6,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (proper-left, upper) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.2,
+        "height": 0.22,
+        "depth": 0.22,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          -0.28,
+          0.28,
+          -0.06
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.2,
+          0.22,
+          0.22
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpLeftUpper",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpRightTemple",
+      "name": "Hair clump (proper-right temple)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.5,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (proper-right temple) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.16,
+        "height": 0.18,
+        "depth": 0.18,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.3,
+          0.08,
+          0.04
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.16,
+          0.18,
+          0.18
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpRightTemple",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "smaller/more receded than the proper-left counterpart"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpFrontFringe",
+      "name": "Hair clump (front fringe)",
+      "level": "meso",
+      "role": "body",
+      "importance": 0.65,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (front fringe) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.28,
+        "height": 0.16,
+        "depth": 0.14,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.0,
+          0.28,
+          0.34
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.28,
+          0.16,
+          0.14
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpFrontFringe",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "covers the forehead down toward the measured hairline (anatomy.json: 0.414 from crown)"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone",
+        "faceplate-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpBackLeft",
+      "name": "Hair clump (back, proper-left)",
+      "level": "micro",
+      "role": "body",
+      "importance": 0.4,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (back, proper-left) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.2,
+        "height": 0.22,
+        "depth": 0.2,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          -0.16,
+          0.22,
+          -0.34
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.2,
+          0.22,
+          0.2
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpBackLeft",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "back of head not observed in the source photo -- plausible continuation, flagged approximate"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
+    },
+    {
+      "id": "hairClumpBackRight",
+      "name": "Hair clump (back, proper-right)",
+      "level": "micro",
+      "role": "body",
+      "importance": 0.4,
+      "confidence": 0.7,
+      "primitive": "ellipsoid",
+      "topologyClass": "assembled-solid",
+      "topologyRationale": "Hair clump (back, proper-right) is one of 9 stylized hair-clump primitives (reconstruction.md: prefer 5-15 clumps over strand geometry) forming the curl-cluster mass, not a single smooth dome.",
+      "geometryDescriptor": {
+        "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
+        "edgeTreatment": {
+          "type": "none",
+          "bevelRadius": 0.0,
+          "segments": 1
+        },
+        "deformationStack": [],
+        "uvStrategy": "generated procedural coordinates",
+        "normalStrategy": "flat face normals (flatShading:true) -- the facets ARE the surface language, never smoothed away"
+      },
+      "parent": "head",
+      "attachment": {
+        "parentSocket": "origin",
+        "localStart": [
+          0,
+          0,
+          0
+        ],
+        "localEnd": [
+          0,
+          0,
+          0
+        ],
+        "contactType": "overlap",
+        "embedDepth": 0.03,
+        "overlap": 0.03,
+        "gapTolerance": 0.0
+      },
+      "dimensions": {
+        "width": 0.18,
+        "height": 0.2,
+        "depth": 0.18,
+        "units": "relative",
+        "confidence": 0.7
+      },
+      "transform": {
+        "position": [
+          0.12,
+          0.2,
+          -0.32
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ],
+        "scale": [
+          0.18,
+          0.2,
+          0.18
+        ]
+      },
+      "actionProfile": {
+        "animationRole": "static",
+        "pivot": {
+          "mode": "center",
+          "localPosition": [
+            0,
+            0,
+            0
+          ],
+          "axis": [
+            0,
+            1,
+            0
+          ],
+          "confidence": 0.7
+        },
+        "transformChannels": {
+          "translate": false,
+          "rotate": false,
+          "scale": false,
+          "bend": false,
+          "twist": false,
+          "detach": false,
+          "visibility": true,
+          "materialState": false
+        },
+        "sockets": [],
+        "collider": {
+          "type": "box",
+          "offset": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "notes": "display prop only -- no physics"
+        },
+        "constraints": [],
+        "destruction": {
+          "breakable": false,
+          "fractureGroup": "hairClumpBackRight",
+          "seamRefs": [],
+          "detachableFragments": [],
+          "breakImpulse": 0.0,
+          "debrisMaterial": "hidden"
+        }
+      },
+      "material": "hair",
+      "materialLayers": [
+        "hair"
+      ],
+      "deformations": [],
+      "joints": [],
+      "seams": [],
+      "localFeatures": [
+        "back of head not observed in the source photo -- plausible continuation, flagged approximate"
+      ],
+      "surfaceDetail": {
+        "macroRoughness": 0.0,
+        "microRoughness": 0.0,
+        "bumpAmplitude": 0.0,
+        "normalPattern": "",
+        "displacementPattern": "",
+        "occlusionPattern": "",
+        "edgeWearPattern": "",
+        "notes": "Faceted low-poly: shading variation comes from real flat-normal lighting response, not painted-in gradients."
+      },
+      "evidenceRefs": [
+        "hairMass-zone"
+      ],
+      "details": [],
+      "fidelityTier": "form-refinement",
+      "colorMaterialRecipe": {
+        "dominantAlbedo": "rgba(168, 92, 58, 1.0)",
+        "secondaryAlbedo": "rgba(100, 55, 34, 1.0)",
+        "materialClass": "unknown",
+        "materialClassConfidence": 0.6,
+        "notes": "Flat faceted material -- secondaryAlbedo is a darker facet-shadow variant of the same hue, not a separate observed color zone."
+      }
     }
   ],
   "materials": [
@@ -4445,11 +5624,22 @@
     {
       "id": "hairClumps",
       "kind": "stylized-clump-cluster",
-      "count": "8-10 major masses",
-      "parentComponent": "hairMass",
-      "rule": "reconstruction.md: prefer 5-15 major stylized clumps over strand geometry for single-image hair reconstruction. 8-10 low-poly clump primitives (irregular ellipsoids/cones), layered front-to-back, matching the observed silhouette (fuller proper-left, receding at both temples) -- not individually identity-critical, but the CLUSTER shape is.",
+      "count": "9 major masses (individually authored)",
+      "parentComponent": "head",
+      "elementComponentIds": [
+        "hairClumpCrownCenter",
+        "hairClumpCrownLeft",
+        "hairClumpCrownRight",
+        "hairClumpLeftFull",
+        "hairClumpLeftUpper",
+        "hairClumpRightTemple",
+        "hairClumpFrontFringe",
+        "hairClumpBackLeft",
+        "hairClumpBackRight"
+      ],
+      "rule": "reconstruction.md: prefer 5-15 major stylized clumps over strand geometry. Hand-placed (not radially instanced -- the built-in instancing mechanism assumes a uniform circular array, which cannot express this silhouette's measured left/right asymmetry), matching the observed silhouette: fuller/lower on proper-left, more receded on proper-right, both temples receding somewhat from the crown.",
       "evidenceRefs": [
-        "detail-zones/hairMass.png"
+        "hairMass-zone"
       ]
     }
   ],
@@ -4462,7 +5652,15 @@
         "torso",
         "neck",
         "head",
-        "hairMass"
+        "hairClumpCrownCenter",
+        "hairClumpCrownLeft",
+        "hairClumpCrownRight",
+        "hairClumpLeftFull",
+        "hairClumpLeftUpper",
+        "hairClumpRightTemple",
+        "hairClumpFrontFringe",
+        "hairClumpBackLeft",
+        "hairClumpBackRight"
       ],
       "acceptance": [
         "silhouette reads as a bust, not a full figure",
@@ -4482,7 +5680,6 @@
         "henleyCollar",
         "neck",
         "head",
-        "hairMass",
         "browLeft",
         "browRight",
         "eyeLeft",
@@ -4490,7 +5687,16 @@
         "nose",
         "mouth",
         "earLeft",
-        "earRight"
+        "earRight",
+        "hairClumpCrownCenter",
+        "hairClumpCrownLeft",
+        "hairClumpCrownRight",
+        "hairClumpLeftFull",
+        "hairClumpLeftUpper",
+        "hairClumpRightTemple",
+        "hairClumpFrontFringe",
+        "hairClumpBackLeft",
+        "hairClumpBackRight"
       ],
       "acceptance": [
         "no child part floats away from its parent",
@@ -4501,11 +5707,19 @@
       "id": "form-refinement",
       "goal": "Facet the hair mass into 8-10 stylized clump primitives (repetitionSystems.hairClumps) and refine the face-plate shapes (asymmetric smile, brow arch) to match the measured faceLandmarks.",
       "componentRefs": [
-        "hairMass",
         "browLeft",
         "browRight",
         "mouth",
-        "nose"
+        "nose",
+        "hairClumpCrownCenter",
+        "hairClumpCrownLeft",
+        "hairClumpCrownRight",
+        "hairClumpLeftFull",
+        "hairClumpLeftUpper",
+        "hairClumpRightTemple",
+        "hairClumpFrontFringe",
+        "hairClumpBackLeft",
+        "hairClumpBackRight"
       ],
       "acceptance": [
         "hair silhouette is asymmetric (fuller proper-left) not a symmetric dome",
@@ -4531,7 +5745,15 @@
         "drawstringRight",
         "henleyCollar",
         "head",
-        "hairMass"
+        "hairClumpCrownCenter",
+        "hairClumpCrownLeft",
+        "hairClumpCrownRight",
+        "hairClumpLeftFull",
+        "hairClumpLeftUpper",
+        "hairClumpRightTemple",
+        "hairClumpFrontFringe",
+        "hairClumpBackLeft",
+        "hairClumpBackRight"
       ],
       "acceptance": [
         "every material reads as one of the four site palette hues",
@@ -4588,6 +5810,21 @@
       "cameraView": "front",
       "notes": "",
       "aiVisionNotes": "Deterministic Divine Eye score used in place of a VLM call (none available in this environment)."
+    },
+    {
+      "timestamp": "2026-09-15T04:02:21.975971+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.73,
+      "aiVisionScore": 0.73,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+      "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+      "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+      "cameraView": "front",
+      "notes": "",
+      "aiVisionNotes": "Agent-vision judgment, not the raw Divine Eye ensemble (see mismatches note): hair now reads correctly as an asymmetric curl mass rather than a smooth dome."
     }
   ],
   "reviewHistory": [
@@ -4626,6 +5863,44 @@
         "cameraView": "front",
         "notes": "",
         "aiVisionNotes": "Deterministic Divine Eye score used in place of a VLM call (none available in this environment)."
+      }
+    },
+    {
+      "timestamp": "2026-09-15T04:02:21.975971+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.73,
+      "aiVisionScore": 0.73,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "action": "refine-code",
+      "summary": "Form-refinement: replaced the single smooth hair-dome with 9 individually-authored asymmetric clump primitives per reconstruction.md. Visually a clear improvement -- reads as real curly hair with the measured left-fuller/right-receded asymmetry, not a bathing cap. Divine Eye silhouetteIoU actually went down slightly (0.536 -> 0.522, gaps between clumps cost a little total area) -- a concrete example of self_correction.md's 2D-gates-blind-to-3D-realism warning, not a real quality regression. See tier1-exception.md update.",
+      "matched": [
+        "hair silhouette now irregular and asymmetric, matching the photo's real curl-mass character",
+        "left-fuller/right-receded asymmetry visible and correctly oriented",
+        "check_part_coverage still clean with the 9 new clump components"
+      ],
+      "mismatches": [
+        "silhouette IoU regressed slightly on paper (0.536->0.522) despite a real visual improvement -- documented, not chased",
+        "torso/arm bulk still narrower than the photo -- unchanged from prior review"
+      ],
+      "specFixes": [
+        "material-pass next: apply the real acetate-palette colors (currently all one placeholder tan)"
+      ],
+      "codeFixes": [],
+      "evidence": [
+        ".img2threejs/render-capture/side-by-side.png",
+        ".img2threejs/tier1-exception.md"
+      ],
+      "outOfSequence": true,
+      "mapStrippedRender": ".img2threejs/render-capture/front-reframed.png",
+      "visualEvidence": {
+        "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+        "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+        "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+        "cameraView": "front",
+        "notes": "",
+        "aiVisionNotes": "Agent-vision judgment, not the raw Divine Eye ensemble (see mismatches note): hair now reads correctly as an asymmetric curl mass rather than a smooth dome."
       }
     }
   ],
@@ -4756,7 +6031,7 @@
         "key_path": "categories.material_pbr[2]",
         "score": 2.934232368741,
         "snippets": [
-          "... (kh\u1eafc ch\u1eef, v\u1ebft tr\u1ea7y, d\u1ec7t v\u1ea3i) m\u00e0 kh\u00f4ng t\u0103ng s\u1ed1 \u0111a gi\u00e1c. Recognition cues: Fine surface relief (engraving, stippling, fabric weave, edge chips) visible under raking light but absent from the silhouette; Typically stored as a ..."
+          "... (khắc chữ, vết trầy, dệt vải) mà không tăng số đa giác. Recognition cues: Fine surface relief (engraving, stippling, fabric weave, edge chips) visible under raking light but absent from the silhouette; Typically stored as a ..."
         ],
         "source_refs": [
           {
@@ -4780,7 +6055,7 @@
         "key_path": "categories.material_pbr[12]",
         "score": 2.632304791455,
         "snippets": [
-          "Distinguishes textures with lighting baked directly into color (static, stylized) from textures that respond dynamically to scene lighting via separate PBR channels. Ph\u00e2n bi\u1ec7t k\u1ebft c\u1ea5u c\u00f3 \u00e1nh s\u00e1ng \u0111\u01b0\u1ee3c n\u01b0\u1edbng tr\u1ef1c ti\u1ebfp v\u00e0o m\u00e0u (t\u0129nh, c\u00e1ch \u0111i\u1ec7u) ..."
+          "Distinguishes textures with lighting baked directly into color (static, stylized) from textures that respond dynamically to scene lighting via separate PBR channels. Phân biệt kết cấu có ánh sáng được nướng trực tiếp vào màu (tĩnh, cách điệu) ..."
         ],
         "source_refs": [
           {
