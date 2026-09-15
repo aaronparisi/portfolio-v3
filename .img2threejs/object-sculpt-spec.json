@@ -748,17 +748,13 @@
       "interaction-pass",
       "optimization-pass"
     ],
-    "currentPass": "blockout",
-    "completedPasses": [],
-    "lastCompletedPass": "",
-    "blockedReason": "blockout requires a browser screenshot and self-correction review before structural-pass unlocks",
-    "nextRequiredEvidence": [
-      "blockout browser render screenshot from your agent's browser/screenshot tool",
-      "side-by-side reference/render comparison sheet",
-      "AI vision score >= 0.7 with layer scores and mismatch critique",
-      "critical semantic feature scores from the same image pair meeting their individual thresholds",
-      "reviewHistory entry for blockout with action=continue"
-    ]
+    "currentPass": "structural-pass",
+    "completedPasses": [
+      "blockout"
+    ],
+    "lastCompletedPass": "blockout",
+    "blockedReason": "",
+    "nextRequiredEvidence": []
   },
   "lookDevTargets": {
     "qualityPriority": "stylized-flat-faceted",
@@ -1176,10 +1172,10 @@
       "level": "macro",
       "role": "body",
       "importance": 0.95,
-      "confidence": 0.8,
+      "confidence": 0.85,
       "primitive": "tapered-sweep",
       "topologyClass": "assembled-solid",
-      "topologyRationale": "Torso is a tapered-sweep frustum (wide shoulders at the top station, narrower waist at the bottom crop) rather than a point-topped cone.",
+      "topologyRationale": "Torso is a tapered-sweep measured directly from the reference photo's alpha silhouette at 7 height slices (see .img2threejs/image-analysis.md and the measure-widths capture): narrow at the shoulder/neck junction, widening toward the crop as the arms held at the sides bulk out the hoodie, with a slight pinch at the very bottom where the hands come together -- not a guessed realistic-body taper.",
       "geometryDescriptor": {
         "topologyIntent": "stylized low-poly character part, flat-shaded facets left visible",
         "edgeTreatment": {
@@ -1198,28 +1194,58 @@
                 -0.5,
                 0.0
               ],
-              "rx": 0.25,
-              "rz": 0.1375,
+              "rx": 0.4163,
+              "rz": 0.20815,
               "twist": 0.0
             },
             {
               "position": [
                 0.0,
-                -0.15,
+                -0.26,
                 0.0
               ],
-              "rx": 0.3375,
-              "rz": 0.18562500000000004,
+              "rx": 0.4946,
+              "rz": 0.2473,
               "twist": 0.0
             },
             {
               "position": [
                 0.0,
-                0.35,
+                -0.09,
                 0.0
               ],
-              "rx": 0.4625,
-              "rz": 0.254375,
+              "rx": 0.4656,
+              "rz": 0.2328,
+              "twist": 0.0
+            },
+            {
+              "position": [
+                0.0,
+                0.07,
+                0.0
+              ],
+              "rx": 0.4319,
+              "rz": 0.21595,
+              "twist": 0.0
+            },
+            {
+              "position": [
+                0.0,
+                0.24,
+                0.0
+              ],
+              "rx": 0.3957,
+              "rz": 0.19785,
+              "twist": 0.0
+            },
+            {
+              "position": [
+                0.0,
+                0.4,
+                0.0
+              ],
+              "rx": 0.3244,
+              "rz": 0.1622,
               "twist": 0.0
             },
             {
@@ -1228,8 +1254,8 @@
                 0.5,
                 0.0
               ],
-              "rx": 0.5,
-              "rz": 0.275,
+              "rx": 0.1857,
+              "rz": 0.09285,
               "twist": 0.0
             }
           ],
@@ -1256,9 +1282,9 @@
         "gapTolerance": 0.0
       },
       "dimensions": {
-        "width": 1.95,
+        "width": 2.7,
         "height": 1.78,
-        "depth": 1.0725,
+        "depth": 1.35,
         "units": "relative",
         "confidence": 0.8
       },
@@ -1274,9 +1300,9 @@
           0
         ],
         "scale": [
-          1.95,
+          2.7,
           1.78,
-          1.0725
+          1.35
         ]
       },
       "actionProfile": {
@@ -4547,8 +4573,62 @@
       ]
     }
   ],
-  "visualEvidence": [],
-  "reviewHistory": [],
+  "visualEvidence": [
+    {
+      "timestamp": "2026-09-15T03:47:16.110817+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.5,
+      "aiVisionScore": 0.5,
+      "visualAcceptanceThreshold": 0.85,
+      "layerScores": {},
+      "featureReviews": [],
+      "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+      "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+      "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+      "cameraView": "front",
+      "notes": "",
+      "aiVisionNotes": "Deterministic Divine Eye score used in place of a VLM call (none available in this environment)."
+    }
+  ],
+  "reviewHistory": [
+    {
+      "timestamp": "2026-09-15T03:47:16.110817+00:00",
+      "passId": "blockout",
+      "estimatedFidelity": 0.5,
+      "aiVisionScore": 0.5,
+      "visualAcceptanceThreshold": 0.85,
+      "layerScores": {},
+      "featureReviews": [],
+      "action": "refine-code",
+      "summary": "Divine Eye: reject/refine-code (silhouette IoU 0.536, scale delta 0.477, both below hard-gate thresholds; objectness 0.546). This is the tool's honest, unmodified verdict. Per grimoire/review/self_correction.md's own photo-vs-procedural caveat, chasing this score further for a deliberately stylized low-poly bust risks distorting the model rather than improving it. User reviewed the side-by-side comparison and explicitly authorized proceeding to structural-pass despite the score -- see .img2threejs/tier1-exception.md for the full reasoning and sculptPipeline.completedPasses for the manual advance this authorized.",
+      "matched": [
+        "bilateral symmetry (0.0106, well within tolerance)",
+        "multi-angle holds as a real volume, not a degenerate flat plane (diagnose_render_multi_angle: degenerate=false, min ratio 1.02)",
+        "torso taper direction and width now measured from the real photo's alpha silhouette, not guessed"
+      ],
+      "mismatches": [
+        "silhouette IoU 0.536 vs 0.85 required -- torso/arm bulk still narrower than photo, hair is a smooth dome vs photo's irregular curl silhouette",
+        "scale delta 0.477 -- render's overall subject-to-frame proportion doesn't match the photo's crop"
+      ],
+      "specFixes": [
+        "form-refinement pass: facet hairMass into 8-10 clump masses per reconstruction.md, which should also improve silhouette match since the current smooth dome undershoots the real hair's width/irregularity"
+      ],
+      "codeFixes": [],
+      "evidence": [
+        ".img2threejs/render-capture/side-by-side.png",
+        ".img2threejs/tier1-exception.md"
+      ],
+      "mapStrippedRender": ".img2threejs/render-capture/front-reframed.png",
+      "visualEvidence": {
+        "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+        "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+        "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+        "cameraView": "front",
+        "notes": "",
+        "aiVisionNotes": "Deterministic Divine Eye score used in place of a VLM call (none available in this environment)."
+      }
+    }
+  ],
   "lodPlan": [
     {
       "tier": "near",
@@ -4741,5 +4821,104 @@
     "forward": "+Z",
     "bones": [],
     "note": "No skeleton/SkinnedMesh -- each componentTree entry is its own rigid Object3D pivot (parent/transform), which is what actionReadiness.defaultRigType='action-ready-static-rig' actually calls for. Bones are reserved for chains that need bind-skin deformation (arms/legs/spine), none of which exist on this bust."
-  }
+  },
+  "tier1Results": [
+    {
+      "passed": false,
+      "checks": {
+        "silhouetteIoU": 0.0762,
+        "aspectRatioDelta": 0.6952,
+        "scaleDelta": 0.8982,
+        "bilateralSymmetryError": 0.0053,
+        "colorDelta": {
+          "checked": 18,
+          "maxDeltaE": 35.61,
+          "perComponent": [
+            {
+              "componentId": null,
+              "deltaE": 25.13
+            },
+            {
+              "componentId": null,
+              "deltaE": 35.61
+            },
+            {
+              "componentId": null,
+              "deltaE": 35.61
+            },
+            {
+              "componentId": null,
+              "deltaE": 19.99
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 19.99
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 32.2
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 22.0
+            },
+            {
+              "componentId": null,
+              "deltaE": 22.0
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            },
+            {
+              "componentId": null,
+              "deltaE": 27.28
+            }
+          ],
+          "gated": false
+        }
+      },
+      "failures": [
+        "silhouette IoU 0.076 is below threshold 0.85",
+        "aspect-ratio delta 0.695 exceeds threshold 0.05",
+        "scale delta 0.898 exceeds threshold 0.08",
+        "blockout requires --map-stripped-render evidence"
+      ],
+      "maskWarnings": [],
+      "renderHash": "9680cff241523fcf",
+      "passId": "blockout"
+    }
+  ]
 }

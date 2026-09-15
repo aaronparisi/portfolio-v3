@@ -48,6 +48,30 @@ export function AaronBust3D() {
     if (rootPivot) rootPivot.visible = false;
     scene.add(model);
 
+    // img2threejs's check_part_coverage.py assembly gate needs a runtime
+    // dump of the actual built part tree -- exposed only in dev, read by
+    // the pipeline's Playwright capture, never shipped meaningfully in a
+    // production build's behavior.
+    if (import.meta.env.DEV) {
+      const parts: { name: string; kind: string; triangles: number }[] = [];
+      let unnamedMeshes = 0;
+      model.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          const triangles = obj.geometry.index
+            ? obj.geometry.index.count / 3
+            : obj.geometry.attributes.position.count / 3;
+          if (!obj.name) unnamedMeshes += 1;
+          else parts.push({ name: obj.name, kind: "part", triangles: Math.round(triangles) });
+        }
+      });
+      (window as unknown as { __aaronBustParts: unknown }).__aaronBustParts = {
+        model: "aaron-faceted-bust",
+        parts,
+        unnamedMeshes,
+        integralMeshes: parts.length,
+      };
+    }
+
     const lights = createAaronFacetedBustLookDevLights("neutral");
     scene.add(lights);
     scene.environment = createAaronFacetedBustEnvironment(renderer);
