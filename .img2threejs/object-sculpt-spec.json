@@ -4971,17 +4971,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.6,
         "variation": 0.1,
@@ -4991,23 +4980,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5036,7 +5008,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Amber (--accent) reused directly as skin tone -- the lightest, warmest palette color, and the same one the hero portrait's own highlight plane uses for skin."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Amber (--accent) reused directly as skin tone -- the lightest, warmest palette color, and the same one the hero portrait's own highlight plane uses for skin.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "hair",
@@ -5058,17 +5038,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.8,
         "variation": 0.1,
@@ -5078,23 +5047,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5123,7 +5075,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Sienna (--accent-warm) -- a plausible warm dark-brown hair read, distinct in value from the amber skin. Stylized clump masses (reconstruction.md), never strand geometry."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Sienna (--accent-warm) -- a plausible warm dark-brown hair read, distinct in value from the amber skin. Stylized clump masses (reconstruction.md), never strand geometry.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "hoodieFleece",
@@ -5145,17 +5105,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.95,
         "variation": 0.05,
@@ -5165,23 +5114,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5210,7 +5142,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Indigo (the portrait's shadow plane) -- the darkest palette color, matching the real garment being the darkest thing in the source photo even though the hue itself (indigo, not the real wine/aubergine) is a deliberate palette-lock substitution."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Indigo (the portrait's shadow plane) -- the darkest palette color, matching the real garment being the darkest thing in the source photo even though the hue itself (indigo, not the real wine/aubergine) is a deliberate palette-lock substitution.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "henleyKnit",
@@ -5232,17 +5172,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.5,
         "variation": 0.0,
@@ -5252,23 +5181,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5290,7 +5202,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Ink -- distinguished from the indigo hoodie by a lower roughness (subtler sheen) rather than a different hue, keeping the whole model inside the same four-color family."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Ink -- distinguished from the indigo hoodie by a lower roughness (subtler sheen) rather than a different hue, keeping the whole model inside the same four-color family.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "metal",
@@ -5312,17 +5232,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.3,
         "variation": 0.0,
@@ -5332,23 +5241,6 @@
       "metalness": {
         "base": 1.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5370,7 +5262,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Same ink base color as the henley, but metalness:1 + low roughness reads as brushed metal under real lighting -- same hue, completely different material response, standard PBR practice."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Same ink base color as the henley, but metalness:1 + low roughness reads as brushed metal under real lighting -- same hue, completely different material response, standard PBR practice.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "cord",
@@ -5392,17 +5292,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.7,
         "variation": 0.0,
@@ -5412,23 +5301,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5450,7 +5322,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Amber again (lightest palette color) so the drawstrings pop against the indigo hoodie the way the real white cord popped against the real dark fleece."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Amber again (lightest palette color) so the drawstrings pop against the indigo hoodie the way the real white cord popped against the real dark fleece.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "eye",
@@ -5472,17 +5352,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 0.15,
         "variation": 0.0,
@@ -5492,23 +5361,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5537,7 +5389,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Off-white sclera (site's --ink token) with a low roughness for the glossy-sphere-plus-catchlight treatment reconstruction.md calls for; iris/catchlight are separate small child meshes, not a texture."
+      "notes": "Deliberately flat, no procedural surface texture: this is a faceted low-poly material -- shading variation comes from real-time lighting hitting flat per-face normals (flatShading:true), not from a painted macro/meso/micro noise stack. Matches the hero portrait's own flat acetate-plane treatment. Off-white sclera (site's --ink token) with a low roughness for the glossy-sphere-plus-catchlight treatment reconstruction.md calls for; iris/catchlight are separate small child meshes, not a texture.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     },
     {
       "id": "hidden",
@@ -5559,17 +5419,6 @@
         "amplitude": 0.0,
         "heightCorrelation": 0.0
       },
-      "textureResolution": 64,
-      "textureProjection": {
-        "mode": "none",
-        "repeat": [
-          1.0,
-          1.0
-        ],
-        "anisotropy": 1,
-        "texelDensityIntent": "no texture -- flat vertex-color/material color only"
-      },
-      "surfaceFrequencyBands": [],
       "roughness": {
         "base": 1.0,
         "variation": 0.0,
@@ -5579,23 +5428,6 @@
       "metalness": {
         "base": 0.0,
         "variation": 0.0
-      },
-      "normal": {
-        "pattern": "none",
-        "strength": 0.0,
-        "scale": 1.0,
-        "space": "tangent"
-      },
-      "bump": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0
-      },
-      "displacement": {
-        "pattern": "none",
-        "amplitude": 0.0,
-        "scale": 1.0,
-        "silhouetteAffects": false
       },
       "ambientOcclusion": {
         "cavityStrength": 0.0,
@@ -5617,7 +5449,15 @@
         "flatShading:true is load-bearing -- the facets are the entire surface language.",
         "No texture maps of any kind; MeshStandardMaterial with a flat color + roughness/metalness only."
       ],
-      "notes": "Not rendered -- root is an empty THREE.Group, never a visible mesh."
+      "notes": "Not rendered -- root is an empty THREE.Group, never a visible mesh.",
+      "textureless": {
+        "declared": true,
+        "reason": "Deliberately flat, no procedural or reference texture of any kind -- this is a faceted low-poly material, shading comes from flatShading:true hitting real lights, not a synthesized texture map. This flag was described in every material's own notes field from the start but never actually set -- the real cause of every component rendering the same washed-white-under-warm-light tan instead of its declared baseColor.",
+        "evidence": [
+          "image-analysis.md Layer 5/6 (materials & surface, color & finish)",
+          "objectClass.notes palette-lock decision"
+        ]
+      }
     }
   ],
   "repetitionSystems": [
@@ -5825,6 +5665,21 @@
       "cameraView": "front",
       "notes": "",
       "aiVisionNotes": "Agent-vision judgment, not the raw Divine Eye ensemble (see mismatches note): hair now reads correctly as an asymmetric curl mass rather than a smooth dome."
+    },
+    {
+      "timestamp": "2026-09-15T04:13:59.358654+00:00",
+      "passId": "material-pass",
+      "estimatedFidelity": 0.72,
+      "aiVisionScore": 0.72,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+      "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+      "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+      "cameraView": "front",
+      "notes": "",
+      "aiVisionNotes": "Agent-vision judgment: material zones now read correctly and distinctly, a large improvement over the uniform-tan blockout/form-refinement renders. Silhouette/proportion critique from prior reviews is unchanged (not re-litigated here)."
     }
   ],
   "reviewHistory": [
@@ -5901,6 +5756,43 @@
         "cameraView": "front",
         "notes": "",
         "aiVisionNotes": "Agent-vision judgment, not the raw Divine Eye ensemble (see mismatches note): hair now reads correctly as an asymmetric curl mass rather than a smooth dome."
+      }
+    },
+    {
+      "timestamp": "2026-09-15T04:13:59.358654+00:00",
+      "passId": "material-pass",
+      "estimatedFidelity": 0.72,
+      "aiVisionScore": 0.72,
+      "visualAcceptanceThreshold": 0.7,
+      "layerScores": {},
+      "featureReviews": [],
+      "action": "refine-code",
+      "summary": "Found and fixed a real authoring bug: every material had documented in its own prose notes 'deliberately flat, no procedural texture' but never actually set the textureless.declared flag the generator checks for -- so createSculptMaterial's texture branch fired anyway, forcing every mesh to color:0xffffff + a synthesized texture, which is why every component rendered the same washed tan regardless of its distinct declared baseColor. Set textureless.declared=true with evidence on all 8 materials, removed the now-contradictory normal/bump/displacement/surfaceFrequencyBands/textureProjection/textureResolution fields. Real per-component colors (indigo hoodie, amber skin, sienna hair, dark metal zipper) now render correctly.",
+      "matched": [
+        "distinct material zones now visible and correctly assigned per component",
+        "check_part_coverage still clean (25/25) after the material fix",
+        "palette matches the site's own acetate-plane tokens (app/app.css)"
+      ],
+      "mismatches": [
+        "eyes read a bit bright/glowy (low roughness catchlight material may want dialing back once real lighting -- not the generic lookDev preset -- is wired in)",
+        "lighting is still the generic img2threejs lookDev preset, not the site's own amber light-cone -- deferred to lighting-pass/actual site integration"
+      ],
+      "specFixes": [
+        "lighting-pass: replace the generic neutral lookDev lights with the site's own key/fill/rim already recorded in lightingFromPhoto"
+      ],
+      "codeFixes": [],
+      "evidence": [
+        ".img2threejs/render-capture/side-by-side.png"
+      ],
+      "outOfSequence": true,
+      "mapStrippedRender": ".img2threejs/render-capture/front-reframed.png",
+      "visualEvidence": {
+        "referenceScreenshot": "public/images/aaron-photo-cutout.png",
+        "renderScreenshot": ".img2threejs/render-capture/front-reframed.png",
+        "comparisonImage": ".img2threejs/render-capture/side-by-side.png",
+        "cameraView": "front",
+        "notes": "",
+        "aiVisionNotes": "Agent-vision judgment: material zones now read correctly and distinctly, a large improvement over the uniform-tan blockout/form-refinement renders. Silhouette/proportion critique from prior reviews is unchanged (not re-litigated here)."
       }
     }
   ],
