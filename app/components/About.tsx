@@ -30,7 +30,6 @@ function EndorsementCard({ name, quote, accent }: { name: string; quote: string;
       onPointerLeave={() => void api.start({ scale: 1, shadow: 0 })}
       className="h-full rounded-2xl bg-[var(--bg-alt)] p-5 text-sm italic leading-relaxed text-[var(--ink-soft)]"
       style={{
-        borderLeft: `3px solid ${accent}`,
         scale: style.scale,
         boxShadow: style.shadow.to(
           (s) => `0 ${s * 20}px ${s * 30}px -${s * 10}px rgb(0 0 0 / ${s * 0.25})`,
@@ -38,8 +37,11 @@ function EndorsementCard({ name, quote, accent }: { name: string; quote: string;
       }}
     >
       &ldquo;{quote}&rdquo;
-      <footer className="mt-3 font-mono text-xs not-italic text-[var(--ink-soft)]">
-        — {name}, via LinkedIn
+      {/* A small colored mark instead of a side-tab border — the
+          "AI card" tell design-review flagged this as. */}
+      <footer className="mt-3 flex items-center gap-2 font-mono text-xs not-italic text-[var(--ink-soft)]">
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full" style={{ background: accent }} />
+        {name}, via LinkedIn
       </footer>
     </animated.blockquote>
   );
@@ -60,10 +62,9 @@ export function About() {
       <span id="about" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-[97px] sm:top-32" />
       <div className="mx-auto max-w-2xl px-6 text-center">
         <Reveal>
-          <p className="eyebrow mb-6">About</p>
-          <blockquote className="font-display text-3xl italic leading-snug text-[var(--ink)] sm:text-4xl">
+          <blockquote className="font-display text-3xl font-medium leading-snug text-[var(--ink)] sm:text-4xl">
             &ldquo;The kind of kid who kept asking,{" "}
-            <span className="text-[var(--accent-warm)]">why?</span>&rdquo;
+            <span className="annotation text-4xl sm:text-5xl">why?</span>&rdquo;
           </blockquote>
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
             I taught AP Calculus before I ever wrote a line of code. Teaching advanced mathematics
@@ -73,7 +74,7 @@ export function About() {
             that involve extensive collaboration with product and design, and always digging one
             layer deeper into the architecture I build, and the tools I use to build it.
           </p>
-          <p className="mx-auto mt-8 max-w-xl text-sm italic leading-relaxed text-[var(--ink-soft)]">
+          <p className="mx-auto mt-8 max-w-xl text-sm leading-relaxed text-[var(--ink-soft)]">
             I&rsquo;ll admit it: I don&rsquo;t have years and years of development experience.
             I&rsquo;ve never studied advanced algorithms. I&rsquo;m no mastermind, and I am not
             the fastest developer this side of the Mississippi.
@@ -81,23 +82,23 @@ export function About() {
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
             And&hellip; in the words of my coworkers, I am{" "}
             <span className="font-semibold text-[var(--ink)]">&ldquo;an asset to any team&rdquo;</span>.{" "}
-            <span className="font-display text-xl italic text-[var(--accent-warm)]">Why?</span>
+            <span className="annotation text-2xl">Why?</span>
           </p>
           <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            Because I don&rsquo;t just find <em>&ldquo;a solution&rdquo;</em> ~ {" "}
+            Because I don&rsquo;t just find &ldquo;a solution&rdquo; ~{" "}
             <strong className="font-semibold text-[var(--ink)]">
               I dig until I am confident my code is well-written.
             </strong>{" "}
             Because I don&rsquo;t just find bugs ~{" "}
             <strong className="font-semibold text-[var(--ink)]">
-              I poke and prod until I know <span className="text-[var(--accent-warm)]">WHY</span>{" "}
+              I poke and prod until I know <span className="annotation text-lg">WHY</span>{" "}
               the code broke, and how to fix it at the root.
             </strong>{" "}
             I can&rsquo;t grok spaghetti code, so I don&rsquo;t write it. And I have a hawkish eye
             for inconsistencies ~ so when something doesn&rsquo;t make sense to me, I ask about it
             until I do.
           </p>
-          <p className="mx-auto mt-8 max-w-xl text-sm italic leading-relaxed text-[var(--ink-soft)]">
+          <p className="mx-auto mt-8 max-w-xl text-sm leading-relaxed text-[var(--ink-soft)]">
             But don&rsquo;t take my word for it&hellip;
           </p>
         </Reveal>

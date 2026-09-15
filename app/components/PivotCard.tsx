@@ -25,7 +25,7 @@ export function PivotCard({ entry }: { entry: TimelineEntry }) {
       <animated.div
         onPointerEnter={() => !reduced && void api.start({ scale: 1.02, shadow: 1 })}
         onPointerLeave={() => void api.start({ scale: 1, shadow: 0 })}
-        className="pivot-card rounded-r-2xl bg-[var(--bg-alt)] p-6 sm:p-8"
+        className="pivot-card rounded-2xl p-6 sm:p-8"
         style={{
           scale: style.scale,
           boxShadow: style.shadow.to(
@@ -34,14 +34,10 @@ export function PivotCard({ entry }: { entry: TimelineEntry }) {
         }}
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          {/* .eyebrow's own `color: var(--accent)` and this Tailwind
-              utility are equal-specificity class selectors, so source
-              order (not who's "more specific") decides the winner —
-              and .eyebrow, defined after Tailwind's own generated
-              utilities in app.css, was quietly winning every time. An
-              inline style always beats a class, regardless of order. */}
-          <p className="eyebrow" style={{ color: "var(--accent-warm)" }}>
-            The turning point
+          {/* A grease-pencil margin note instead of an eyebrow label — the
+              one card in the timeline someone circled. */}
+          <p className="annotation text-lg" style={{ color: "var(--accent-warm)" }}>
+            the turning point
           </p>
           <span className="font-mono text-xs text-[var(--ink-soft)]">{entry.range}</span>
         </div>

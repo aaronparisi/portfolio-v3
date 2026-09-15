@@ -15,8 +15,7 @@ export function Timeline() {
       <span id="journey" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-[97px] sm:top-32" />
       <div className="mx-auto max-w-3xl px-6">
         <Reveal>
-          <p className="eyebrow">The journey</p>
-          <h2 className="mt-2 font-display text-3xl text-[var(--ink)] sm:text-4xl">
+          <h2 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">
             From chalkboard to codebase
           </h2>
         </Reveal>

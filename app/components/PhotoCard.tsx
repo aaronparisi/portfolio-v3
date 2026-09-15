@@ -1,45 +1,58 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { animated, to, useSpring } from "@react-spring/web";
+import { animated, to, useSprings, useSpring } from "@react-spring/web";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
+// Bottom of the stack to top — the order the sheets would actually be laid
+// down on a projector: darkest plane first, ink line work drawn last, on
+// top, like a grease-pencil outline finishing the drawing. Every PNG here
+// is a real derived asset, not a CSS mask: macOS's Vision framework lifted
+// the subject from the source photo (see public/images/aaron-photo-cutout.png),
+// then each plane was posterized from that cutout's own luminance and edge
+// data — see the generation notes in public/images/hero-planes/README.md.
+const PLANES = ["shadow", "midtone", "highlight", "line"] as const;
+
 /**
- * The hero portrait: a photo card that tilts toward the cursor with real
- * spring physics (an overshoot-and-settle, not a linear follow), floats
- * gently on its own when idle, and shifts the photo slightly opposite
- * the tilt for a bit of parallax depth inside the frame. A soft two-tone
- * shape sits offset behind it for depth.
+ * The hero portrait, restaged for the Overhead Projector world: instead of
+ * a single photo in a rounded frame, Aaron's likeness assembles live from
+ * four acetate overlay sheets dropping into place under the light-cone,
+ * one at a time, the way a teacher builds up a transparency diagram layer
+ * by layer. Once assembled it still tilts toward the cursor with real
+ * spring physics and floats gently on its own when idle — the same
+ * interaction the old card had, carried over rather than dropped.
  */
 export function PhotoCard() {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
 
-  // Combining several separate SpringValues into one transform string
-  // (via the to([a, b, ...], fn) form) renders a subtly different
-  // string on the server than the one the client re-derives on mount —
-  // a real hydration mismatch, not just a lint nit; React throws away
-  // the whole subtree's hydration rather than reconciling it. Both
-  // transforms below are hover/idle-driven and start from a resting
-  // state that looks identical with no inline style at all, so neither
-  // is rendered until after mount, which sidesteps the mismatch instead
-  // of chasing it.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // The sheets dropping into place: each plane starts higher up and
+  // transparent, as if it's about to be laid onto the platen, then settles
+  // with a slight overshoot (low friction relative to tension) — a sheet
+  // dropped onto glass doesn't glide in, it falls the last inch and
+  // settles.
+  const trail = useSprings(
+    PLANES.length,
+    PLANES.map((_, i) => ({
+      from: { opacity: 0, y: -28 },
+      to: { opacity: 1, y: 0 },
+      delay: reduced ? 0 : 260 + i * 260,
+      immediate: reduced,
+      config: { tension: 300, friction: 16 },
+    })),
+  );
 
   const [style, api] = useSpring(() => ({
     rx: 0,
     ry: 0,
     scale: 1,
-    imgX: 0,
-    imgY: 0,
     config: { tension: 260, friction: 18 },
   }));
 
-  // A continuous, very small drift — the card feels alive even before
-  // you touch it. Visits four waypoints in a loose loop (rather than
-  // bobbing straight up and down) so it wanders in every direction
-  // instead of along one axis — closer to how something actually
-  // floats. Runs independently of the tilt spring above so hovering
-  // doesn't have to fight it or reset it.
+  // A continuous, very small drift — the stack feels lit and alive even
+  // before you touch it. See PhotoCard's original comment: visits four
+  // waypoints in a loose loop rather than bobbing on one axis.
   const [float, floatApi] = useSpring(() => ({ x: 0, y: 0 }));
   useEffect(() => {
     if (reduced) return;
@@ -67,25 +80,26 @@ export function PhotoCard() {
     if (!rect) return;
     const px = (e.clientX - rect.left) / rect.width - 0.5;
     const py = (e.clientY - rect.top) / rect.height - 0.5;
-    void api.start({ ry: px * 16, rx: -py * 16, imgX: -px * 18, imgY: -py * 18 });
+    void api.start({ ry: px * 12, rx: -py * 12 });
   }
 
   function handleLeave() {
-    void api.start({ rx: 0, ry: 0, scale: 1, imgX: 0, imgY: 0 });
+    void api.start({ rx: 0, ry: 0, scale: 1 });
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-[22rem]" style={{ perspective: "1400px" }}>
-      <div
-        aria-hidden="true"
-        className="photo-blob absolute -inset-5 -z-10 rotate-3 rounded-[2.5rem] opacity-80"
-      />
+    <div className="relative mx-auto w-full max-w-[24rem]" style={{ perspective: "1400px" }}>
+      {/* The projector's own light-cone, anchored behind the stack rather
+          than the whole hero, so the portrait reads as the thing actually
+          sitting under the lamp. */}
+      <div aria-hidden="true" className="light-cone lamp-flicker absolute -inset-16 -z-10" />
+
       <animated.div
         ref={ref}
         onPointerMove={handleMove}
         onPointerLeave={handleLeave}
         onPointerEnter={() => !reduced && void api.start({ scale: 1.015 })}
-        className="aspect-[4/5] overflow-hidden rounded-[2rem] border border-[var(--border)] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.35)]"
+        className="relative aspect-square"
         style={
           mounted
             ? {
@@ -99,31 +113,22 @@ export function PhotoCard() {
             : { transformStyle: "preserve-3d" }
         }
       >
-        <animated.img
-          src="/images/aaron-photo.jpg"
-          srcSet="/images/aaron-photo-sm.jpg 800w, /images/aaron-photo.jpg 1400w"
-          sizes="(max-width: 640px) 90vw, 22rem"
-          alt="Aaron Parisi"
-          width={1050}
-          height={1400}
-          className="h-full w-full object-cover"
-          style={{
-            objectPosition: "50% 48%",
-            // The 1.1 scale is baked into this same string (rather than a
-            // separate Tailwind scale-110 class) since an inline `style`
-            // transform completely replaces any class-based transform
-            // rather than combining with it — it needs a little headroom
-            // so the parallax translate below never reveals the frame's
-            // edge. Applied unconditionally (not gated on `mounted` like
-            // the card's own transform above) since 1.1 is a fixed
-            // baseline scale, not something that only exists once a
-            // spring starts moving — omitting it pre-mount would show a
-            // visibly smaller, unzoomed photo for a moment.
-            transform: mounted
-              ? to([style.imgX, style.imgY], (x, y) => `scale(1.1) translate3d(${x}px, ${y}px, 0)`)
-              : "scale(1.1)",
-          }}
-        />
+        {PLANES.map((plane, i) => (
+          <animated.img
+            key={plane}
+            src={`/images/hero-planes/${plane}.png`}
+            alt={i === PLANES.length - 1 ? "Aaron Parisi" : ""}
+            aria-hidden={i === PLANES.length - 1 ? undefined : true}
+            width={1100}
+            height={1100}
+            className="absolute inset-0 h-full w-full select-none"
+            draggable={false}
+            style={{
+              opacity: trail[i].opacity,
+              transform: trail[i].y.to((y) => `translate3d(0, ${y}px, 0)`),
+            }}
+          />
+        ))}
       </animated.div>
     </div>
   );

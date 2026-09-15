@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { animated, useSpring, useTrail, type SpringValue } from "@react-spring/web";
 import { PhotoCard } from "./PhotoCard";
 import { AnimatedEquation } from "./AnimatedEquation";
@@ -5,7 +6,7 @@ import { SpringButton } from "./SpringButton";
 import { ChevronDownIcon } from "./icons";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const TRAIL_ITEMS = 5; // eyebrow, heading, bio, equation morph, cta row
+const TRAIL_ITEMS = 4; // heading, bio, equation morph, cta row — no eyebrow
 
 // `y` isn't a real CSS property — binding {opacity, y} straight to
 // `style` (as an object) silently does nothing for the y part, since
@@ -17,6 +18,26 @@ function riseStyle({ opacity, y }: { opacity: SpringValue<number>; y: SpringValu
 
 export function Hero() {
   const reduced = usePrefersReducedMotion();
+
+  // A gentle, physics-driven bob for the scroll cue — real spring settling
+  // rather than Tailwind's animate-bounce, whose elastic keyframe is a
+  // dated, mechanical-looking loop, not an object actually decelerating.
+  const [chevron, chevronApi] = useSpring(() => ({ y: 0 }));
+  useEffect(() => {
+    if (reduced) return;
+    void chevronApi.start({
+      to: async (next) => {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+          await next({ y: 6, config: { tension: 120, friction: 14 } });
+          await next({ y: 0, config: { tension: 170, friction: 20 } });
+        }
+      },
+    });
+    return () => {
+      chevronApi.stop();
+    };
+  }, [reduced, chevronApi]);
 
   const trail = useTrail(TRAIL_ITEMS, {
     from: { opacity: 0, y: 24 },
@@ -34,41 +55,35 @@ export function Hero() {
   });
 
   return (
-    <section className="relative overflow-hidden pb-24 pt-28 sm:pb-32 sm:pt-36">
+    <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32">
+      {/* The room's ambient light — the softer, wider half of the same
+          lamp that focuses down onto the portrait in PhotoCard itself.
+          One light source for the whole page, not a decorative gradient. */}
+      <div aria-hidden="true" className="light-cone absolute inset-x-0 top-0 -z-10 h-[36rem] opacity-60" />
+
       <div className="mx-auto grid max-w-5xl gap-16 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-8">
         <div className="text-center lg:text-left">
-          <animated.p
-            style={riseStyle(trail[0])}
-            className="eyebrow mb-5 flex items-center justify-center gap-2 lg:justify-start"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--accent)]" />
-            </span>
-            Frontend Developer
-          </animated.p>
-
           <animated.h1
-            style={riseStyle(trail[1])}
+            style={riseStyle(trail[0])}
             className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
           >
-            Aaron <em className="text-[var(--accent)]">Parisi</em>
+            Aaron <em className="not-italic text-[var(--accent)]">Parisi</em>
           </animated.h1>
 
           <animated.p
-            style={riseStyle(trail[2])}
+            style={riseStyle(trail[1])}
             className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
           >
-            Calculus teacher turned self-taught developer. I build interfaces with React,
+            Frontend developer, formerly an AP Calculus teacher. I build interfaces with React,
             TypeScript, and a habit of digging one layer deeper.
           </animated.p>
 
-          <animated.div style={riseStyle(trail[3])} className="mt-8 flex justify-center lg:justify-start">
+          <animated.div style={riseStyle(trail[2])} className="mt-8 flex justify-center lg:justify-start">
             <AnimatedEquation />
           </animated.div>
 
           <animated.div
-            style={riseStyle(trail[4])}
+            style={riseStyle(trail[3])}
             className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
           >
             <SpringButton href="#journey" className="btn-primary rounded-full px-6 py-3 font-medium">
@@ -96,7 +111,12 @@ export function Hero() {
         aria-label="Scroll down"
         className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 text-[var(--ink-soft)] transition-colors hover:text-[var(--ink)] sm:block"
       >
-        <ChevronDownIcon className="h-5 w-5 animate-bounce" />
+        <animated.span
+          className="block"
+          style={{ transform: chevron.y.to((y) => `translate3d(0, ${y}px, 0)`) }}
+        >
+          <ChevronDownIcon className="h-5 w-5" />
+        </animated.span>
       </a>
     </section>
   );

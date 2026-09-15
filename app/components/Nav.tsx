@@ -1,5 +1,4 @@
 import { animated, useSpring } from "@react-spring/web";
-import { ThemeToggle } from "./ThemeToggle";
 import { MotionToggle } from "./MotionToggle";
 import { BrandMark } from "./BrandMark";
 import { SpringButton } from "./SpringButton";
@@ -32,7 +31,6 @@ export function Nav() {
             Get in touch
           </SpringButton>
           <MotionToggle />
-          <ThemeToggle />
         </div>
       </nav>
     </header>
