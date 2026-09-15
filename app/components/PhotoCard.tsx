@@ -163,37 +163,34 @@ export function PhotoCard() {
               className="absolute inset-0 h-full w-full select-none object-cover"
               style={{
                 objectPosition: "50% 100%",
-                // Gruvbox-theme experiment: a much stronger sepia than the
-                // fancy-design version's light grade (0.4). At 0.4, a dark
-                // saturated color like the maroon jacket barely moves --
-                // sepia's matrix pulls hardest on colors with room to
-                // shift, so the face tinted while the jacket stayed
-                // stubbornly itself. Pushed close to full sepia so every
-                // region gets remapped into the same warm tonal family
-                // regardless of its starting hue, then saturate() back up
-                // to keep it a rich duotone-ish gold rather than a washed-
-                // out old photograph.
-                filter: "sepia(0.85) saturate(1.7) hue-rotate(-8deg) brightness(0.92) contrast(1.15)",
+                // Gruvbox-theme experiment: strong sepia (0.85, up from
+                // fancy-design's 0.4 -- see that commit) so every region,
+                // including the dark saturated jacket, gets remapped into
+                // one warm tonal family regardless of starting hue. First
+                // attempt then re-saturated hard (1.7) to keep it "rich",
+                // which overshot into vivid gold instead of sepia -- an
+                // actual sepia photograph is muted and brownish, not
+                // saturated. Saturate is now barely above neutral.
+                filter: "sepia(0.85) saturate(1.05) hue-rotate(-4deg) brightness(0.95) contrast(1.08)",
                 transform: to([lens.mx, lens.my], (mx, my) => `translate3d(${-mx}px, ${-my}px, 0) scale(1.12)`),
               }}
               draggable={false}
             />
-            {/* Warm wash matching the light-cone's own amber, strongest at
-                the crown, so the lamp above reads as actually landing on
-                Aaron rather than just glowing behind a photo. Gruvbox-theme
-                experiment: the fancy-design version's wash dropped to fully
-                transparent through the middle (40%-55%) before rising again
-                at the very bottom -- fine when the base filter alone
-                carried the jacket, but with the near-full sepia above doing
-                that job now, this only has to add gentle top-to-bottom
-                direction, so it stays present (never truly 0) the whole way
-                down instead of leaving a flat gap. */}
+            {/* Warm wash matching the light-cone's own amber -- direction,
+                not a second light source. The first pass put 38% accent
+                right over the crown, which is exactly where the face sits
+                (object-position: 50% 100% puts the eye-line in the top
+                third, see PhotoCard's own doc comment) -- strong enough to
+                wash the features out instead of just suggesting light
+                landing there. Cut roughly in half throughout; still
+                present the whole way down (no dead zone, per the earlier
+                fix) but now a suggestion of light, not a veil over it. */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 38%, transparent), color-mix(in oklab, var(--accent) 14%, transparent) 35%, color-mix(in oklab, var(--accent-warm) 12%, transparent) 65%, color-mix(in oklab, var(--accent-warm) 30%, transparent) 100%)",
+                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 16%, transparent), color-mix(in oklab, var(--accent) 6%, transparent) 35%, color-mix(in oklab, var(--accent-warm) 6%, transparent) 65%, color-mix(in oklab, var(--accent-warm) 16%, transparent) 100%)",
               }}
             />
           </div>

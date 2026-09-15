@@ -64,11 +64,29 @@ export function Hero() {
           is. Two boxes sharing one anchor point read as one lamp; a cone
           anchored to the portrait's own (vertically-centered) box instead
           does not, since nothing then connects it to the nav above. */}
+      {/* Gruvbox-theme experiment: this cone's intensity was tuned against
+          the Overhead Projector world's --accent (#e8bc78, a soft amber) --
+          Gruvbox's --accent (#fabd2f) is a much more saturated, punchier
+          yellow, so the identical intensity read as an actual light source
+          obscuring the face instead of a warm suggestion of one. Turns out
+          it was never actually at opacity-90 in the first place: an
+          opacity utility and the lamp-flicker animation on the SAME
+          element don't compose -- lamp-flicker's keyframes hardcode
+          opacity 1 and 0.94, which fully overrides whatever static
+          opacity is also declared on that element for as long as the
+          (infinite) animation runs, so this sat at ~0.94-1 the whole time
+          regardless of the utility class. Split across two nested
+          elements instead: opacity on the outer sets the real base
+          intensity, lamp-flicker on the inner multiplies its own 1/0.94
+          on top of that (opacity compounds across nesting), so both
+          actually apply. */}
       <div aria-hidden="true" className="light-cone absolute inset-x-0 top-0 -z-10 h-[36rem] opacity-60" />
       <div
         aria-hidden="true"
-        className="light-cone lamp-flicker absolute right-0 top-0 -z-10 h-[42rem] w-[46rem] max-w-[85%] opacity-90"
-      />
+        className="absolute right-0 top-0 -z-10 h-[42rem] w-[46rem] max-w-[85%] opacity-45"
+      >
+        <div className="light-cone lamp-flicker h-full w-full" />
+      </div>
 
       <div className="mx-auto grid max-w-5xl gap-16 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-8">
         <div className="text-center lg:text-left">
