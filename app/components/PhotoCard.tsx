@@ -163,26 +163,37 @@ export function PhotoCard() {
               className="absolute inset-0 h-full w-full select-none object-cover"
               style={{
                 objectPosition: "50% 100%",
-                // A CSS filter grade, not just a gradient laid on top — the
-                // gradient alone left the photo's own colors (the green
-                // trees, the blue-white sky sliver) sitting in obvious
-                // contrast against the page's palette. sepia+hue-rotate
-                // pulls the whole photo's cast toward amber/sienna before
-                // the gradient adds direction on top of that.
-                filter: "sepia(0.4) saturate(1.35) hue-rotate(-12deg) brightness(0.94) contrast(1.08)",
+                // Gruvbox-theme experiment: a much stronger sepia than the
+                // fancy-design version's light grade (0.4). At 0.4, a dark
+                // saturated color like the maroon jacket barely moves --
+                // sepia's matrix pulls hardest on colors with room to
+                // shift, so the face tinted while the jacket stayed
+                // stubbornly itself. Pushed close to full sepia so every
+                // region gets remapped into the same warm tonal family
+                // regardless of its starting hue, then saturate() back up
+                // to keep it a rich duotone-ish gold rather than a washed-
+                // out old photograph.
+                filter: "sepia(0.85) saturate(1.7) hue-rotate(-8deg) brightness(0.92) contrast(1.15)",
                 transform: to([lens.mx, lens.my], (mx, my) => `translate3d(${-mx}px, ${-my}px, 0) scale(1.12)`),
               }}
               draggable={false}
             />
             {/* Warm wash matching the light-cone's own amber, strongest at
                 the crown, so the lamp above reads as actually landing on
-                Aaron rather than just glowing behind a photo. */}
+                Aaron rather than just glowing behind a photo. Gruvbox-theme
+                experiment: the fancy-design version's wash dropped to fully
+                transparent through the middle (40%-55%) before rising again
+                at the very bottom -- fine when the base filter alone
+                carried the jacket, but with the near-full sepia above doing
+                that job now, this only has to add gentle top-to-bottom
+                direction, so it stays present (never truly 0) the whole way
+                down instead of leaving a flat gap. */}
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 42%, transparent), color-mix(in oklab, var(--accent) 12%, transparent) 40%, transparent 55%, color-mix(in oklab, var(--accent-warm) 34%, transparent) 100%)",
+                  "linear-gradient(180deg, color-mix(in oklab, var(--accent) 38%, transparent), color-mix(in oklab, var(--accent) 14%, transparent) 35%, color-mix(in oklab, var(--accent-warm) 12%, transparent) 65%, color-mix(in oklab, var(--accent-warm) 30%, transparent) 100%)",
               }}
             />
           </div>

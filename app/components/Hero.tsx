@@ -76,7 +76,8 @@ export function Hero() {
             style={riseStyle(trail[0])}
             className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
           >
-            Aaron <em className="not-italic text-[var(--accent)]">Parisi</em>
+            Aaron{" "}
+            <em className="font-hand not-italic tracking-normal text-[var(--accent)]">Parisi</em>
           </animated.h1>
 
           <animated.p
