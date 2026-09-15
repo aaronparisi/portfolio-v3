@@ -134,14 +134,17 @@ export function PhotoCard() {
                   // during the spring (60fps) was expensive enough to
                   // produce a visible tile-compositing artifact (a faint
                   // grid ghosting across the page) mid-transition on
-                  // Chromium. rgba(33,28,21) below is a precomputed
-                  // equivalent of color-mix(in oklab, var(--bg) 92%,
-                  // var(--accent) 8%) -- it doesn't depend on `g` at all,
-                  // but keeping it a literal here (rather than color-mix)
-                  // keeps every layer of this string equally cheap.
+                  // Chromium. rgb(232,188,120) is --accent and
+                  // rgb(57,52,41) is a precomputed color-mix(in oklab,
+                  // var(--bg) 92%, var(--accent) 8%) -- both literal since
+                  // this is the one spot that can't read the CSS variable
+                  // at animation time without paying for color-mix() again.
+                  // Gruvbox-theme experiment: recomputed both from this
+                  // branch's --accent (#fabd2f) / --bg (#282828) --
+                  // literal colors don't follow the variable swap for free.
                   boxShadow: lens.glow.to(
                     (g) =>
-                      `0 0 0 1px rgba(232, 188, 120, ${0.45 + g * 0.25}), 0 0 0 10px rgb(33, 28, 21), 0 ${25 + g * 10}px 60px -15px rgba(0,0,0,0.7), 0 0 ${90 + g * 60}px -10px rgba(232, 188, 120, ${0.35 + g * 0.2})`,
+                      `0 0 0 1px rgba(250, 189, 47, ${0.45 + g * 0.25}), 0 0 0 10px rgb(57, 52, 41), 0 ${25 + g * 10}px 60px -15px rgba(0,0,0,0.7), 0 0 ${90 + g * 60}px -10px rgba(250, 189, 47, ${0.35 + g * 0.2})`,
                   ),
                 }
               : undefined

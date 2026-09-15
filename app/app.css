@@ -1,60 +1,58 @@
 @import "tailwindcss";
 
 @theme {
-  /* Overhead Projector world: a confident geometric grotesk carries every
-     headline and body line (no serif — this isn't an editorial/literary
-     brief, it's a lit-room/lecture-hall one). A genuine grease-pencil hand
-     face is reserved *only* for annotation marks — see .annotation — never
-     for body copy. JetBrains Mono stays for code, the one place monospace
-     is earned. */
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-hand: "Permanent Marker", cursive;
+  /* Gruvbox-theme experiment (branch: gruvbox-theme): the "Overhead
+     Projector" world's sans/hand pairing (Space Grotesk + Permanent
+     Marker) is swapped for a text-editor's own type stack — two distinct
+     coder-monospace faces doing double duty as display AND body copy
+     (Space Mono's wider, more geometric letterforms carry headlines;
+     JetBrains Mono's tighter rhythm carries everything read at length,
+     the same split a real editor draws between a title bar and its
+     buffer), plus a grittier, less-ubiquitous hand face for annotation
+     marks than the Permanent Marker/Caveat/Kalam trio every site reaches
+     for. */
+  --font-display: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace, "Apple Color Emoji", "Segoe UI Emoji";
+  --font-hand: "Rock Salt", cursive;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* One committed world, not a light/dark switch: the whole site is staged as
-   a dim classroom lit by a single overhead projector. A "light mode" would
-   mean turning the room lights on and losing the premise entirely — so
-   unlike the previous system, this is the only theme there is. */
+/* Gruvbox-theme experiment (branch: gruvbox-theme): every token below is
+   the standard Gruvbox Dark (medium contrast) palette — bg0/bg1, fg1/fg4,
+   and the bright yellow/orange accent pair — mapped straight onto the
+   same role names the Overhead Projector world used (--accent,
+   --accent-warm, --plane-*). No component changed to build this: the
+   whole site already read its colors from these variables, never a
+   hardcoded hex, so a full retheme is a token swap, not a rewrite. */
 :root {
   --radius-lg: 1.25rem;
   --radius-md: 0.75rem;
-  --shadow-color: 30 40% 4%;
+  --shadow-color: 0 0% 4%;
 
-  /* Classroom-dark ground — warm-neutral near-black, not a cold true-black,
-     since it's meant to read as a room with a bulb in it, not a void. */
-  --bg: #100e0c;
-  --bg-alt: #1a1613;
-  --ink: #f3ece0;
-  --ink-soft: #b8ad9c;
-  --border: rgb(243 236 224 / 12%);
-  --border-strong: rgb(243 236 224 / 22%);
+  /* Gruvbox bg0 / fg1 — the editor's own background and foreground. */
+  --bg: #282828;
+  --bg-alt: #3c3836;
+  --ink: #ebdbb2;
+  --ink-soft: #a89984;
+  --border: rgb(235 219 178 / 12%);
+  --border-strong: rgb(235 219 178 / 22%);
   color-scheme: dark;
 
-  /* The acetate-plane palette, extracted for real from Aaron's own photo
-     (see public/images/hero-planes/ + PhotoCard.tsx) and reused as the
-     site's actual accent system, rather than inventing separate brand
-     colors that would fight the portrait. --accent is the lamp-lit amber
-     the projector's light-cone glows; --accent-warm is the sienna one
-     plane down from it. Both come from the same warm family — no teal,
-     no purple, no second unrelated hue anywhere on the page. */
-  --accent: #e8bc78;
-  --accent-soft: #f0cf9a;
-  --accent-warm: #a85c3a;
-  --accent-warm-soft: #c47850;
-  --on-accent: #100e0c;
+  /* Gruvbox's bright yellow is doing the job --accent (the site's one
+     "lamp") always did; bright orange stands in for --accent-warm. Same
+     warm-family constraint as before, just a different warm family. */
+  --accent: #fabd2f;
+  --accent-soft: #fbdca0;
+  --accent-warm: #fe8019;
+  --accent-warm-soft: #febf6f;
+  --on-accent: #1d2021;
 
-  --plane-shadow: #2a264a;
-  --plane-midtone: #a85c3a;
-  --plane-highlight: #e8bc78;
-  --plane-line: #14100e;
+  --plane-shadow: #458588;
+  --plane-midtone: #d65d0e;
+  --plane-highlight: #fabd2f;
+  --plane-line: #1d2021;
 
-  /* The hero equation's board is the same acetate a transparency sheet
-     would be — dark, faintly warm, lit from the same lamp as everything
-     else, so it reads as part of the projector stack rather than a
-     separate "screen" bolted onto the page. */
-  --board: #1c1712;
+  --board: #32302f;
   --marker: var(--accent-soft);
 }
 

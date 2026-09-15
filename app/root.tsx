@@ -11,8 +11,15 @@ export const links: Route.LinksFunction = () => [
     crossOrigin: "anonymous",
   },
   {
+    // Gruvbox-theme experiment (branch: gruvbox-theme): swapped the
+    // Space Grotesk/Permanent Marker pairing for two coder-monospace
+    // fonts (Space Mono for display, JetBrains Mono for body/UI — already
+    // used for dates/code bits) plus Rock Salt for the hand-written accent
+    // role instead of the very-online Permanent Marker/Caveat/Kalam
+    // family — a rougher, inkier mark, closer to grease pencil on a
+    // chalkboard than a felt-tip highlighter.
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400..700&family=Permanent+Marker&family=JetBrains+Mono:wght@400..600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=JetBrains+Mono:wght@400..600&family=Rock+Salt&display=swap",
   },
 ];
 
