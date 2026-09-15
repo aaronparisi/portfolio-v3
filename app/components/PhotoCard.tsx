@@ -2,6 +2,16 @@ import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
+// The CRT wipe's diagonal boundary, shared by the clip-path that reveals
+// the layer AND the scan-beam that rides its edge -- both derived from the
+// same (p, skew) pair rather than two separately-tuned values, so they
+// can never drift out of alignment the way a plain vertical bar did
+// against this diagonal edge.
+const WIPE_SKEW = 18;
+function wipeEdgeX(p: number) {
+  return p * (100 + WIPE_SKEW * 2) - WIPE_SKEW;
+}
+
 /**
  * The hero portrait as a lens/porthole — the real photo (background and
  * all), circle-cropped like looking through the projector's own lens
@@ -22,6 +32,7 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
  */
 export function PhotoCard() {
   const wrapRef = useRef<HTMLDivElement>(null);
+  const isHoveringRef = useRef(false);
   const reduced = usePrefersReducedMotion();
 
   const [mounted, setMounted] = useState(false);
@@ -103,14 +114,44 @@ export function PhotoCard() {
   }
 
   function handleLeave() {
+    isHoveringRef.current = false;
     void lensApi.start({ rx: 0, ry: 0, mx: 0, my: 0, scale: 1, glow: 0 });
     void crtApi.start({ p: 0 });
   }
 
   function handleEnter() {
+    isHoveringRef.current = true;
     if (reduced) return;
     void crtApi.start({ p: 1 });
   }
+
+  // A one-time hint, a few seconds after the page settles: the wipe
+  // exists as a real interactive effect, not just a decoration, so it's
+  // worth surfacing once rather than requiring a visitor to already know
+  // to hover a circular photo. A small peek (20%, not a full reveal) and
+  // back, not a loop -- it should read as "try hovering me", not as an
+  // idle animation running forever.
+  useEffect(() => {
+    if (reduced) return;
+    let closeTimer = 0;
+    const openTimer = window.setTimeout(() => {
+      if (isHoveringRef.current) return;
+      // A snappier config than the wipe's own (tension 20/friction 13,
+      // tuned to take ~300ms to cross the whole circle) -- at that speed,
+      // a 700ms-ish hold barely gets partway to 20% before reversing, so
+      // the hint reads as a faint flicker instead of an actual peek. This
+      // override only affects this one call, not the hover wipe itself.
+      void crtApi.start({ p: 0.2, config: { tension: 210, friction: 18 } });
+      closeTimer = window.setTimeout(() => {
+        if (isHoveringRef.current) return;
+        void crtApi.start({ p: 0, config: { tension: 90, friction: 16 } });
+      }, 900);
+    }, 5000);
+    return () => {
+      window.clearTimeout(openTimer);
+      window.clearTimeout(closeTimer);
+    };
+  }, [reduced, crtApi]);
 
   return (
     <div className="relative mx-auto flex w-full max-w-[26rem] justify-center lg:justify-end" style={{ perspective: "1400px" }}>
@@ -223,9 +264,8 @@ export function PhotoCard() {
               style={{
                 isolation: "isolate",
                 clipPath: crt.p.to((p) => {
-                  const skew = 18;
-                  const x = p * (100 + skew * 2) - skew;
-                  return `polygon(0% 0%, ${x + skew}% 0%, ${x - skew}% 100%, 0% 100%)`;
+                  const x = wipeEdgeX(p);
+                  return `polygon(0% 0%, ${x + WIPE_SKEW}% 0%, ${x - WIPE_SKEW}% 100%, 0% 100%)`;
                 }),
               }}
             >
@@ -270,15 +310,27 @@ export function PhotoCard() {
                 edge -- present only while the wipe is actually in
                 transit (a bell curve of p, zero at both rest states),
                 the flash-and-fade a real scan line leaves rather than a
-                static seam. */}
+                static seam. Clipped to a thin parallelogram parallel to
+                the main wipe's own boundary (same wipeEdgeX/WIPE_SKEW),
+                not a plain vertical bar -- a vertical highlight next to a
+                diagonal cut line very visibly didn't line up. */}
             <animated.div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 w-1"
+              className="pointer-events-none absolute inset-0"
               style={{
-                left: crt.p.to((p) => `${p * (100 + 36) - 18}%`),
+                clipPath: crt.p.to((p) => {
+                  const x = wipeEdgeX(p);
+                  const r = 1.6; // band half-width, in the same % units as the edge
+                  return `polygon(${x + WIPE_SKEW - r}% 0%, ${x + WIPE_SKEW + r}% 0%, ${x - WIPE_SKEW + r}% 100%, ${x - WIPE_SKEW - r}% 100%)`;
+                }),
                 opacity: crt.p.to((p) => 4 * p * (1 - p)),
                 background: "#b8bb26",
-                boxShadow: "0 0 10px 2px #b8bb26, 0 0 22px 6px rgba(184, 187, 38, 0.6)",
+                // filter, not boxShadow: a box-shadow follows the element's
+                // full rectangular border-box, not its clip-path, so it
+                // would glow as a vertical rectangle regardless of the
+                // parallelogram's actual angle. drop-shadow follows the
+                // clipped alpha shape.
+                filter: "drop-shadow(0 0 8px #b8bb26) drop-shadow(0 0 18px rgba(184, 187, 38, 0.6))",
               }}
             />
           </div>
