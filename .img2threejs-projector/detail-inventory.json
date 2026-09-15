@@ -1,0 +1,110 @@
+{
+  "sourceImage": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/reference.jpg",
+  "zonesDir": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory",
+  "detailInventory": {
+    "scanMethod": "grid-3x3",
+    "targetMinDetails": 6,
+    "details": [
+      {
+        "id": "zone-r0c0",
+        "kind": "surface-graphic",
+        "description": "Post's front face carries a dense printed ruled/tick-mark scale (short horizontal dashes stacked the full visible length), like a ruler or measuring tape. Post cross-section is a rounded-edge rectangular extrusion, cream/off-white.",
+        "region": { "x": 0.0, "y": 0.0, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "post material colorMaterialRecipe / localOverrides",
+        "mapsTo": { "type": "material.localOverride", "ref": "post.rulerScaleDecal" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r0c0.png",
+        "confidence": 0.9
+      },
+      {
+        "id": "zone-r0c1",
+        "kind": "component-feature",
+        "description": "Head housing's lower lens box, front-lateral face: a large knurled/serrated circular ring (focus/zoom control) dominates the face; a small blue accent button/dot sits on the box's proximal (post-facing) side; a thin ribbed horizontal grip strip runs along the box's bottom edge. Mirror flap above shows a matte-to-semi-gloss reflective panel, not a pure blown-out mirror at this angle.",
+        "region": { "x": 0.3333, "y": 0.0, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "head-housing componentTree / lens-barrel local features",
+        "mapsTo": { "type": "component.localFeature", "ref": "headHousing.lensBox.focusRing" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r0c1.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "zone-r0c2",
+        "kind": "form-feature",
+        "description": "Rear tip of the head housing's chevron: the mirror flap's rear point and the lens box's rear point meet at a sharp wedge apex, confirming the true boomerang/chevron silhouette (not a rounded fold) -- cream, no additional surface marks.",
+        "region": { "x": 0.6667, "y": 0.0, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "macro",
+        "affects": "headHousing silhouette geometry",
+        "mapsTo": { "type": "component.localFeature", "ref": "headHousing.chevronApex" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r0c2.png",
+        "confidence": 0.9
+      },
+      {
+        "id": "zone-r1c0",
+        "kind": "component-feature",
+        "description": "Two distinct blue knurled thumbscrew knobs on the post at different heights: an upper main clamp knob mounted through a cream bracket where the horizontal arm's post-side end pivots (this is the height/angle clamp for the whole arm assembly), and a smaller secondary knob further down clamping a second cream bracket lower on the post (likely a rotation lock for the post-to-base joint). Both knobs are vivid mid-blue with a knurled rim.",
+        "region": { "x": 0.0, "y": 0.3333, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "post componentTree / attachment joints (interaction targets)",
+        "mapsTo": { "type": "component.localFeature", "ref": "post.clampKnobUpper+post.lockKnobLower" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r1c0.png",
+        "confidence": 0.9
+      },
+      {
+        "id": "zone-r1c1",
+        "kind": "surface-relief",
+        "description": "Platen glass shows concentric fresnel-ring relief converging toward the plate's center, visible as faint curved arc lines. Frame bezel is cream with small darker square corner clips at each mitred corner. A small white rectangular label plate sticker sits on the front-left frame edge (text illegible).",
+        "region": { "x": 0.3333, "y": 0.3333, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "platen material normal/relief + frame localOverrides",
+        "mapsTo": { "type": "material.localOverride", "ref": "platen.fresnelRelief+platen.frame.labelPlate" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r1c1.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "zone-r1c2",
+        "kind": "component-feature",
+        "description": "Platen frame's right-front mitred corner meeting the base's right side: a small right-angle corner bracket/clip is visible at the joint, plus a single small dark screw or rivet dot just below the corner on the cream frame.",
+        "region": { "x": 0.6667, "y": 0.3333, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "micro",
+        "affects": "platen frame localFeatures",
+        "mapsTo": { "type": "component.localFeature", "ref": "platen.frame.cornerBracket" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r1c2.png",
+        "confidence": 0.75
+      },
+      {
+        "id": "zone-r2c0",
+        "kind": "form-feature",
+        "description": "Left carrying-handle recess is NOT a rounded-rectangle side pocket as first assumed from the full frame -- it is a triangular wedge notch cut directly into the base's vertical corner edge, cream-colored on the recessed interior faces against the dark charcoal exterior shell. Corrects image-analysis.md's Layer 3 guess.",
+        "region": { "x": 0.0, "y": 0.6667, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "base componentTree handle geometry (corrects earlier assumption)",
+        "mapsTo": { "type": "component.localFeature", "ref": "base.handleRecessLeft" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r2c0.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "zone-r2c1",
+        "kind": "component-feature",
+        "description": "Base front-right corner control cluster: blue→yellow→red gradient arc decal (red pointer needle visible near the yellow/red boundary), a small round secondary gauge dial with its own red needle just left of the arc, a 2-position black rocker power switch left of that, and the main blue rotary control knob below the arc's center. A small round bolt/nub sits on the cream top-frame edge above this cluster.",
+        "region": { "x": 0.3333, "y": 0.6667, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "base front control-panel componentTree + colorMaterialRecipe",
+        "mapsTo": { "type": "component.localFeature", "ref": "base.controlPanel.gradientDial+rockerSwitch+controlKnob" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r2c1.png",
+        "confidence": 0.85
+      },
+      {
+        "id": "zone-r2c2",
+        "kind": "component-feature",
+        "description": "Confirms the gradient arc + small round secondary gauge + main blue knob cluster from a slightly different crop angle -- same features as zone-r2c1, no new marks; corner fillet radius of the base body clearly visible here.",
+        "region": { "x": 0.6667, "y": 0.6667, "width": 0.3333, "height": 0.3333, "units": "normalized" },
+        "scale": "meso",
+        "affects": "base front control-panel componentTree (duplicate confirmation)",
+        "mapsTo": { "type": "component.localFeature", "ref": "base.controlPanel.gradientDial+rockerSwitch+controlKnob" },
+        "evidenceRef": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/detail-inventory/zone-r2c2.png",
+        "confidence": 0.85
+      }
+    ]
+  },
+  "authoringInstruction": "Open each zone crop under zonesDir and replace every detail stub's kind, description, scale, affects, mapsTo, and confidence with what is actually observed. Add more detail entries per zone if a single zone contains multiple distinct marks; do not leave stubs unfilled or unlinked (mapsTo must reference a real component.localFeatures or material.localOverrides entry)."
+}

@@ -1,0 +1,117 @@
+{
+    "model": "overhead-projector",
+    "parts": [
+        {
+            "name": "Overhead Projector (root)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Base body (housing)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Base skirt (lower flare band)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Top perimeter bezel/frame",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Left carrying-handle notch",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Right carrying-handle notch",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Main rotary control knob",
+            "kind": "part",
+            "triangles": 1632
+        },
+        {
+            "name": "Gradient gauge arc plate",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Secondary round gauge dial",
+            "kind": "part",
+            "triangles": 1632
+        },
+        {
+            "name": "Power rocker switch",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Platen (glass surface)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Vertical arm post",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Post secondary lock knob",
+            "kind": "part",
+            "triangles": 1632
+        },
+        {
+            "name": "Arm assembly (pivot)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Main arm clamp knob",
+            "kind": "part",
+            "triangles": 1632
+        },
+        {
+            "name": "Horizontal arm, lower segment",
+            "kind": "part",
+            "triangles": 832
+        },
+        {
+            "name": "Horizontal arm, upper segment",
+            "kind": "part",
+            "triangles": 832
+        },
+        {
+            "name": "Head housing (pivot)",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Head housing lens box",
+            "kind": "part",
+            "triangles": 1728
+        },
+        {
+            "name": "Lens barrel",
+            "kind": "part",
+            "triangles": 1632
+        },
+        {
+            "name": "Lens focus/knurled ring",
+            "kind": "part",
+            "triangles": 4608
+        },
+        {
+            "name": "Mirror flap",
+            "kind": "part",
+            "triangles": 1728
+        }
+    ],
+    "unnamedMeshes": 0,
+    "integralMeshes": 22
+}

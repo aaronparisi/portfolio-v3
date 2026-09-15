@@ -1,0 +1,14 @@
+{
+  "admitted": true,
+  "reasons": [],
+  "provenance": {
+    "viewpoint": "reference",
+    "sourcePath": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs-projector/reference.jpg",
+    "width": 600,
+    "height": 800,
+    "foregroundCoverage": 0.2574,
+    "largestComponentFraction": 1.0,
+    "pHash": 13179459949006241288,
+    "duplicateOfHash": null
+  }
+}
