@@ -1,24 +1,23 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { animated, to, useSprings, useSpring } from "@react-spring/web";
+import { animated, to, useSpring } from "@react-spring/web";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-// Bottom of the stack to top — the order the sheets would actually be laid
-// down on a projector: darkest plane first, ink line work drawn last, on
-// top, like a grease-pencil outline finishing the drawing. Every PNG here
-// is a real derived asset, not a CSS mask: macOS's Vision framework lifted
-// the subject from the source photo (see public/images/aaron-photo-cutout.png),
-// then each plane was posterized from that cutout's own luminance and edge
-// data — see the generation notes in public/images/hero-planes/README.md.
-const PLANES = ["shadow", "midtone", "highlight", "line"] as const;
-
 /**
- * The hero portrait, restaged for the Overhead Projector world: instead of
- * a single photo in a rounded frame, Aaron's likeness assembles live from
- * four acetate overlay sheets dropping into place under the light-cone,
- * one at a time, the way a teacher builds up a transparency diagram layer
- * by layer. Once assembled it still tilts toward the cursor with real
- * spring physics and floats gently on its own when idle — the same
- * interaction the old card had, carried over rather than dropped.
+ * The hero portrait, sitting under the projector's own light-cone. This is
+ * the real photo (public/images/aaron-photo-cutout.png), not a projected
+ * illustration — an earlier version rebuilt it as four stacked acetate
+ * overlay planes (edge-detected line art + posterized color fields), which
+ * read as slightly uncanny up close (see git history / hero-planes/README.md
+ * if reviving that idea). A real photo, warmed with a top-down amber wash so
+ * the light-cone above it looks like it's actually landing on Aaron rather
+ * than just glowing behind a flat cutout, reads as correct in a way the
+ * illustrated version didn't. See scripts/generate-hero-tint.mjs for exactly
+ * how hero-tinted.png was derived from the cutout — same Playwright-canvas
+ * approach as the old plane generator, just one gradient-tint pass instead
+ * of four posterized ones.
+ *
+ * The tilt-toward-cursor and idle float are carried over unchanged from the
+ * original card — that interaction was never the problem.
  */
 export function PhotoCard() {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,21 +26,16 @@ export function PhotoCard() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // The sheets dropping into place: each plane starts higher up and
-  // transparent, as if it's about to be laid onto the platen, then settles
-  // with a slight overshoot (low friction relative to tension) — a sheet
-  // dropped onto glass doesn't glide in, it falls the last inch and
-  // settles.
-  const trail = useSprings(
-    PLANES.length,
-    PLANES.map((_, i) => ({
-      from: { opacity: 0, y: -28 },
-      to: { opacity: 1, y: 0 },
-      delay: reduced ? 0 : 260 + i * 260,
-      immediate: reduced,
-      config: { tension: 300, friction: 16 },
-    })),
-  );
+  // A single settle-in, the way a slide drops onto the platen — starts
+  // slightly high and transparent, falls the last inch with a touch of
+  // overshoot rather than gliding to a stop.
+  const entrance = useSpring({
+    from: { opacity: 0, y: -28 },
+    to: { opacity: 1, y: 0 },
+    delay: reduced ? 0 : 200,
+    immediate: reduced,
+    config: { tension: 300, friction: 16 },
+  });
 
   const [style, api] = useSpring(() => ({
     rx: 0,
@@ -50,9 +44,9 @@ export function PhotoCard() {
     config: { tension: 260, friction: 18 },
   }));
 
-  // A continuous, very small drift — the stack feels lit and alive even
-  // before you touch it. See PhotoCard's original comment: visits four
-  // waypoints in a loose loop rather than bobbing on one axis.
+  // A continuous, very small drift — the portrait feels lit and alive even
+  // before you touch it, visiting four waypoints in a loose loop rather
+  // than bobbing on one axis.
   const [float, floatApi] = useSpring(() => ({ x: 0, y: 0 }));
   useEffect(() => {
     if (reduced) return;
@@ -89,9 +83,9 @@ export function PhotoCard() {
 
   return (
     <div className="relative mx-auto w-full max-w-[24rem]" style={{ perspective: "1400px" }}>
-      {/* The projector's own light-cone, anchored behind the stack rather
-          than the whole hero, so the portrait reads as the thing actually
-          sitting under the lamp. */}
+      {/* The projector's own light-cone, anchored behind the portrait rather
+          than the whole hero, so it reads as the thing actually sitting
+          under the lamp. */}
       <div aria-hidden="true" className="light-cone lamp-flicker absolute -inset-16 -z-10" />
 
       <animated.div
@@ -113,22 +107,18 @@ export function PhotoCard() {
             : { transformStyle: "preserve-3d" }
         }
       >
-        {PLANES.map((plane, i) => (
-          <animated.img
-            key={plane}
-            src={`/images/hero-planes/${plane}.png`}
-            alt={i === PLANES.length - 1 ? "Aaron Parisi" : ""}
-            aria-hidden={i === PLANES.length - 1 ? undefined : true}
-            width={1100}
-            height={1100}
-            className="absolute inset-0 h-full w-full select-none"
-            draggable={false}
-            style={{
-              opacity: trail[i].opacity,
-              transform: trail[i].y.to((y) => `translate3d(0, ${y}px, 0)`),
-            }}
-          />
-        ))}
+        <animated.img
+          src="/images/hero-tinted.png"
+          alt="Aaron Parisi"
+          width={1100}
+          height={1100}
+          className="absolute inset-0 h-full w-full select-none"
+          draggable={false}
+          style={{
+            opacity: entrance.opacity,
+            transform: entrance.y.to((y) => `translate3d(0, ${y}px, 0)`),
+          }}
+        />
       </animated.div>
     </div>
   );
