@@ -56,10 +56,19 @@ export function Hero() {
 
   return (
     <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32">
-      {/* The room's ambient light — the softer, wider half of the same
-          lamp that focuses down onto the portrait in PhotoCard itself.
-          One light source for the whole page, not a decorative gradient. */}
+      {/* The room's ambient light — soft, wide, centered on the whole
+          section. On its own it barely reaches the portrait (which sits
+          off to the right), so a second, stronger cone below is anchored
+          the same way -- flush with the nav, top-0 of this section -- but
+          shifted right and sized to actually be bright where the portrait
+          is. Two boxes sharing one anchor point read as one lamp; a cone
+          anchored to the portrait's own (vertically-centered) box instead
+          does not, since nothing then connects it to the nav above. */}
       <div aria-hidden="true" className="light-cone absolute inset-x-0 top-0 -z-10 h-[36rem] opacity-60" />
+      <div
+        aria-hidden="true"
+        className="light-cone lamp-flicker absolute right-0 top-0 -z-10 h-[42rem] w-[46rem] max-w-[85%] opacity-90"
+      />
 
       <div className="mx-auto grid max-w-5xl gap-16 px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-8">
         <div className="text-center lg:text-left">

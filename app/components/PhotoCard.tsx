@@ -100,10 +100,11 @@ export function PhotoCard() {
 
   return (
     <div className="relative mx-auto flex w-full max-w-[26rem] justify-center lg:justify-end" style={{ perspective: "1400px" }}>
-      {/* The projector's own light-cone, anchored behind the lens rather
-          than the whole hero, so it reads as the thing actually sitting
-          under the lamp. */}
-      <div aria-hidden="true" className="light-cone lamp-flicker absolute -inset-16 -z-10" />
+      {/* The lamp itself lives in Hero.tsx now, anchored to the section's
+          top (flush with the nav) rather than to this box -- a cone
+          anchored here instead moves with wherever the grid vertically
+          centers the photo, which is exactly what left a visible gap
+          between the nav and the glow. */}
 
       <animated.div
         className="relative aspect-square w-[17rem] sm:w-[20rem]"
