@@ -7,7 +7,10 @@ import { Timeline } from "~/components/Timeline";
 import { Skills } from "~/components/Skills";
 import { Footer } from "~/components/Footer";
 import { ScrollProgress } from "~/components/ScrollProgress";
-import { LoadingScreen } from "~/components/LoadingScreen";
+// Swapped from the bar-equalizer loader (still in LoadingScreen.tsx,
+// untouched, in case that's worth returning to) to the 3D calculus-
+// surface loader while that one's in development.
+import { LoadingScreen3D as LoadingScreen } from "~/components/LoadingScreen3D";
 import { useActiveSectionHash } from "~/hooks/useActiveSectionHash";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
