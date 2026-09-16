@@ -30,7 +30,7 @@ function wipeEdgeX(p: number) {
  * fancy-design's own 100% but backed off slightly per Gruvbox-theme
  * feedback that it read as too high/centered.
  */
-export function PhotoCard() {
+export function PhotoCard({ peekDelayMs = 5000 }: { peekDelayMs?: number } = {}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const isHoveringRef = useRef(false);
   const reduced = usePrefersReducedMotion();
@@ -128,12 +128,15 @@ export function PhotoCard() {
     void crtApi.start({ p: 1 });
   }
 
-  // A one-time hint, a few seconds after the page settles: the wipe
-  // exists as a real interactive effect, not just a decoration, so it's
-  // worth surfacing once rather than requiring a visitor to already know
-  // to hover a circular photo. A small peek (20%, not a full reveal) and
-  // back, not a loop -- it should read as "try hovering me", not as an
-  // idle animation running forever.
+  // A one-time hint that the wipe is a real interactive effect, not just
+  // a decoration -- a visitor has no other way to discover a circular
+  // photo is hoverable. `peekDelayMs` defaults to a few seconds after
+  // mount (the old "you've been looking at this a while, try hovering
+  // it" timing), but Hero fires this deliberately early and larger as
+  // this card's own dedicated beat in the page's opening choreography --
+  // same mechanism, different occasion. Either way it's a peek (partial
+  // reveal) and back, not a loop -- it should read as "try hovering me,"
+  // not as an idle animation running forever.
   useEffect(() => {
     if (reduced) return;
     let closeTimer = 0;
@@ -144,17 +147,17 @@ export function PhotoCard() {
       // a 700ms-ish hold barely gets partway to 20% before reversing, so
       // the hint reads as a faint flicker instead of an actual peek. This
       // override only affects this one call, not the hover wipe itself.
-      void crtApi.start({ p: 0.2, config: { tension: 210, friction: 18 } });
+      void crtApi.start({ p: 0.32, config: { tension: 210, friction: 18 } });
       closeTimer = window.setTimeout(() => {
         if (isHoveringRef.current) return;
         void crtApi.start({ p: 0, config: { tension: 90, friction: 16 } });
       }, 900);
-    }, 5000);
+    }, peekDelayMs);
     return () => {
       window.clearTimeout(openTimer);
       window.clearTimeout(closeTimer);
     };
-  }, [reduced, crtApi]);
+  }, [reduced, crtApi, peekDelayMs]);
 
   return (
     <div className="relative mx-auto flex w-full max-w-[26rem] justify-center lg:justify-end" style={{ perspective: "1400px" }}>
