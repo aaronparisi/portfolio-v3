@@ -1,65 +1,32 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
-import { animated, to, useSpring } from "@react-spring/web";
+import { animated, config as springConfig, to, useSpring, useTrail } from "@react-spring/web";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const LOOPS = 3;
+// The Gruvbox bright palette, hardcoded rather than pulled from CSS
+// custom properties -- this loader is meant to visibly show off
+// several of the theme's colors at once, not lean on a single
+// semantic accent token the way the rest of the site does.
+const BAR_COLORS = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
+// Uneven peaks -- an equalizer where every bar tops out the same
+// height reads as a progress bar wearing a costume, not a live signal.
+const PEAK_SCALES = [6, 8.5, 5, 9.5, 6.5, 8, 5.5];
+const BAR_COUNT = BAR_COLORS.length;
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function clamp01(n: number) {
-  return Math.min(1, Math.max(0, n));
-}
-
-// The full Gruvbox bright palette, hardcoded rather than pulled from
-// CSS custom properties -- this loader is meant to visibly show off
-// several of the theme's colors at once (a graph and a row of bars,
-// not a single accent-colored thing), so it reads more as "here's this
-// theme's whole palette in motion" than any one semantic token would.
-const BAR_COLORS = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598"];
-const WAVE_COLORS = ["#d3869b", "#fb4934", "#83a598"];
-
-const DRAW_CONFIG = { tension: 170, friction: 16 };
-const UNDRAW_CONFIG = { tension: 230, friction: 22 };
-const BAR_CONFIG = { tension: 280, friction: 14 };
+const LOAD_DURATION = 5200;
 const TILT_CONFIG = { tension: 180, friction: 20 };
-
-// A damped sine wave, sampled into a polyline -- an oscillation actually
-// decaying to rest, the literal shape of what every spring on this site
-// is doing under the hood, not just a decorative squiggle. Computed once
-// at module scope since the viewBox is fixed.
-function dampedWavePath(width: number, height: number, points = 70) {
-  const cy = height / 2;
-  const segments: string[] = [];
-  for (let i = 0; i <= points; i++) {
-    const t = i / points;
-    const amp = (1 - t) ** 1.7 * (height * 0.44);
-    const y = cy + Math.sin(t * Math.PI * 5.5) * amp;
-    segments.push(`${i === 0 ? "M" : "L"} ${(t * width).toFixed(1)} ${y.toFixed(1)}`);
-  }
-  return segments.join(" ");
-}
-const WAVE_W = 280;
-const WAVE_H = 90;
-const WAVE_PATH = dampedWavePath(WAVE_W, WAVE_H);
-
-// Each bar cycles through the same sequence of relative heights, just
-// entering it at a different offset -- staggered enough to read as a
-// live equalizer instead of everything pulsing in lockstep, without
-// needing actual randomness (deterministic, easy to verify).
-const HEIGHT_SEQUENCE = [0.3, 0.92, 0.48, 1, 0.36, 0.72, 0.22, 0.6];
 
 /**
  * A purely decorative loading screen -- there's nothing real to wait on,
  * this exists to open the site with a "someone who knows animation
- * built this" moment. A damped-sine-wave graph (the literal shape of a
- * spring settling) draws itself in with real spring physics, hangs for
- * a beat, then erases and redraws a couple more times in a different
- * Gruvbox color each pass, while a row of equalizer bars -- each its
- * own color from the same palette -- bounces underneath the entire
- * time on independent, continuously-looping springs. A faint
- * pointer-tilt makes it "interactable," not just self-playing.
+ * built this" moment.
+ *
+ * The core mechanic -- a spring `useTrail` reversing between two states
+ * in an endless loop, then redirected to a single settle-to-zero pass
+ * once `exiting` flips -- is Aaron's own sketch in LoadingSpring.tsx,
+ * dressed up here with per-bar Gruvbox colors, uneven peaks and
+ * staggered delays so it reads as a live equalizer rather than several
+ * identical bars in unison, plus glow, reflections, and a pointer-tilt
+ * so it's "interactable," not just self-playing.
  *
  * Gated out entirely for prefers-reduced-motion by the parent -- this
  * component assumes it's allowed to animate and never renders a static
@@ -68,10 +35,77 @@ const HEIGHT_SEQUENCE = [0.3, 0.92, 0.48, 1, 0.36, 0.72, 0.22, 0.6];
 export function LoadingScreen({ onComplete }: { onComplete: () => void }) {
   const reduced = usePrefersReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
-
   const [exiting, setExiting] = useState(false);
-  const [waveColor, setWaveColor] = useState(WAVE_COLORS[0]);
-  const [draw, drawApi] = useSpring(() => ({ p: 0 }));
+
+  useEffect(() => {
+    if (reduced) {
+      onComplete();
+      return;
+    }
+    const timer = window.setTimeout(() => setExiting(true), LOAD_DURATION);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced]);
+
+  // The trail starts at a plain resting value and is driven entirely
+  // imperatively from here on -- both the endless wobble and its later
+  // redirect into the exit are explicit barsApi.start() calls in mount-
+  // and exiting-triggered effects, never the declarative per-render form.
+  // An earlier version passed the wobbly `{ loop: { reverse: true }, ... }`
+  // config directly as useTrail's own reactive props; since that factory
+  // function returns a brand-new object (and a brand-new `loop` object)
+  // on every render, react-spring kept re-asserting the endless loop on
+  // renders that happened after `exiting` flipped true, racing against
+  // -- and winning over -- the one-shot exit animation. Confirmed by
+  // logging: the exit's onRest never fired, and the bars visibly bounced
+  // back up to full height instead of staying collapsed. Starting both
+  // phases only from effects, never from a live render-time config,
+  // removes that race entirely.
+  const [bars, barsApi] = useTrail<{ scaleY: number; opacity: number }>(BAR_COUNT, () => ({
+    scaleY: 1,
+    opacity: 1,
+  }));
+
+  useEffect(() => {
+    if (reduced) return;
+    void barsApi.start((i) => ({
+      from: { scaleY: 1, opacity: 1 },
+      to: { scaleY: PEAK_SCALES[i], opacity: 1 },
+      loop: { reverse: true },
+      delay: i * 90,
+      config: springConfig.wobbly,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reduced]);
+
+  useEffect(() => {
+    if (!exiting) return;
+    // .stop() first -- cancels the endless wobble's internal async
+    // chain outright rather than trusting a same-tick .start() call to
+    // cleanly preempt it.
+    barsApi.stop();
+    void barsApi.start((i) => ({
+      to: { scaleY: 0, opacity: 0 },
+      loop: false,
+      delay: i * 55,
+      config: springConfig.stiff,
+    }));
+    // onComplete on a fixed timer, not this spring's own onRest --
+    // measured via getComputedStyle sampling: the last bar reads as
+    // fully invisible (opacity/scale both under 0.02) within about a
+    // second, but onRest itself didn't fire until ~3.6s in. A spring
+    // interrupted mid-oscillation (this one was still actively
+    // reversing when `exiting` flipped) carries real residual velocity
+    // into its new target, and react-spring's rest detection waits for
+    // that velocity to decay to near float-precision zero, not just for
+    // the value to look done -- an appropriate default for a spring
+    // meant to be watched, not one gating a callback. 1400ms comfortably
+    // clears the point where it's visually finished without waiting out
+    // that asymptotic tail.
+    const timer = window.setTimeout(onComplete, 1400);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exiting]);
 
   const [tilt, tiltApi] = useSpring(() => ({ rx: 0, ry: 0, config: TILT_CONFIG }));
 
@@ -87,63 +121,6 @@ export function LoadingScreen({ onComplete }: { onComplete: () => void }) {
   function handlePointerLeave() {
     void tiltApi.start({ rx: 0, ry: 0 });
   }
-
-  useEffect(() => {
-    if (reduced) {
-      onComplete();
-      return;
-    }
-
-    let cancelled = false;
-    const isLive = () => !cancelled;
-
-    async function run() {
-      for (let loop = 0; loop < LOOPS; loop++) {
-        if (!isLive()) return;
-        setWaveColor(WAVE_COLORS[loop % WAVE_COLORS.length]);
-        void drawApi.start({ p: 1, config: DRAW_CONFIG });
-        await sleep(700);
-
-        if (!isLive()) return;
-        await sleep(500);
-
-        // The last pass doesn't erase itself -- it hands off to the
-        // exit sequence below with the graph still fully drawn.
-        if (loop === LOOPS - 1) {
-          await sleep(300);
-          break;
-        }
-
-        if (!isLive()) return;
-        void drawApi.start({ p: 0, config: UNDRAW_CONFIG });
-        await sleep(550);
-
-        if (!isLive()) return;
-        await sleep(150);
-      }
-
-      if (!isLive()) return;
-      await sleep(200);
-      setExiting(true);
-      await sleep(550);
-      if (!isLive()) return;
-      onComplete();
-    }
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reduced]);
-
-  const waveOffset = draw.p.to((p) => 1 - clamp01(p));
-
-  const stage = useSpring({
-    from: { opacity: 0, scale: 0.85 },
-    to: exiting ? { opacity: 0, scale: 1.18 } : { opacity: 1, scale: 1 },
-    config: exiting ? { tension: 210, friction: 26 } : { tension: 300, friction: 16 },
-  });
 
   return (
     <div
@@ -161,92 +138,57 @@ export function LoadingScreen({ onComplete }: { onComplete: () => void }) {
         }}
       />
 
-      <animated.div
+      <div
         ref={containerRef}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        className="relative flex flex-col items-center gap-6"
-        style={{ opacity: stage.opacity, transform: stage.scale.to((s) => `scale(${s})`), perspective: "900px" }}
+        style={{ perspective: "900px" }}
       >
         <animated.div
+          className="flex items-end gap-3 sm:gap-4"
           style={{
             transform: to([tilt.rx, tilt.ry], (rx, ry) => `rotateX(${rx}deg) rotateY(${ry}deg)`),
             transformStyle: "preserve-3d",
           }}
         >
-          <svg
-            aria-hidden="true"
-            viewBox={`0 0 ${WAVE_W} ${WAVE_H}`}
-            className="h-20 w-64 sm:h-24 sm:w-72"
-            fill="none"
-          >
-            {/* A dim resting axis -- the wave draws relative to
-                something, not floating in a void, reinforcing "this is
-                a graph" over "this is a squiggle." */}
-            <line x1={0} y1={WAVE_H / 2} x2={WAVE_W} y2={WAVE_H / 2} stroke="var(--ink-soft)" strokeOpacity={0.25} strokeWidth={1} />
-            <animated.path
-              d={WAVE_PATH}
-              stroke={waveColor}
-              strokeWidth={4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="none"
-              pathLength={1}
-              style={{
-                strokeDasharray: 1,
-                strokeDashoffset: waveOffset,
-                filter: `drop-shadow(0 0 8px ${waveColor}88)`,
-              }}
-            />
-          </svg>
-
-          <div className="mt-2 flex h-16 items-end justify-center gap-3 sm:h-20">
-            {BAR_COLORS.map((color, i) => (
-              <Bar key={color} color={color} index={i} reduced={reduced} />
-            ))}
-          </div>
+          {bars.map((style, i) => (
+            <div key={i} className="flex flex-col items-center">
+              <div className="flex h-24 w-3 items-end justify-center sm:h-28 sm:w-4">
+                <animated.div
+                  className="w-full rounded-t-full"
+                  style={{
+                    height: 10,
+                    transformOrigin: "bottom",
+                    transform: style.scaleY.to((s) => `scaleY(${s})`),
+                    opacity: style.opacity,
+                    background: BAR_COLORS[i],
+                    boxShadow: `0 0 12px ${BAR_COLORS[i]}99`,
+                  }}
+                />
+              </div>
+              {/* A faint reflection beneath each bar -- the same live
+                  scaleY value, just anchored to its top edge and
+                  flipped in intensity, the kind of detail that reads
+                  as "someone who knows animation" without needing its
+                  own animation logic. */}
+              <animated.div
+                aria-hidden="true"
+                className="w-3 rounded-b-full sm:w-4"
+                style={{
+                  height: 10,
+                  marginTop: 2,
+                  transformOrigin: "top",
+                  transform: style.scaleY.to((s) => `scaleY(${s * 0.4})`),
+                  opacity: style.opacity.to((o) => o * 0.22),
+                  background: BAR_COLORS[i],
+                }}
+              />
+            </div>
+          ))}
         </animated.div>
-      </animated.div>
+      </div>
 
       <span className="sr-only">Loading the page.</span>
-    </div>
-  );
-}
-
-// A single equalizer bar, bouncing through HEIGHT_SEQUENCE on its own
-// clock -- react-spring's async `to` chain (not a fixed setTimeout
-// loop) so each leg's overshoot is real spring settling, and stopping
-// it on unmount is a single `api.stop()` rather than tracking timers.
-function Bar({ color, index, reduced }: { color: string; index: number; reduced: boolean }) {
-  const [style, api] = useSpring(() => ({ h: 0.25 }));
-
-  useEffect(() => {
-    if (reduced) return;
-    void api.start({
-      to: async (next) => {
-        let i = index; // each bar enters the shared sequence at a different offset
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          await next({ h: HEIGHT_SEQUENCE[i % HEIGHT_SEQUENCE.length], config: BAR_CONFIG });
-          i++;
-        }
-      },
-    });
-    return () => {
-      api.stop();
-    };
-  }, [api, index, reduced]);
-
-  return (
-    <div className="flex h-full w-3 items-end sm:w-4">
-      <animated.div
-        className="w-full rounded-t-full"
-        style={{
-          height: style.h.to((h) => `${h * 100}%`),
-          background: color,
-          boxShadow: `0 0 10px ${color}77`,
-        }}
-      />
     </div>
   );
 }
