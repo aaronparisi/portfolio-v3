@@ -38,15 +38,18 @@ export function PhotoCard() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  // The lens settling into place — starts slightly high and transparent,
-  // falls the last inch with a touch of overshoot rather than gliding to
-  // a stop, the same "dropped onto the platen" language as before.
+  // The lens opening — scale starts near a point and pops out to full
+  // size with real overshoot, an iris expanding rather than a photo
+  // fading in, since the site's own loading screen (see LoadingScreen.tsx)
+  // hands off to this exact moment: the page "turns on" and this circle
+  // is the thing visibly growing out of roughly where that screen's own
+  // centered content just was.
   const entrance = useSpring({
-    from: { opacity: 0, y: -28 },
-    to: { opacity: 1, y: 0 },
+    from: { opacity: 0, y: -28, scale: 0.08 },
+    to: { opacity: 1, y: 0, scale: 1 },
     delay: reduced ? 0 : 200,
     immediate: reduced,
-    config: { tension: 300, friction: 16 },
+    config: { tension: 210, friction: 15 },
   });
 
   // Two coupled springs, not one: the lens housing (ring + glow) tilts and
@@ -166,8 +169,8 @@ export function PhotoCard() {
         style={{
           opacity: entrance.opacity,
           transform: to(
-            [entrance.y, float.x, float.y],
-            (y, fx, fy) => `translate3d(${fx}px, ${fy + y}px, 0)`,
+            [entrance.y, entrance.scale, float.x, float.y],
+            (y, s, fx, fy) => `translate3d(${fx}px, ${fy + y}px, 0) scale(${s})`,
           ),
         }}
       >

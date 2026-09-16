@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { animated, useSpring, useTrail, type SpringValue } from "@react-spring/web";
+import { animated, to, useSpring, useTrail, type SpringValue } from "@react-spring/web";
 import { PhotoCard } from "./PhotoCard";
 import { AnimatedEquation } from "./AnimatedEquation";
 import { SpringButton } from "./SpringButton";
@@ -54,6 +54,19 @@ export function Hero() {
     config: { tension: 170, friction: 22 },
   });
 
+  // The photo arrives pulled in toward center, then the text column
+  // (already settling in on its own trail above) pushes it out to its
+  // real right-aligned slot -- a separate, later-delayed spring rather
+  // than folded into photoSpring above, since a single useSpring call
+  // can't give one of its own fields a different delay than the rest.
+  const photoPush = useSpring({
+    from: { x: -64 },
+    to: { x: 0 },
+    delay: reduced ? 0 : 560,
+    immediate: reduced,
+    config: { tension: 175, friction: 20 },
+  });
+
   return (
     <section className="relative overflow-hidden pb-24 pt-24 sm:pb-32">
       {/* The room's ambient light — soft, wide, centered on the whole
@@ -102,8 +115,9 @@ export function Hero() {
             style={riseStyle(trail[1])}
             className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
           >
-            Frontend developer, formerly an AP Calculus teacher. I build interfaces with React,
-            TypeScript, and a habit of digging one layer deeper.
+            AP Calculus teacher turned Frontend Developer. I build interfaces with React,
+            TypeScript, and a habit of digging one layer deeper. The type of kid who kept
+            asking, <span className="annotation text-xl">Why?</span>
           </animated.p>
 
           <animated.div style={riseStyle(trail[2])} className="mt-8 flex justify-center lg:justify-start">
@@ -127,7 +141,10 @@ export function Hero() {
           style={{
             opacity: photoSpring.opacity,
             scale: photoSpring.scale,
-            transform: photoSpring.y.to((v) => `translate3d(0, ${v}px, 0)`),
+            transform: to(
+              [photoSpring.y, photoPush.x],
+              (y, x) => `translate3d(${x}px, ${y}px, 0)`,
+            ),
           }}
         >
           <PhotoCard />
