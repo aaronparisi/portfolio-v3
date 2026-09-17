@@ -1,0 +1,14 @@
+{
+  "admitted": true,
+  "reasons": [],
+  "provenance": {
+    "viewpoint": "reference",
+    "sourcePath": "/Users/aaronparisi/Desktop/portfolio-site/.img2threejs/reference.png",
+    "width": 1050,
+    "height": 1400,
+    "foregroundCoverage": 0.3399,
+    "largestComponentFraction": 1.0,
+    "pHash": 16997054185220252836,
+    "duplicateOfHash": null
+  }
+}

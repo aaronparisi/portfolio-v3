@@ -13,3 +13,10 @@
 # Generated architecture diagram (archify) — a standalone project
 # artifact for reference, not site content, so it isn't committed.
 /diagrams/
+
+# Local tool state (impeccable design-skill config/hooks) — machine-local,
+# not project source. .impeccable/surfaces/ (the direction contract) and
+# PRODUCT.md/DESIGN.md at the repo root are real project docs and stay
+# tracked.
+/.impeccable/config.local.json
+/.codex/

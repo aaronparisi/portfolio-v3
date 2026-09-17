@@ -1,5 +1,4 @@
 import { animated, useSpring } from "@react-spring/web";
-import { ThemeToggle } from "./ThemeToggle";
 import { MotionToggle } from "./MotionToggle";
 import { BrandMark } from "./BrandMark";
 import { SpringButton } from "./SpringButton";
@@ -13,8 +12,29 @@ const links = [
 ];
 
 export function Nav() {
+  const reduced = usePrefersReducedMotion();
+
+  // The site "turning on" -- but the nav isn't the first thing to move.
+  // The hero photo gets its own moment center-stage first (pop in, then
+  // its hover-wipe "peek" as a demo), and only once that's had its beat
+  // does the nav drop down from off-screen, followed by the text column.
+  // The 2.2s delay is tuned against that photo sequence in Hero.tsx --
+  // change one, sanity-check the other. A small overshoot past 0 (low
+  // friction relative to tension) reads as a physical thing settling
+  // into its slot, not a panel sliding to a stop.
+  const entrance = useSpring({
+    from: { y: -80, opacity: 0 },
+    to: { y: 0, opacity: 1 },
+    delay: reduced ? 0 : 2200,
+    immediate: reduced,
+    config: { tension: 210, friction: 18 },
+  });
+
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md">
+    <animated.header
+      className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md"
+      style={{ opacity: entrance.opacity, transform: entrance.y.to((y) => `translate3d(0, ${y}px, 0)`) }}
+    >
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
         <BrandMark />
 
@@ -32,10 +52,9 @@ export function Nav() {
             Get in touch
           </SpringButton>
           <MotionToggle />
-          <ThemeToggle />
         </div>
       </nav>
-    </header>
+    </animated.header>
   );
 }
 

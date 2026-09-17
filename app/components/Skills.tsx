@@ -204,8 +204,7 @@ export function Skills() {
     <section id="skills" className="py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-6">
         <Reveal>
-          <p className="eyebrow">Skills</p>
-          <h2 className="mt-2 font-display text-3xl text-[var(--ink)] sm:text-4xl">
+          <h2 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">
             What I bring to the table
           </h2>
         </Reveal>

@@ -31,9 +31,8 @@ export function Footer() {
     <footer id="contact" className="border-t border-[var(--border)] px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <Reveal>
-          <p className="eyebrow">Contact</p>
-          <h2 className="mt-2 font-display text-4xl text-[var(--ink)] sm:text-5xl">
-            Let&rsquo;s build <em className="text-[var(--accent)]">something</em>
+          <h2 className="font-display text-4xl text-[var(--ink)] sm:text-5xl">
+            Let&rsquo;s build <span className="annotation text-4xl sm:text-5xl">something</span>
           </h2>
           <p className="mx-auto mt-4 max-w-md text-[var(--ink-soft)]">
             Open to frontend roles with room to grow alongside product and design.
