@@ -19,7 +19,9 @@ import * as THREE from "three";
 
 export const GRAPH_DOMAIN = 3;
 const SEGMENTS = 84;
-const AXIS_LENGTH = 4.2;
+const AXIS_LENGTH = 3.5;
+const GRID_HALF_SIZE = 3.3;
+const GRID_HALF_HEIGHT = 1.7;
 
 export function evaluateF(x: number, y: number): number {
   return (7 * x * y) / Math.exp(x * x + y * y);
@@ -112,6 +114,69 @@ export function createSurfaceMesh(): THREE.Mesh {
   return new THREE.Mesh(geo, material);
 }
 
+/**
+ * Re-sorts a surface geometry's index buffer by each triangle's
+ * horizontal distance from the origin (nearest first) and returns that
+ * sorted distance list. Pair this with geometry.setDrawRange() and
+ * revealCountForRadius() to make the mesh visibly render outward from
+ * (0,0,0) -- an animated uniform scale on the whole mesh only makes an
+ * already-complete shape bigger or smaller, it never actually looks
+ * like new surface is appearing; this makes the surface itself, as
+ * data, come into existence ring by ring the way a real plotting
+ * routine or calculus-visualization tool would draw it.
+ */
+export function prepareRadialReveal(geometry: THREE.BufferGeometry): Float32Array {
+  const index = geometry.getIndex();
+  const position = geometry.getAttribute("position");
+  if (!index || !position) return new Float32Array(0);
+
+  const triangleCount = index.count / 3;
+  const order = new Array<number>(triangleCount);
+  const radii = new Float32Array(triangleCount);
+
+  for (let t = 0; t < triangleCount; t++) {
+    order[t] = t;
+    const a = index.getX(t * 3);
+    const b = index.getX(t * 3 + 1);
+    const c = index.getX(t * 3 + 2);
+    // World X and Z carry math x and math y (see file header) -- the
+    // reveal spreads across that horizontal plane, ignoring height, so
+    // it reads as "outward from the origin in x and y" the way the
+    // domain itself grows, not as some unrelated 3D sphere expanding.
+    const cx = (position.getX(a) + position.getX(b) + position.getX(c)) / 3;
+    const cz = (position.getZ(a) + position.getZ(b) + position.getZ(c)) / 3;
+    radii[t] = Math.sqrt(cx * cx + cz * cz);
+  }
+
+  order.sort((i, j) => radii[i] - radii[j]);
+
+  const sortedIndex = new Uint16Array(index.count);
+  const sortedRadii = new Float32Array(triangleCount);
+  for (let t = 0; t < triangleCount; t++) {
+    const original = order[t];
+    sortedIndex[t * 3] = index.getX(original * 3);
+    sortedIndex[t * 3 + 1] = index.getX(original * 3 + 1);
+    sortedIndex[t * 3 + 2] = index.getX(original * 3 + 2);
+    sortedRadii[t] = radii[original];
+  }
+
+  geometry.setIndex(new THREE.BufferAttribute(sortedIndex, 1));
+  geometry.setDrawRange(0, 0);
+  return sortedRadii;
+}
+
+/** Binary search: how many of the (radius-sorted) triangles have a centroid at or inside `radius`. */
+export function revealCountForRadius(sortedRadii: Float32Array, radius: number): number {
+  let lo = 0;
+  let hi = sortedRadii.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (sortedRadii[mid] <= radius) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 function createAxisLabel(text: string, colorCss: string): THREE.Sprite {
   const size = 128;
   const canvas = document.createElement("canvas");
@@ -178,16 +243,55 @@ export function createAxesGroup(): AxesGroup {
   return { root, worldXAxis, worldYAxis, worldZAxis };
 }
 
-export function createFloorGrid(): THREE.GridHelper {
-  const grid = new THREE.GridHelper(GRAPH_DOMAIN * 2 + 1, 14, 0x504945, 0x3c3836);
-  (grid.material as THREE.Material).transparent = true;
-  (grid.material as THREE.Material).opacity = 0.6;
+// CalcPlot3D's box: grid lines on the floor, ceiling, and two walls, so
+// there's always a reference plane behind/below whatever you're looking
+// at from any orbit angle -- a single floor grid only reads as ground
+// while the other three sides of the bounding box show nothing at all.
+function makeGridPlane(): THREE.GridHelper {
+  const grid = new THREE.GridHelper(GRID_HALF_SIZE * 2, 12, 0x504945, 0x3c3836);
+  const material = grid.material as THREE.Material;
+  material.transparent = true;
+  material.opacity = 0.45;
   return grid;
+}
+
+export function createGridBox(): THREE.Group {
+  const group = new THREE.Group();
+
+  const floor = makeGridPlane();
+  floor.position.y = -GRID_HALF_HEIGHT;
+  group.add(floor);
+
+  const ceiling = makeGridPlane();
+  ceiling.position.y = GRID_HALF_HEIGHT;
+  group.add(ceiling);
+
+  // GridHelper lies flat in XZ (spans local X and Z) by default;
+  // rotating -90 deg about X carries that plane to XY (a wall facing
+  // along Z), and -90 deg about Z carries it to YZ (a wall facing along
+  // X) -- both checked against the standard rotation matrices, not
+  // guessed, since a sign error here just silently faces a wall the
+  // wrong way with nothing to catch it.
+  const backWall = makeGridPlane();
+  backWall.rotation.x = Math.PI / 2;
+  backWall.position.z = -GRID_HALF_SIZE;
+  group.add(backWall);
+
+  const sideWall = makeGridPlane();
+  sideWall.rotation.z = Math.PI / 2;
+  sideWall.position.x = -GRID_HALF_SIZE;
+  group.add(sideWall);
+
+  return group;
 }
 
 export function disposeObject3D(root: THREE.Object3D): void {
   root.traverse((obj) => {
-    if (obj instanceof THREE.Mesh || obj instanceof THREE.Sprite) {
+    // THREE.Line covers LineSegments too (GridHelper extends
+    // LineSegments) -- easy to forget since neither is a Mesh, and a
+    // missed case here just quietly leaks that geometry/material
+    // instead of throwing.
+    if (obj instanceof THREE.Mesh || obj instanceof THREE.Sprite || obj instanceof THREE.Line) {
       obj.geometry?.dispose();
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
       mats.forEach((m) => {

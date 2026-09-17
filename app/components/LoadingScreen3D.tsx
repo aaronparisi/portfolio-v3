@@ -4,41 +4,48 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { animated, useSpring } from "@react-spring/web";
 import {
   createAxesGroup,
-  createFloorGrid,
+  createGridBox,
   createSurfaceMesh,
   disposeObject3D,
+  prepareRadialReveal,
+  revealCountForRadius,
   springValue,
 } from "~/three/createLoadingGraph";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 const ENTER_DELAY = 5000;
+// Radians/sec -- only applied while the visitor isn't actively dragging,
+// so the graph is never fighting their own orbiting, but never just
+// sits dead-still if they never touch it either.
+const AUTO_ROTATE_SPEED = 0.18;
 
 /**
  * The loading screen as a real multivariable calculus surface --
- * f(x, y) = 7xy / e^(x^2+y^2) -- rendered CalcPlot3D-style: colored
- * axes sprout from the origin, then the surface itself repeatedly
- * grows outward from (0,0,0) and contracts back, looping for as long
- * as it takes someone to look at it. It's a real THREE.js scene, not a
- * video or a screenshot -- drag to orbit it (OrbitControls, built into
- * three itself, no extra dependency) the whole time, including while
- * it's still "loading."
+ * f(x, y) = 7xy / e^(x^2+y^2) -- rendered CalcPlot3D-style: a grid box,
+ * colored axes sprouting from the origin, then the surface itself
+ * repeatedly rendering outward from (0,0,0) and retracting back,
+ * looping for as long as it takes someone to look at it. It's a real
+ * THREE.js scene, not a video -- drag to orbit it (OrbitControls,
+ * built into three itself, no extra dependency) any time, including
+ * mid-animation, and it slowly turns on its own whenever nobody's
+ * dragging it.
  *
  * Unlike every other loading screen on this branch, this one doesn't
  * time itself out -- there's a real, if decorative, "load" happening
  * (constructing the geometry, compiling shaders), so after a few
  * seconds an "Enter the site" button appears and the visitor decides
- * when they're done watching it breathe.
+ * when they're done watching it.
  *
- * All of the motion here -- the axis sprout, the surface's grow/hold/
- * shrink cycle -- is driven by springValue() (see createLoadingGraph.ts),
- * a closed-form damped-oscillator function evaluated against elapsed
- * time inside this component's own requestAnimationFrame loop, not by
- * react-spring. This loop isn't driven by React renders at all, so
- * wiring a second animation library into it would add a layer of
- * indirection (reading spring values back out via .get() every frame)
- * for no real benefit over just computing the same physics directly.
- * The "Enter" button below is normal DOM, and does use react-spring,
- * same as everywhere else on the page.
+ * All of the motion here -- the axis sprout, the auto-rotate, the
+ * surface's grow/hold/shrink cycle -- is driven by springValue() (see
+ * createLoadingGraph.ts), a closed-form damped-oscillator function
+ * evaluated against elapsed time inside this component's own
+ * requestAnimationFrame loop, not by react-spring. This loop isn't
+ * driven by React renders at all, so wiring a second animation library
+ * into it would add a layer of indirection (reading spring values back
+ * out via .get() every frame) for no real benefit over just computing
+ * the same physics directly. The "Enter" button below is normal DOM,
+ * and does use react-spring, same as everywhere else on the page.
  */
 export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
   const reduced = usePrefersReducedMotion();
@@ -73,7 +80,7 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     // height variation into what reads as a flat plane. Deliberately
     // asymmetric X/Z instead, so the default view actually cuts across
     // the saddle shape rather than along it.
-    camera.position.set(1.4, 4.6, 7.6);
+    camera.position.set(1.3, 3.9, 6.4);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setClearColor(new THREE.Color(bgHex), 1);
@@ -94,17 +101,27 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     fill.position.set(-4, 2, -3);
     scene.add(fill);
 
-    const grid = createFloorGrid();
-    scene.add(grid);
+    // Everything that should turn together under the idle auto-rotate
+    // (grid box, axes, surface) lives under one root, so rotating that
+    // single group is the whole implementation -- no need to touch the
+    // camera or duplicate the rotation across three separate objects.
+    const graphRoot = new THREE.Group();
+    scene.add(graphRoot);
+
+    graphRoot.add(createGridBox());
 
     const axes = createAxesGroup();
-    scene.add(axes.root);
+    graphRoot.add(axes.root);
 
     const surface = createSurfaceMesh();
-    const surfaceGroup = new THREE.Group();
-    surfaceGroup.add(surface);
-    surfaceGroup.scale.setScalar(0);
-    scene.add(surfaceGroup);
+    graphRoot.add(surface);
+    // Sorts the surface's own triangles by distance from the origin and
+    // hands back that sorted distance list -- draw range is then just
+    // "how many of the nearest N triangles to show," which is what
+    // makes the surface actually render outward ring by ring instead of
+    // merely scaling an already-complete shape up and down.
+    const sortedRadii = prepareRadialReveal(surface.geometry);
+    const maxRadius = sortedRadii.length > 0 ? sortedRadii[sortedRadii.length - 1] : 1;
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -113,6 +130,21 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     controls.maxDistance = 16;
     controls.target.set(0, 0, 0);
     controls.update();
+
+    // OrbitControls' own built-in autoRotate has historically had
+    // quirks about how it interacts with active dragging across
+    // versions -- simpler and more predictable to track interaction
+    // state ourselves (these events fire on real pointer/touch
+    // engagement) and drive the rotation by hand in the render loop.
+    let userInteracting = false;
+    const handleInteractionStart = () => {
+      userInteracting = true;
+    };
+    const handleInteractionEnd = () => {
+      userInteracting = false;
+    };
+    controls.addEventListener("start", handleInteractionStart);
+    controls.addEventListener("end", handleInteractionEnd);
 
     function resize() {
       if (!container) return;
@@ -133,15 +165,16 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     // in this three version in favor of THREE.Timer -- a manual delta
     // is simpler than adopting a whole new clock API for one number).
     const startTime = performance.now();
+    let lastElapsed = 0;
 
     // The axes sprout once, staggered, and stay fully drawn -- only the
     // surface keeps looping after that, so the coordinate system reads
     // as "established" before the thing being graphed on it arrives.
     const AXIS_STAGGER = 0.15;
     const SURFACE_START = 1.1;
-    const GROW_DURATION = 1.0;
-    const HOLD_DURATION = 0.5;
-    const SHRINK_DURATION = 0.9;
+    const GROW_DURATION = 2.6;
+    const HOLD_DURATION = 0.7;
+    const SHRINK_DURATION = 2.0;
     const GAP_DURATION = 0.3;
 
     let phase: "grow" | "hold" | "shrink" | "gap" = "grow";
@@ -150,6 +183,12 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     function tick() {
       if (disposed) return;
       const elapsed = (performance.now() - startTime) / 1000;
+      const dt = Math.min(0.1, Math.max(0, elapsed - lastElapsed));
+      lastElapsed = elapsed;
+
+      if (!userInteracting) {
+        graphRoot.rotation.y += dt * AUTO_ROTATE_SPEED;
+      }
 
       const axisList: Array<[THREE.Group, number]> = [
         [axes.worldXAxis, 0],
@@ -162,36 +201,48 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       }
 
       if (elapsed < SURFACE_START) {
-        surfaceGroup.scale.setScalar(0);
+        surface.geometry.setDrawRange(0, 0);
       } else {
         const t = elapsed - phaseStart;
-        let s: number;
+        // Close to critically damped (friction ~= 2*sqrt(tension)) on
+        // purpose -- real spring physics, but with the oscillation
+        // tuned almost all the way out, since visible bounce here would
+        // read as the reveal radius flickering in and out near the end
+        // of each sweep instead of a clean, legible "spreading outward."
+        // Tension is deliberately very low (typical UI springs on this
+        // site run 100-300) -- this needs to be slow enough to actually
+        // watch spread from the origin outward, not just visually
+        // confirm it happened; the first attempt (tension 110) settled
+        // in well under half a second, which read as the shape simply
+        // appearing, not rendering.
+        let p: number;
         if (phase === "grow") {
-          s = springValue(t, 0, 1, 130, 15);
+          p = springValue(t, 0, 1, 5, 4.5);
           if (t > GROW_DURATION) {
             phase = "hold";
             phaseStart = elapsed;
           }
         } else if (phase === "hold") {
-          s = 1;
+          p = 1;
           if (t > HOLD_DURATION) {
             phase = "shrink";
             phaseStart = elapsed;
           }
         } else if (phase === "shrink") {
-          s = springValue(t, 1, 0, 190, 22);
+          p = springValue(t, 1, 0, 9, 6);
           if (t > SHRINK_DURATION) {
             phase = "gap";
             phaseStart = elapsed;
           }
         } else {
-          s = 0;
+          p = 0;
           if (t > GAP_DURATION) {
             phase = "grow";
             phaseStart = elapsed;
           }
         }
-        surfaceGroup.scale.setScalar(Math.max(0, s));
+        const clampedRadius = Math.max(0, Math.min(1, p)) * maxRadius;
+        surface.geometry.setDrawRange(0, revealCountForRadius(sortedRadii, clampedRadius) * 3);
       }
 
       controls.update();
@@ -204,12 +255,11 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       disposed = true;
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
+      controls.removeEventListener("start", handleInteractionStart);
+      controls.removeEventListener("end", handleInteractionEnd);
       controls.dispose();
       renderer.dispose();
-      disposeObject3D(axes.root);
-      disposeObject3D(surfaceGroup);
-      grid.geometry.dispose();
-      (grid.material as THREE.Material).dispose();
+      disposeObject3D(graphRoot);
       container.removeChild(renderer.domElement);
     };
   }, [reduced]);
