@@ -98,23 +98,25 @@ const WIPE_STRIPE_COLORS = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c
 const WIPE_STRIPE_PX = 7; // width of each individual color stripe
 const WIPE_BRUSH_PX = WIPE_STRIPE_COLORS.length * WIPE_STRIPE_PX; // the band shows exactly one pass of the full palette
 const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLORS.map((c, i) => `${c} ${i * WIPE_STRIPE_PX}px ${(i + 1) * WIPE_STRIPE_PX}px`).join(", ")})`;
-// Overdamped (friction well past critical for this tension) on
-// purpose -- a wipe that swept across and then *bounced back* would
-// read as a mistake, not a flourish, unlike the deliberately
-// underdamped press/glow springs elsewhere in this component.
-// Tension/friction are both scaled down from the original, snappier
-// pass by the same factor, which keeps the curve's *shape* (zeta, the
-// damping ratio) identical while stretching it out in time -- lowering
-// tension alone would've changed how it decelerates, not just how long
-// it takes. An earlier "slower" pass only scaled this by 1.4x (to
-// 0.9s), which still read as barely visible; this scales the original
-// by roughly 3.4x instead. 2.2s is ~99% of the way through this exact
-// config's closed-form curve (solved directly from springValue's own
-// math, not eyeballed) -- long enough that the handoff to solid yellow
-// at the end is never visually abrupt.
-const WIPE_TENSION = 10;
-const WIPE_FRICTION = 9;
-const WIPE_DURATION_S = 2.2;
+// Split into two very different-feeling stretches rather than one
+// continuous motion the whole time: a long HOLD where the sweep barely
+// moves at all -- as if the disabled tan is a spring pulled taut and
+// held -- followed by a short, underdamped SNAP where it actually
+// releases and covers essentially the whole distance, landing with a
+// small overshoot-and-settle wobble (the "springiness"). A single
+// smooth spring release naturally has its highest velocity roughly
+// 1/omega0 into its own motion -- i.e., fairly early relative to its
+// own duration, not at the very end -- so a plain one-phase spring
+// stretched across the full 2.2s would spend most of that time
+// decelerating, not accelerating. Concentrating virtually all of the
+// visible motion into a short burst *after* a long static hold is what
+// actually reads as "released, then fast," while HOLD + SNAP still
+// adds up to the same 2.2s total as the single-phase version before it.
+const WIPE_HOLD_S = 1.5;
+const WIPE_SNAP_S = 0.7;
+const WIPE_SNAP_TENSION = 90;
+const WIPE_SNAP_FRICTION = 9;
+const WIPE_DURATION_S = WIPE_HOLD_S + WIPE_SNAP_S;
 
 /**
  * Plays the enable transition's sweep once on mount, then calls
@@ -157,7 +159,11 @@ function WipeSweep({ onDone }: { onDone: () => void }) {
         onDoneRef.current();
         return;
       }
-      const p = springValue(t, 0, 1, WIPE_TENSION, WIPE_FRICTION);
+      // springValue itself already returns exactly `from` (0 here) for
+      // any t <= 0, so feeding it negative time during the hold -- no
+      // special-casing needed -- keeps the sweep motionless until the
+      // snap actually begins at t = WIPE_HOLD_S.
+      const p = springValue(t - WIPE_HOLD_S, 0, 1, WIPE_SNAP_TENSION, WIPE_SNAP_FRICTION);
       el.style.transform = `translateX(${(p - 1) * 100}%) skewX(${WIPE_SKEW_DEG}deg)`;
       raf = requestAnimationFrame(tick);
     }
@@ -424,7 +430,7 @@ const DOT_HOP_S = 0.26;
 const DOT_RESTITUTION = 0.45;
 const DOT_BOUNCE_COUNT = 3; // bounce-backs after the initial launch, each one smaller
 const DOT_REST_S = 0.7;
-const DOT_PEAK_HEIGHT_PX = 10; // how high the initial launch throws each dot above rest
+const DOT_PEAK_HEIGHT_PX = 8.5; // how high the initial launch throws each dot above rest
 
 type DotPhase = { kind: "rise" | "fall" | "rest"; heightPx: number; duration: number };
 
