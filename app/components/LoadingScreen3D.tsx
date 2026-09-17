@@ -11,9 +11,17 @@ import {
   springValue,
 } from "~/three/createLoadingGraph";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
-import { SpringButton } from "~/components/SpringButton";
+import { EnterSiteButton } from "~/components/EnterSiteButton";
 
-const ENTER_DELAY = 5000;
+// How long the "Enter the site" button stays disabled, showing a
+// bouncing "Loading" ellipsis instead -- there's nothing real being
+// waited on here (same as the rest of this screen), it's purely
+// decorative pacing so the button doesn't feel clickable before the
+// visitor has had a beat to actually look at the graph.
+const ENTER_DELAY = 6000;
+// The button itself appears much sooner than that -- it's just
+// disabled/grayed out for the remainder of ENTER_DELAY, not hidden.
+const BUTTON_ENTRANCE_DELAY = 400;
 
 // Radians of graph rotation per pixel of drag -- the one sensitivity
 // constant both live dragging and the post-release momentum replay
@@ -52,10 +60,11 @@ const MOMENTUM_FRICTION = 4;
  * than snapping back to a fixed default rotation.
  *
  * Unlike every other loading screen on this branch, this one doesn't
- * time itself out -- there's a real, if decorative, "load" happening
- * (constructing the geometry, compiling shaders), so after a few
- * seconds an "Enter the site" button appears and the visitor decides
- * when they're done watching it.
+ * time itself out on its own -- there's a real, if decorative, "load"
+ * happening (constructing the geometry, compiling shaders), so an
+ * "Enter the site" button appears almost immediately but stays
+ * disabled (see EnterSiteButton) for a few seconds before the visitor
+ * can actually use it.
  *
  * All of the motion here -- the axis sprout, the auto-rotate, the
  * surface's grow/hold/shrink cycle -- is driven by springValue() (see
@@ -65,12 +74,13 @@ const MOMENTUM_FRICTION = 4;
  * driven by React renders at all, so wiring a second animation library
  * into it would add a layer of indirection (reading spring values back
  * out via .get() every frame) for no real benefit over just computing
- * the same physics directly. The "Enter" button below is normal DOM,
- * and does use react-spring, same as everywhere else on the page.
+ * the same physics directly. EnterSiteButton below is normal DOM, and
+ * does use react-spring, same as everywhere else on the page.
  */
 export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
   const reduced = usePrefersReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [buttonVisible, setButtonVisible] = useState(false);
   const [ready, setReady] = useState(false);
   const [exiting, setExiting] = useState(false);
 
@@ -81,8 +91,12 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => {
     if (reduced) return;
-    const timer = window.setTimeout(() => setReady(true), ENTER_DELAY);
-    return () => window.clearTimeout(timer);
+    const visibleTimer = window.setTimeout(() => setButtonVisible(true), BUTTON_ENTRANCE_DELAY);
+    const readyTimer = window.setTimeout(() => setReady(true), ENTER_DELAY);
+    return () => {
+      window.clearTimeout(visibleTimer);
+      window.clearTimeout(readyTimer);
+    };
   }, [reduced]);
 
   useEffect(() => {
@@ -509,13 +523,17 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
   }, [reduced]);
 
   function handleEnter() {
+    // The button's own `disabled` attribute already prevents this from
+    // firing before `ready`, but a disabled check costs nothing extra
+    // to keep here too.
+    if (!ready) return;
     setExiting(true);
     window.setTimeout(onComplete, 450);
   }
 
   const button = useSpring({
-    opacity: ready && !exiting ? 1 : 0,
-    y: ready && !exiting ? 0 : 16,
+    opacity: buttonVisible && !exiting ? 1 : 0,
+    y: buttonVisible && !exiting ? 0 : 16,
     config: { tension: 210, friction: 20 },
   });
 
@@ -542,12 +560,10 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
         style={{
           opacity: button.opacity,
           transform: button.y.to((y) => `translate3d(0, ${y}px, 0)`),
-          pointerEvents: ready && !exiting ? "auto" : "none",
+          pointerEvents: buttonVisible && !exiting ? "auto" : "none",
         }}
       >
-        <SpringButton onClick={handleEnter} className="btn-primary cursor-pointer rounded-full px-8 py-3 font-medium">
-          Enter the site
-        </SpringButton>
+        <EnterSiteButton disabled={!ready} onClick={handleEnter} />
       </animated.div>
       <span className="sr-only">Loading the page.</span>
     </animated.div>
