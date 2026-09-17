@@ -1,4 +1,4 @@
-import { useEffect, useRef, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { animated, to, useSpring } from "@react-spring/web";
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
@@ -66,6 +66,130 @@ const CENTER_COLOR = "#fb4934";
 const CENTER_RADIUS_PX = 16;
 const CENTER_FADE_PX = 10;
 
+// The one-shot transition that plays when the button flips from
+// disabled to enabled: a diagonal band of Gruvbox colors sweeps left
+// to right, with solid accent yellow trailing behind it and the
+// disabled tan still showing ahead of it (wherever the sweep hasn't
+// reached yet) -- like the band is repainting the button as it
+// passes, rather than a plain crossfade.
+//
+// Built as a single element containing two children -- a big solid
+// block of yellow, followed by a narrow strip of striped colors --
+// both riding inside one skewX()'d, translateX()'d container. Skewing
+// the *container* rather than hand-computing a diagonal clip-path
+// polygon means both the yellow's leading edge and the stripe band's
+// internal edges tilt together automatically, from plain vertical
+// stripes in the container's own local coordinates.
+//
+// Sized and positioned entirely in the parent button's own terms --
+// `calc(100% + ...)` for width and a plain -100%/0% translateX range
+// -- rather than measuring the button's pixel width in JS, so this
+// doesn't need a ref or a resize observer to stay correct if the
+// button's size ever changes.
+const WIPE_SKEW_DEG = -16;
+// However large the skew shear ends up being at this button's actual
+// height, WIPE_MARGIN_PX just needs to safely exceed it so the leading
+// and trailing edges stay fully off-canvas (start) or fully past both
+// corners (end) rather than clipping a sliver of the wrong color at
+// the top or bottom -- comfortably oversized for any height this
+// button is likely to be.
+const WIPE_MARGIN_PX = 32;
+const WIPE_STRIPE_COLORS = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
+const WIPE_STRIPE_PX = 7; // width of each individual color stripe
+const WIPE_BRUSH_PX = WIPE_STRIPE_COLORS.length * WIPE_STRIPE_PX; // the band shows exactly one pass of the full palette
+const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLORS.map((c, i) => `${c} ${i * WIPE_STRIPE_PX}px ${(i + 1) * WIPE_STRIPE_PX}px`).join(", ")})`;
+// Overdamped (friction well past critical for this tension) on
+// purpose -- a wipe that swept across and then *bounced back* would
+// read as a mistake, not a flourish, unlike the deliberately
+// underdamped press/glow springs elsewhere in this component. 0.65s
+// is ~99% of the way through this exact config's closed-form curve
+// (solved directly from springValue's own math, not eyeballed) --
+// long enough that the handoff to solid yellow at the end is never
+// visually abrupt.
+const WIPE_TENSION = 120;
+const WIPE_FRICTION = 30;
+const WIPE_DURATION_S = 0.65;
+
+/**
+ * Plays the enable transition's sweep once on mount, then calls
+ * `onDone`. Driven by a plain requestAnimationFrame loop evaluating
+ * springValue() directly (see ~/utils/springValue) rather than
+ * react-spring's useSpring -- not for the dots' lockstep reasons this
+ * time, but because react-spring's onRest firing needs its own rest
+ * detection to pass first, and that turned out to lag well behind
+ * when this exact spring is visibly settled (confirmed directly:
+ * background-color sampling after triggering this transition showed
+ * the solid-yellow handoff arriving ~1.9s after the sweep started, on
+ * a spring whose curve is ~99% resolved by 0.65s). Whatever's driving
+ * wipeDone needs to fire close to when the sweep actually *looks*
+ * done, since it's what hands the button's own background off from
+ * the animated sweep to a plain solid yellow -- a callback that lags
+ * a second or more behind would leave the button visibly stuck mid-
+ * transition. A fixed-duration rAF loop has no such lag: it calls
+ * onDone the instant its own known-in-advance duration elapses.
+ */
+function WipeSweep({ onDone }: { onDone: () => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      onDoneRef.current();
+      return;
+    }
+    let raf = 0;
+    let disposed = false;
+    const startTime = performance.now();
+
+    function tick() {
+      if (disposed || !el) return;
+      const t = (performance.now() - startTime) / 1000;
+      if (t >= WIPE_DURATION_S) {
+        el.style.transform = `translateX(0%) skewX(${WIPE_SKEW_DEG}deg)`;
+        onDoneRef.current();
+        return;
+      }
+      const p = springValue(t, 0, 1, WIPE_TENSION, WIPE_FRICTION);
+      el.style.transform = `translateX(${(p - 1) * 100}%) skewX(${WIPE_SKEW_DEG}deg)`;
+      raf = requestAnimationFrame(tick);
+    }
+    tick();
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+    };
+    // Runs exactly once per mount -- this component is only ever
+    // mounted for the duration of one sweep, not kept around and
+    // re-triggered, so onDone is read via a ref rather than listed
+    // here (its identity can change across the parent's own re-renders
+    // without restarting the sweep).
+  }, []);
+
+  return (
+    <span
+      ref={ref}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-y-0"
+      // The initial transform matches tick()'s own t=0 value exactly
+      // -- without it, this would render one frame with no transform
+      // at all (fully covering, untranslated) before the effect's
+      // first rAF callback ever runs, flashing solid yellow for a
+      // frame before the sweep starts.
+      style={{
+        left: `${-WIPE_MARGIN_PX}px`,
+        width: `calc(100% + ${2 * WIPE_MARGIN_PX + WIPE_BRUSH_PX}px)`,
+        transform: `translateX(-100%) skewX(${WIPE_SKEW_DEG}deg)`,
+      }}
+    >
+      <span className="absolute inset-y-0 left-0" style={{ width: `calc(100% - ${WIPE_BRUSH_PX}px)`, background: "var(--accent)" }} />
+      <span className="absolute inset-y-0 right-0" style={{ width: `${WIPE_BRUSH_PX}px`, backgroundImage: WIPE_BRUSH_GRADIENT }} />
+    </span>
+  );
+}
+
 /**
  * The loading screen's call to action -- a from-scratch component
  * rather than an extension of SpringButton (which only ever renders
@@ -92,6 +216,42 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
   // frame to frame, the same "magnetic" feel PhotoCard's tilt effect
   // uses for its own cursor tracking.
   const [glow, glowApi] = useSpring(() => ({ x: 50, y: 50, opacity: 0, config: { tension: 220, friction: 20 } }));
+  // Whether the enable transition has finished painting the button
+  // yellow -- kept separate from `disabled` itself so the background
+  // can keep showing the disabled tan for the wipe overlay (see
+  // WipeSweep below) to sweep across, instead of snapping straight to
+  // yellow underneath it the instant `disabled` flips (which would
+  // make the whole wipe invisible -- there'd be nothing left for it to
+  // reveal).
+  const [wipeDone, setWipeDone] = useState(disabled ? false : true);
+  const wasDisabled = useRef(disabled);
+
+  useEffect(() => {
+    if (wasDisabled.current && !disabled) {
+      if (reduced) {
+        // No sweep to watch, so nothing to gate on -- go straight there.
+        setWipeDone(true);
+      } else {
+        // The "pop": a bigger, bouncier version of the hover scale
+        // bump, released back down after a fixed delay instead of
+        // chained via react-spring's own async next()/onRest --
+        // confirmed directly (see WipeSweep's own comment) that
+        // react-spring's rest detection is precise enough to add most
+        // of a second beyond when a spring is visually settled, which
+        // would make the "bounce back" half of the pop start visibly
+        // later than the eye expects. A plain timeout tuned to when
+        // this specific spring configuration actually *looks* settled
+        // doesn't have that lag.
+        void pressApi.start({ scale: 1.18, config: { tension: 260, friction: 9 } });
+        const popBackId = window.setTimeout(() => {
+          void pressApi.start({ scale: 1, config: { tension: 300, friction: 14 } });
+        }, 260);
+        setWipeDone(false);
+        return () => window.clearTimeout(popBackId);
+      }
+    }
+    wasDisabled.current = disabled;
+  }, [disabled, reduced, pressApi]);
 
   function handlePointerEnter() {
     if (disabled || reduced) return;
@@ -147,11 +307,19 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
         // Muted gray while loading, not just a dimmed accent -- reads
         // more clearly as "not yet interactive" than a translucent
         // yellow would (which could look like a hover/press state).
-        background: disabled ? "var(--ink-soft)" : "var(--accent)",
-        color: disabled ? "var(--bg)" : "var(--on-accent)",
+        // Gated on wipeDone, not just `disabled` -- see wipeDone's own
+        // comment above for why the enable transition needs the base
+        // to keep showing tan a little longer than the button's
+        // actual functional disabled state.
+        background: wipeDone ? "var(--accent)" : "var(--ink-soft)",
+        color: wipeDone ? "var(--on-accent)" : "var(--bg)",
+        // Opacity, unlike background/color, follows `disabled` directly
+        // and snaps immediately -- it's part of the "pop" moment, not
+        // the wipe's own slower reveal.
         opacity: disabled ? 0.6 : 1,
       }}
     >
+      {!disabled && !wipeDone && !reduced && <WipeSweep onDone={() => setWipeDone(true)} />}
       {!disabled && (
         <animated.span
           aria-hidden="true"
@@ -265,14 +433,17 @@ const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
 //   preserves the real stagger through stalls of any length, which is
 //   also just a more correct simulation regardless of what's sharing
 //   the thread.
-// Nudged down from its natural inline position -- a small circle
-// sitting next to capital-letter/lowercase text lands noticeably
-// above the letters' actual baseline (font line-height reserves room
-// below the baseline for descenders like the "g" in "Loading", which
-// this dot never uses), so items-end alone left it visibly floating
-// above the bottom of the "L". DOT_REST_OFFSET_PX pulls its resting
-// position down to sit flush with the letters' baseline instead.
-const DOT_REST_OFFSET_PX = 1;
+// items-end alone aligns the dot's bottom to the *line box's* bottom,
+// not to any actual letter's -- and the line box extends well below
+// the baseline to reserve room for descenders (the "g" in "Loading"),
+// landing the dot flush with "g", not "L". Measured directly via
+// canvas.measureText against this button's own font (JetBrains Mono,
+// 500 16px/24px): fontBoundingBoxDescent is 5px, while "L" itself has
+// an actualBoundingBoxDescent of 0 (its ink stops exactly at the
+// baseline, having no descender) -- so items-end alone leaves the dot
+// resting 5px below "L"'s true bottom. This pulls it back up by
+// exactly that, landing it flush with "L" instead of "g".
+const DOT_REST_OFFSET_PX = -5;
 
 function LoadingDots() {
   return (
