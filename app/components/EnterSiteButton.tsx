@@ -101,14 +101,18 @@ const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLO
 // Overdamped (friction well past critical for this tension) on
 // purpose -- a wipe that swept across and then *bounced back* would
 // read as a mistake, not a flourish, unlike the deliberately
-// underdamped press/glow springs elsewhere in this component. 0.65s
-// is ~99% of the way through this exact config's closed-form curve
-// (solved directly from springValue's own math, not eyeballed) --
-// long enough that the handoff to solid yellow at the end is never
-// visually abrupt.
-const WIPE_TENSION = 120;
-const WIPE_FRICTION = 30;
-const WIPE_DURATION_S = 0.65;
+// underdamped press/glow springs elsewhere in this component.
+// Tension/friction are both scaled down from an earlier, snappier
+// pass by the same factor (1.4x slower), which keeps the curve's
+// *shape* (zeta, the damping ratio) identical while stretching it out
+// in time -- lowering tension alone would've changed how it decelerates,
+// not just how long it takes. 0.9s is ~99% of the way through this
+// exact config's closed-form curve (solved directly from springValue's
+// own math, not eyeballed) -- long enough that the handoff to solid
+// yellow at the end is never visually abrupt.
+const WIPE_TENSION = 61;
+const WIPE_FRICTION = 21;
+const WIPE_DURATION_S = 0.9;
 
 /**
  * Plays the enable transition's sweep once on mount, then calls
@@ -380,18 +384,65 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
 }
 
 const DOT_STAGGER_S = 0.15; // stagger between dots, so the bounce ripples across them as a wave
-// Rise is slower than fall on purpose -- gravity should read as *pulling
-// it back down*, not just an identical reversal of the same motion.
-// Fall's lower friction relative to its tension gives it a small,
-// natural-feeling settle on landing rather than stopping dead.
-const DOT_RISE_S = 0.38;
-const DOT_FALL_S = 0.32;
+const DOT_LAUNCH_S = 0.22; // the initial upward impulse -- quick, like being launched, not eased into
+const DOT_FALL_S = 0.3; // time for the full-height fall back to the ground
+const DOT_UP_TENSION = 145;
+const DOT_UP_FRICTION = 16;
+const DOT_DOWN_TENSION = 300;
+const DOT_DOWN_FRICTION = 19;
+// How much height survives each bounce, and how many bounces play
+// before it's settled. A *single* underdamped spring released from the
+// peak and just clamped at the ground (tried first) doesn't actually
+// produce this: its natural half-period overshoot dives *below* ground
+// before ever coming back up, and that overshoot is big enough (traced
+// the raw numbers directly) that the clamped-away dip eats most of the
+// available energy -- the next *visible* bounce that's left over comes
+// out under 15% of the previous one, barely readable as a bounce at
+// all before it's already flattened out. Scripting the peak heights
+// explicitly (each one this fraction of the last) is what actually
+// gives control over how gradually it reads as "losing height," while
+// each individual hop's up/down motion still comes from springValue
+// (see ~/utils/springValue) -- so the physics governs the *shape* of
+// every hop, just not the amplitude decay across hops.
+const DOT_RESTITUTION = 0.45;
+const DOT_BOUNCE_COUNT = 3; // bounce-backs after the initial launch, each one smaller
 const DOT_REST_S = 0.7;
-const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
+const DOT_PEAK_HEIGHT = -10; // px, how high the launch throws each dot above rest
+
+type DotPhase = { from: number; to: number; tension: number; friction: number; duration: number };
+
+/**
+ * One full dot cycle as an explicit list of hops: launch straight up
+ * to the peak, then alternating falls (peak height -> 0) and smaller
+ * bounce-backs (0 -> peak height * DOT_RESTITUTION, repeated), each
+ * one's duration scaled by the physical sqrt(height ratio)
+ * relationship (real gravity's time-to-fall/rise from height h is
+ * proportional to sqrt(h)) so smaller bounces read as quicker, not
+ * just shorter, hops -- then a final rest. Built once at module scope
+ * since it's the same sequence for every Dot instance; the tick loop
+ * below just walks it cyclically by duration and index instead of a
+ * hand-written phase enum.
+ */
+function buildDotPhases(): DotPhase[] {
+  const phases: DotPhase[] = [{ from: 0, to: DOT_PEAK_HEIGHT, tension: DOT_UP_TENSION, friction: DOT_UP_FRICTION, duration: DOT_LAUNCH_S }];
+  let height = DOT_PEAK_HEIGHT;
+  for (let i = 0; i <= DOT_BOUNCE_COUNT; i++) {
+    const fallDuration = DOT_FALL_S * Math.sqrt(height / DOT_PEAK_HEIGHT);
+    phases.push({ from: height, to: 0, tension: DOT_DOWN_TENSION, friction: DOT_DOWN_FRICTION, duration: fallDuration });
+    if (i === DOT_BOUNCE_COUNT) break;
+    height *= DOT_RESTITUTION;
+    const riseDuration = DOT_LAUNCH_S * Math.sqrt(height / DOT_PEAK_HEIGHT);
+    phases.push({ from: 0, to: height, tension: DOT_UP_TENSION, friction: DOT_UP_FRICTION, duration: riseDuration });
+  }
+  phases.push({ from: 0, to: 0, tension: 1, friction: 1, duration: DOT_REST_S });
+  return phases;
+}
+const DOT_PHASES = buildDotPhases();
 
 // Three dots bouncing in a staggered wave, each one only ever resting
-// at the bottom between hops (never mid-air) -- gravity, not a
-// pendulum. Driven by springValue() (see ~/utils/springValue) inside a
+// at the bottom between hops (never mid-air) -- launched upward, then
+// brought back down and bounced by gravity, not a pendulum swinging
+// symmetrically. Driven by springValue() (see ~/utils/springValue) inside a
 // plain requestAnimationFrame loop -- the same technique the 3D loading
 // graph uses for its own animation, not react-spring. That's not just
 // consistency for its own sake: react-spring produced two real bugs
@@ -467,7 +518,7 @@ function Dot({ delaySeconds }: { delaySeconds: number }) {
     let raf = 0;
     let disposed = false;
     const startTime = performance.now();
-    let phase: "rise" | "fall" | "rest" = "rise";
+    let phaseIndex = 0;
     let phaseStart = 0;
 
     function tick() {
@@ -494,18 +545,14 @@ function Dot({ delaySeconds }: { delaySeconds: number }) {
         // instead of advancing by the phase's actual duration.
         let t = elapsed - phaseStart;
         while (true) {
-          const duration = phase === "rise" ? DOT_RISE_S : phase === "fall" ? DOT_FALL_S : DOT_REST_S;
+          const duration = DOT_PHASES[phaseIndex].duration;
           if (t <= duration) break;
           phaseStart += duration;
           t -= duration;
-          phase = phase === "rise" ? "fall" : phase === "fall" ? "rest" : "rise";
+          phaseIndex = (phaseIndex + 1) % DOT_PHASES.length;
         }
-        const y =
-          phase === "rise"
-            ? springValue(t, 0, DOT_PEAK_HEIGHT, 145, 16)
-            : phase === "fall"
-              ? springValue(t, DOT_PEAK_HEIGHT, 0, 300, 19)
-              : 0;
+        const { from, to, tension, friction } = DOT_PHASES[phaseIndex];
+        const y = from === to ? 0 : springValue(t, from, to, tension, friction);
         el.style.transform = `translate3d(0, ${y}px, 0)`;
       }
       raf = requestAnimationFrame(tick);
