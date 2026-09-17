@@ -3,14 +3,21 @@ import { animated, to, useSpring } from "@react-spring/web";
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-// The full Gruvbox bright palette, in hue order, as concentric
-// radial-gradient rings radiating from the cursor (a jawbreaker's
-// actual layered-candy look), not a conic sweep. An earlier version
-// used a conic gradient instead, which -- on a short, wide button
-// where much of a full 360-degree wheel sits outside the visible
-// bounds -- read as a gradient sliding in from one side rather than
-// anything centered on the cursor.
-const RAINBOW_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
+// The rainbow rings (everything but the center) -- winds outward from
+// right next to the cursor through the rest of the Gruvbox bright
+// palette, then fades to transparent rather than wrapping back to its
+// first color: an explicit CSS radial-gradient size (see
+// JAWBREAKER_RADIUS_PX below) paints its *last* stop as a solid fill
+// for the entire rest of the element beyond that radius, so a
+// wrap-to-first-color ending meant nearly the whole button --
+// everywhere further than the radius from the cursor -- was actually
+// a solid wash of that last color, not localized to the cursor at
+// all. That's what read as the button "turning tan": the gradient's
+// final color (previously red, wrapped from the first stop) was
+// silently flooding the whole background outside a small circle.
+// Fading to transparent instead means anywhere outside the ring
+// pattern shows the real, unblended accent yellow underneath.
+const RING_COLORS = ["#d3869b", "#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "transparent"];
 
 /**
  * Each color gets two stops, straddling its own position -- holding
@@ -20,11 +27,9 @@ const RAINBOW_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#8
  * entire way to the next (which read as a soft gradient, not the
  * "solid rainbow rings" a jawbreaker actually has). `blendFraction` is
  * how much of the space between two colors is spent blending, vs.
- * solid -- lower reads closer to hard-edged stripes, 1 would be back
- * to the fully-smooth original.
+ * solid -- lower reads closer to hard-edged stripes.
  */
-function buildJawbreakerStops(colors: string[], blendFraction: number): string {
-  const sequence = [...colors, colors[0]];
+function buildJawbreakerStops(sequence: string[], blendFraction: number): string {
   const step = 100 / (sequence.length - 1);
   const solidHalf = (step / 2) * (1 - blendFraction);
   const stops: string[] = [];
@@ -34,7 +39,33 @@ function buildJawbreakerStops(colors: string[], blendFraction: number): string {
   });
   return stops.join(", ");
 }
-const JAWBREAKER_STOPS = buildJawbreakerStops(RAINBOW_HUES, 0.25);
+const JAWBREAKER_STOPS = buildJawbreakerStops(RING_COLORS, 0.25);
+// Shrunk from the original 90px -- at that size the rings read as
+// large enough to dominate the whole (fairly small) button rather
+// than a tight jawbreaker centered right on the cursor.
+const JAWBREAKER_RADIUS_PX = 55;
+
+// The center disc is deliberately a *separate* layer from the rings
+// above, rendered with ordinary alpha compositing instead of
+// mix-blend-mode: color. That's not a style inconsistency -- it's the
+// only way to make it actually read as blue. mix-blend-mode: color
+// locks the result's luminance to whatever's underneath, and the
+// accent yellow backdrop is bright enough that *any* hue rendered
+// through it that way comes out pale and washed, blue included --
+// confirmed directly against the browser's own compositor (a canvas
+// with globalCompositeOperation: "color", not just a guess from the
+// spec): blue over this exact yellow at full opacity comes out
+// rgb(169,203,190), a pale mint, and at the 0.5 opacity the rings use
+// it's rgb(210,196,119) -- textbook "tan". No amount of retuning
+// blend-mode opacity fixes that; it's a ceiling built into the blend
+// mode itself against a backdrop this bright. Plain alpha blending at
+// high opacity doesn't have that ceiling -- at 0.9 it already reads
+// clearly as blue -- so the center gets its own normal-blend layer on
+// top of the ring layer, sized just big enough to fully cover the
+// rings' own color at position 0 (which no longer matters what it is).
+const CENTER_COLOR = "#83a598";
+const CENTER_RADIUS_PX = 16;
+const CENTER_FADE_PX = 10;
 
 /**
  * The loading screen's call to action -- a from-scratch component
@@ -130,7 +161,7 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
             opacity: glow.opacity,
             background: to(
               [glow.x, glow.y],
-              (x, y) => `radial-gradient(circle 90px at ${x}% ${y}%, ${JAWBREAKER_STOPS})`,
+              (x, y) => `radial-gradient(circle ${JAWBREAKER_RADIUS_PX}px at ${x}% ${y}%, ${JAWBREAKER_STOPS})`,
             ),
             // "color" (hue+saturation from this layer, luminance from
             // whatever's underneath), not "overlay" -- overlay on a
@@ -145,7 +176,29 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
           }}
         />
       )}
-      <span className="relative inline-flex items-center gap-2">
+      {!disabled && (
+        <animated.span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+          style={{
+            // Scaled up from the ring layer's own opacity rather than
+            // an independent spring -- keeps the two layers' fade
+            // in/out timing on hover enter/leave identical, while
+            // still reaching a much higher peak opacity than the
+            // rings do. See CENTER_COLOR's comment above for why this
+            // layer needs to be this much more opaque: ordinary alpha
+            // blending needs to get *that* opaque before blue reads as
+            // blue rather than yellow-tinted teal.
+            opacity: glow.opacity.to((o) => Math.min(1, o * 1.8)),
+            background: to(
+              [glow.x, glow.y],
+              (x, y) =>
+                `radial-gradient(circle ${CENTER_RADIUS_PX + CENTER_FADE_PX}px at ${x}% ${y}%, ${CENTER_COLOR} 0px, ${CENTER_COLOR} ${CENTER_RADIUS_PX}px, transparent ${CENTER_RADIUS_PX + CENTER_FADE_PX}px)`,
+            ),
+          }}
+        />
+      )}
+      <span className="relative inline-flex items-end gap-2">
         {disabled ? (
           <>
             Loading
@@ -166,7 +219,7 @@ const DOT_STAGGER_S = 0.15; // stagger between dots, so the bounce ripples acros
 // natural-feeling settle on landing rather than stopping dead.
 const DOT_RISE_S = 0.38;
 const DOT_FALL_S = 0.32;
-const DOT_REST_S = 0.42;
+const DOT_REST_S = 0.7;
 const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
 
 // Three dots bouncing in a staggered wave, each one only ever resting
@@ -213,9 +266,18 @@ const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
 //   preserves the real stagger through stalls of any length, which is
 //   also just a more correct simulation regardless of what's sharing
 //   the thread.
+// Nudged down from its natural inline position -- a small circle
+// sitting next to capital-letter/lowercase text lands noticeably
+// above the letters' actual baseline (font line-height reserves room
+// below the baseline for descenders like the "g" in "Loading", which
+// this dot never uses), so items-end alone left it visibly floating
+// above the bottom of the "L". DOT_REST_OFFSET_PX pulls its resting
+// position down to sit flush with the letters' baseline instead.
+const DOT_REST_OFFSET_PX = 4;
+
 function LoadingDots() {
   return (
-    <span className="inline-flex items-end gap-1" aria-hidden="true">
+    <span className="inline-flex items-end gap-1" aria-hidden="true" style={{ transform: `translateY(${DOT_REST_OFFSET_PX}px)` }}>
       <Dot delaySeconds={0} />
       <Dot delaySeconds={DOT_STAGGER_S} />
       <Dot delaySeconds={DOT_STAGGER_S * 2} />
