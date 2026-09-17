@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { animated, useSpring } from "@react-spring/web";
 import {
   createAxesGroup,
@@ -15,26 +14,24 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 const ENTER_DELAY = 5000;
 
-// OrbitControls' autoRotateSpeed isn't in rad/sec -- per its own docs,
-// a value of 2.0 is "30 seconds per orbit at 60fps," i.e. 2*PI radians
-// per 30 seconds for every 2.0 of speed. Working in rad/sec ourselves
-// and converting once here is easier to reason about than re-deriving
-// this ratio wherever it's used. Confirmed by measuring
-// getAzimuthalAngle() over time at a known autoRotateSpeed rather than
-// assumed: a *positive* autoRotateSpeed produces a *decreasing*
-// azimuthal angle -- this constant is a plain magnitude ratio, and the
-// call site that converts a measured drag velocity back into an
-// autoRotateSpeed value is the one that has to negate it.
-const AUTOROTATE_UNITS_PER_RAD_PER_SEC = 2 / ((2 * Math.PI) / 30);
-// The idle spin rate this settles back down to -- same 0.18 rad/sec as
-// before, just expressed in OrbitControls' unit now.
-const BASELINE_SPIN_SPEED = 0.18 * AUTOROTATE_UNITS_PER_RAD_PER_SEC;
-// A cap on how much of a flick's momentum carries over, so a very fast
-// drag can't leave the graph spinning absurdly quickly.
-const MAX_SPIN_SPEED = BASELINE_SPIN_SPEED * 10;
-// How quickly a flick's speed eases back down (or up) toward the
-// baseline -- larger = faster settle.
-const SPIN_DECAY_RATE = 1.4;
+// Radians of graph rotation per pixel of drag -- the one sensitivity
+// constant both live dragging and the post-release momentum replay
+// share (see rotateGraphByPixels below), so they're guaranteed to feel
+// like the same motion rather than two independently-tuned ones.
+const DRAG_SENSITIVITY = 0.008;
+// Idle speed, expressed as an equivalent px/sec of drag (so it runs
+// through the exact same rotateGraphByPixels() conversion) -- picked to
+// reproduce the previous 0.18 rad/sec baseline: 0.18 / DRAG_SENSITIVITY.
+const BASELINE_SPEED_PX = 22.5;
+const MAX_FLICK_SPEED_PX = 900;
+const MIN_FLICK_SPEED_PX = 4;
+// Very low tension, close to critically damped (friction ~= 2*sqrt(tension))
+// -- a slow, non-oscillating decay on purpose, per feedback that the
+// previous attempt slowed down too abruptly. This is the same
+// closed-form springValue() the surface reveal uses, just decaying a
+// scalar speed instead of a reveal fraction.
+const MOMENTUM_TENSION = 4;
+const MOMENTUM_FRICTION = 4;
 
 /**
  * The loading screen as a real multivariable calculus surface --
@@ -42,12 +39,16 @@ const SPIN_DECAY_RATE = 1.4;
  * colored axes sprouting from the origin, then the surface itself
  * repeatedly rendering outward from (0,0,0) and retracting back,
  * looping for as long as it takes someone to look at it. It's a real
- * THREE.js scene, not a video -- drag to orbit it (OrbitControls,
- * built into three itself, no extra dependency) any time, including
- * mid-animation. Idle, it slowly turns on its own; flick it while
- * dragging and it keeps coasting in that direction afterward, easing
- * back down to that same idle speed rather than snapping back to a
- * fixed default rotation.
+ * THREE.js scene, not a video -- drag to tumble it freely in any
+ * direction (a hand-rolled quaternion trackball, not OrbitControls:
+ * OrbitControls' azimuth/polar parametrization clamps the polar angle
+ * to [0, pi], so it physically can't rotate past "straight up" without
+ * getting stuck there, and it only ever exposes momentum around the
+ * azimuthal axis -- neither works for "spin it any which way and have
+ * it keep going that way"). Idle, it slowly turns on its own; flick it
+ * while dragging and it keeps coasting in that exact direction and
+ * speed afterward, easing back down to that same idle speed rather
+ * than snapping back to a fixed default rotation.
  *
  * Unlike every other loading screen on this branch, this one doesn't
  * time itself out -- there's a real, if decorative, "load" happening
@@ -87,6 +88,13 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     if (reduced) return;
     const container = containerRef.current;
     if (!container) return;
+
+    // performance.now()-based elapsed time, not THREE.Clock (deprecated
+    // in this three version in favor of THREE.Timer -- a manual delta
+    // is simpler than adopting a whole new clock API for one number).
+    // Declared up front since both the render loop and the pointer-up
+    // handler (for stamping a release time) need it.
+    const startTime = performance.now();
 
     const bgHex = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#282828";
     const scene = new THREE.Scene();
@@ -142,70 +150,119 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     const sortedRadii = prepareRadialReveal(surface.geometry);
     const maxRadius = sortedRadii.length > 0 ? sortedRadii[sortedRadii.length - 1] : 1;
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.minDistance = 3;
-    controls.maxDistance = 16;
-    controls.target.set(0, 0, 0);
+    camera.lookAt(0, 0, 0);
+    // Zoom is the only thing the camera itself still does -- distance
+    // from the origin only, along whatever direction lookAt just set,
+    // so this never needs to touch orientation at all.
+    let cameraDistance = camera.position.length();
+    const MIN_DISTANCE = 3;
+    const MAX_DISTANCE = 16;
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      cameraDistance = THREE.MathUtils.clamp(cameraDistance + e.deltaY * 0.01, MIN_DISTANCE, MAX_DISTANCE);
+      camera.position.setLength(cameraDistance);
+    }
+    renderer.domElement.addEventListener("wheel", onWheel, { passive: false });
+
+    // Free rotation, any axis, no poles: each drag frame composes a
+    // small yaw (around world-up) and pitch (around the camera's own
+    // right vector, read straight off its world matrix) and
+    // premultiplies it onto the graph's current orientation. Premultiply
+    // (not multiply) applies the new rotation in world/camera space,
+    // which is what makes dragging feel the same regardless of how the
+    // graph has already been spun, rather than drifting like a
+    // badly-set-up gimbal.
+    const worldUp = new THREE.Vector3(0, 1, 0);
+    const cameraRightVec = new THREE.Vector3();
+    function rotateGraphByPixels(dx: number, dy: number) {
+      cameraRightVec.setFromMatrixColumn(camera.matrixWorld, 0);
+      const yawQuat = new THREE.Quaternion().setFromAxisAngle(worldUp, -dx * DRAG_SENSITIVITY);
+      const pitchQuat = new THREE.Quaternion().setFromAxisAngle(cameraRightVec, -dy * DRAG_SENSITIVITY);
+      graphRoot.quaternion.premultiply(yawQuat);
+      graphRoot.quaternion.premultiply(pitchQuat);
+    }
+
+    let dragging = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+    let lastPointerTime = 0;
+    let recentVelX = 0;
+    let recentVelY = 0;
+
+    // Momentum is a fixed 2D direction (the drag's own px/sec ratio,
+    // replayed every idle frame through the exact same
+    // rotateGraphByPixels() the live drag uses, so the replay is
+    // guaranteed to match, not just resemble, the live motion) and a
+    // speed that eases from wherever the drag left it down to the
+    // baseline via springValue(), parametrized by time-since-release --
+    // not recomputed from a moving target every frame, so there's no
+    // "settles at zero, then restarts" seam: it's always actually
+    // turning, at some point between the release speed and baseline.
+    let momentumDirX = 1;
+    let momentumDirY = 0;
+    let releaseSpeed = BASELINE_SPEED_PX;
+    let releaseTime = 0;
+    let hasReleased = false;
+
+    function onPointerDown(e: PointerEvent) {
+      dragging = true;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      lastPointerTime = performance.now();
+      recentVelX = 0;
+      recentVelY = 0;
+      renderer.domElement.setPointerCapture(e.pointerId);
+    }
+    function onPointerMove(e: PointerEvent) {
+      if (!dragging) return;
+      const now = performance.now();
+      const dtMs = Math.max(1, now - lastPointerTime);
+      const dx = e.clientX - lastPointerX;
+      const dy = e.clientY - lastPointerY;
+      rotateGraphByPixels(dx, dy);
+      // Exponential smoothing so the very last, possibly-jittery frame
+      // of a drag doesn't solely decide the release velocity.
+      const instVelX = (dx / dtMs) * 1000;
+      const instVelY = (dy / dtMs) * 1000;
+      recentVelX = recentVelX * 0.7 + instVelX * 0.3;
+      recentVelY = recentVelY * 0.7 + instVelY * 0.3;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      lastPointerTime = now;
+    }
+    function onPointerUp(e: PointerEvent) {
+      if (!dragging) return;
+      dragging = false;
+      try {
+        renderer.domElement.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+      const speed = Math.hypot(recentVelX, recentVelY);
+      if (speed > MIN_FLICK_SPEED_PX) {
+        momentumDirX = recentVelX / speed;
+        momentumDirY = recentVelY / speed;
+        releaseSpeed = Math.min(speed, MAX_FLICK_SPEED_PX);
+      } else {
+        // A tap, or a drag that ended stationary -- keep whatever
+        // direction was already playing rather than resetting it, and
+        // don't let the speed itself drop below the idle baseline.
+        releaseSpeed = Math.max(releaseSpeed, BASELINE_SPEED_PX);
+      }
+      releaseTime = (performance.now() - startTime) / 1000;
+      hasReleased = true;
+    }
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("pointercancel", onPointerUp);
 
     if (import.meta.env.DEV) {
       // Dev-only inspection hook (matches OverheadProjector3D's
       // __projectorReview) so the momentum/direction behavior can be
       // measured directly instead of eyeballed from screenshots.
-      (window as unknown as { __loadingGraphReview: unknown }).__loadingGraphReview = { controls, camera };
+      (window as unknown as { __loadingGraphReview: unknown }).__loadingGraphReview = { camera, graphRoot };
     }
-    controls.update();
-
-    // The idle/flick rotation drives the CAMERA (via OrbitControls'
-    // own autoRotate), not the graph object. An earlier version spun
-    // graphRoot.rotation.y directly instead, which read fine for a
-    // constant idle spin but broke the moment "continue with the
-    // drag's momentum" was needed: OrbitControls orbits the *camera*
-    // around the graph, so a rightward drag and a "spin the object
-    // rightward" both look similar but are opposite in sign, and
-    // getting that conversion wrong would make the motion visibly
-    // reverse direction at the exact moment the user releases. Doing
-    // everything in camera-azimuth space sidesteps that entirely: the
-    // same quantity (controls.getAzimuthalAngle()) is what a drag
-    // changes, what autoRotate changes, and what gets measured and
-    // fed back in on release, so there's nothing to convert or get
-    // backwards.
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = BASELINE_SPIN_SPEED;
-    let currentSpinSpeed = BASELINE_SPIN_SPEED;
-    let recentDragVelocity = 0; // rad/sec, smoothed, measured only while dragging
-    let lastAzimuth = controls.getAzimuthalAngle();
-
-    let userInteracting = false;
-    const handleInteractionStart = () => {
-      userInteracting = true;
-      recentDragVelocity = 0;
-      // Autorotate would otherwise keep adding its own contribution on
-      // top of the drag, muddying the velocity being measured below.
-      controls.autoRotate = false;
-    };
-    const handleInteractionEnd = () => {
-      userInteracting = false;
-      // Seed the coast with whatever was actually just measured,
-      // capped, and pointed the same direction the drag was already
-      // going -- a near-zero reading (a tap, or a drag that ended
-      // stationary) falls back to continuing whatever direction was
-      // already playing rather than snapping to a default.
-      // Negated: measured directly (see AUTOROTATE_UNITS_PER_RAD_PER_SEC's
-      // own comment) -- a *positive* autoRotateSpeed produces a
-      // *decreasing* azimuthal angle, not an increasing one, so
-      // reproducing the drag's own measured azimuth velocity with the
-      // same sign would set the graph coasting backwards from the
-      // direction it was just dragged in.
-      const measured = -recentDragVelocity * AUTOROTATE_UNITS_PER_RAD_PER_SEC;
-      const sign = Math.abs(measured) > 0.001 ? Math.sign(measured) : Math.sign(currentSpinSpeed || 1);
-      currentSpinSpeed = sign * Math.min(MAX_SPIN_SPEED, Math.max(Math.abs(measured), BASELINE_SPIN_SPEED));
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = currentSpinSpeed;
-    };
-    controls.addEventListener("start", handleInteractionStart);
-    controls.addEventListener("end", handleInteractionEnd);
 
     function resize() {
       if (!container) return;
@@ -222,10 +279,6 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
 
     let raf = 0;
     let disposed = false;
-    // performance.now()-based elapsed time, not THREE.Clock (deprecated
-    // in this three version in favor of THREE.Timer -- a manual delta
-    // is simpler than adopting a whole new clock API for one number).
-    const startTime = performance.now();
     let lastElapsed = 0;
 
     // The axes sprout once, staggered, and stay fully drawn -- only the
@@ -247,23 +300,18 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       const dt = Math.min(0.1, Math.max(0, elapsed - lastElapsed));
       lastElapsed = elapsed;
 
-      const azimuth = controls.getAzimuthalAngle();
-      const azDelta = azimuth - lastAzimuth;
-      lastAzimuth = azimuth;
-
-      if (userInteracting) {
-        // Exponential smoothing so the very last, possibly-jittery
-        // frame of a drag doesn't solely decide the release velocity.
-        const instVelocity = dt > 0 ? azDelta / dt : 0;
-        recentDragVelocity = recentDragVelocity * 0.72 + instVelocity * 0.28;
-      } else {
-        // Eases `currentSpinSpeed` back toward the signed baseline --
-        // a flick starts fast (or slow) and settles to the same idle
-        // rate as always, just still turning whichever way it was
-        // last sent.
-        const targetSpeed = Math.sign(currentSpinSpeed || 1) * BASELINE_SPIN_SPEED;
-        currentSpinSpeed += (targetSpeed - currentSpinSpeed) * Math.min(1, dt * SPIN_DECAY_RATE);
-        controls.autoRotateSpeed = currentSpinSpeed;
+      if (!dragging) {
+        // Before the first release, there's nothing to decay from --
+        // just the constant baseline, in the default direction (1, 0).
+        // After a release, springValue() computes the current speed
+        // fresh each frame from time-since-release, so it's a pure
+        // function of elapsed time, not a per-frame recursive decay --
+        // continuous by construction (t=0 gives back releaseSpeed
+        // exactly) and never needs to "reach zero and restart."
+        const currentSpeed = hasReleased
+          ? springValue(elapsed - releaseTime, releaseSpeed, BASELINE_SPEED_PX, MOMENTUM_TENSION, MOMENTUM_FRICTION)
+          : BASELINE_SPEED_PX;
+        rotateGraphByPixels(momentumDirX * currentSpeed * dt, momentumDirY * currentSpeed * dt);
       }
 
       const axisList: Array<[THREE.Group, number]> = [
@@ -321,7 +369,6 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
         surface.geometry.setDrawRange(0, revealCountForRadius(sortedRadii, clampedRadius) * 3);
       }
 
-      controls.update();
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
     }
@@ -331,9 +378,11 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       disposed = true;
       cancelAnimationFrame(raf);
       resizeObserver.disconnect();
-      controls.removeEventListener("start", handleInteractionStart);
-      controls.removeEventListener("end", handleInteractionEnd);
-      controls.dispose();
+      renderer.domElement.removeEventListener("wheel", onWheel);
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       renderer.dispose();
       disposeObject3D(graphRoot);
       container.removeChild(renderer.domElement);
@@ -367,7 +416,7 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
         ref={containerRef}
         className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
         role="img"
-        aria-label="A rotating 3D graph of a multivariable calculus surface. Drag to orbit it."
+        aria-label="A rotating 3D graph of a multivariable calculus surface. Drag to spin it in any direction."
       />
       <animated.div
         className="relative z-10"
