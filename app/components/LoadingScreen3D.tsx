@@ -186,7 +186,15 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       graphRoot.quaternion.premultiply(pitchQuat);
     }
 
+    // `dragging` tracks the OS-level gesture (from pointerdown to
+    // whenever a real pointerup/pointercancel eventually fires).
+    // `liveInputActive` tracks something subtly different: whether
+    // we're actually still receiving fresh movement right now, which is
+    // what should gate live-drag vs. momentum-replay in tick() below --
+    // see STALE_TIMEOUT_MS just below for why these two can't just be
+    // the same flag.
     let dragging = false;
+    let liveInputActive = false;
     let lastPointerX = 0;
     let lastPointerY = 0;
     let lastMoveTime = 0;
@@ -217,6 +225,28 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     let trackedDirX = 1;
     let trackedDirY = 0;
 
+    // macOS's three-finger-drag trackpad gesture is a whole separate
+    // problem from the peak-hold logic above, and needed its own fix:
+    // it's an OS-level accessibility feature that keeps the virtual
+    // pointer "down" for a few hundred ms after your fingers actually
+    // lift the trackpad (so you can reposition mid-drag without a fresh
+    // click), and the page genuinely receives zero events -- no
+    // pointermove, no pointerup -- for that entire gap. From here it's
+    // indistinguishable from someone holding the pointer perfectly
+    // still, so the graph correctly freezes... and then the OS finally
+    // delivers the real pointerup and it correctly un-freezes, which is
+    // exactly the reported "stops for a moment, then continues right"
+    // symptom. There's no event to wait for that arrives any sooner --
+    // instead, treat an unusually long gap since the last pointermove
+    // (while nominally still dragging) as an effective release. Chosen
+    // well under the few-hundred-ms OS delay this is specifically
+    // working around, but long enough that an ordinary brief pause
+    // mid-drag (someone's hand just hesitating) doesn't misfire it --
+    // and even if it does, the consequence is only a brief, harmless
+    // coast that gets overridden the instant real movement resumes
+    // (onPointerMove sets liveInputActive back to true unconditionally).
+    const STALE_TIMEOUT_MS = 120;
+
     // Momentum is that tracked (direction, speed) pair, replayed every
     // idle frame through the exact same rotateGraphByPixels() the live
     // drag uses, so the replay is guaranteed to match, not just
@@ -231,8 +261,30 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     let releaseTime = 0;
     let hasReleased = false;
 
+    // Shared by the real pointerup/pointercancel AND the stale-timeout
+    // check in tick() below -- whichever notices the movement has
+    // actually stopped first is the one that gets to seed the coast;
+    // the other is then just a no-op (guarded by liveInputActive
+    // already being false).
+    function finalizeMomentum() {
+      if (trackedSpeed > MIN_FLICK_SPEED_PX) {
+        momentumDirX = trackedDirX;
+        momentumDirY = trackedDirY;
+        releaseSpeed = Math.min(trackedSpeed, MAX_FLICK_SPEED_PX);
+      } else {
+        // A tap, or a drag that ended stationary long enough for the
+        // peak-hold itself to decay -- keep whatever direction was
+        // already playing rather than resetting it, and don't let the
+        // speed drop below the idle baseline.
+        releaseSpeed = Math.max(releaseSpeed, BASELINE_SPEED_PX);
+      }
+      releaseTime = (performance.now() - startTime) / 1000;
+      hasReleased = true;
+    }
+
     function onPointerDown(e: PointerEvent) {
       dragging = true;
+      liveInputActive = true;
       lastPointerX = e.clientX;
       lastPointerY = e.clientY;
       lastMoveTime = performance.now();
@@ -241,6 +293,11 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     }
     function onPointerMove(e: PointerEvent) {
       if (!dragging) return;
+      // Covers resuming after the stale-timeout already soft-released
+      // this gesture below -- if real movement comes back (someone
+      // genuinely paused mid-drag rather than actually letting go),
+      // hand control straight back to live input.
+      liveInputActive = true;
       const now = performance.now();
       const dtMs = Math.max(1, now - lastMoveTime);
       const dx = e.clientX - lastPointerX;
@@ -271,19 +328,15 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       } catch {
         /* already released */
       }
-      if (trackedSpeed > MIN_FLICK_SPEED_PX) {
-        momentumDirX = trackedDirX;
-        momentumDirY = trackedDirY;
-        releaseSpeed = Math.min(trackedSpeed, MAX_FLICK_SPEED_PX);
-      } else {
-        // A tap, or a drag that ended stationary long enough for the
-        // peak-hold itself to decay -- keep whatever direction was
-        // already playing rather than resetting it, and don't let the
-        // speed drop below the idle baseline.
-        releaseSpeed = Math.max(releaseSpeed, BASELINE_SPEED_PX);
+      // If the stale-timeout already caught this (the ordinary case for
+      // a three-finger-drag release, where this event arrives a few
+      // hundred ms after movement actually stopped), momentum has
+      // already been seeded and re-finalizing here would just stomp on
+      // however far it's already decayed.
+      if (liveInputActive) {
+        liveInputActive = false;
+        finalizeMomentum();
       }
-      releaseTime = (performance.now() - startTime) / 1000;
-      hasReleased = true;
     }
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
     renderer.domElement.addEventListener("pointermove", onPointerMove);
@@ -299,6 +352,7 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
         graphRoot,
         getMomentumState: () => ({
           dragging,
+          liveInputActive,
           momentumDirX,
           momentumDirY,
           releaseSpeed,
@@ -346,7 +400,17 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       const dt = Math.min(0.1, Math.max(0, elapsed - lastElapsed));
       lastElapsed = elapsed;
 
-      if (!dragging) {
+      // See STALE_TIMEOUT_MS's own comment: while the OS still reports
+      // the pointer as down but no pointermove has arrived in a while,
+      // treat it as an effective release rather than waiting on an
+      // event that (for a three-finger-drag release) may not arrive for
+      // several hundred more ms.
+      if (dragging && liveInputActive && performance.now() - lastMoveTime > STALE_TIMEOUT_MS) {
+        liveInputActive = false;
+        finalizeMomentum();
+      }
+
+      if (!liveInputActive) {
         // Before the first release, there's nothing to decay from --
         // just the constant baseline, in the default direction (1, 0).
         // After a release, springValue() computes the current speed
