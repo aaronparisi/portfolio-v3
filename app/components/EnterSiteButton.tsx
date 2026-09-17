@@ -116,91 +116,11 @@ const WIPE_HOLD_S = 1.5;
 const WIPE_SNAP_S = 0.7;
 const WIPE_SNAP_TENSION = 90;
 const WIPE_SNAP_FRICTION = 9;
-const WIPE_DURATION_S = WIPE_HOLD_S + WIPE_SNAP_S;
 
-/**
- * Plays the enable transition's sweep once on mount, then calls
- * `onDone`. Driven by a plain requestAnimationFrame loop evaluating
- * springValue() directly (see ~/utils/springValue) rather than
- * react-spring's useSpring -- not for the dots' lockstep reasons this
- * time, but because react-spring's onRest firing needs its own rest
- * detection to pass first, and that turned out to lag well behind
- * when this exact spring is visibly settled (confirmed directly:
- * background-color sampling after triggering this transition showed
- * the solid-yellow handoff arriving ~1.9s after the sweep started, on
- * a spring whose curve is ~99% resolved by 0.65s). Whatever's driving
- * wipeDone needs to fire close to when the sweep actually *looks*
- * done, since it's what hands the button's own background off from
- * the animated sweep to a plain solid yellow -- a callback that lags
- * a second or more behind would leave the button visibly stuck mid-
- * transition. A fixed-duration rAF loop has no such lag: it calls
- * onDone the instant its own known-in-advance duration elapses.
- */
-function WipeSweep({ onDone }: { onDone: () => void }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) {
-      onDoneRef.current();
-      return;
-    }
-    let raf = 0;
-    let disposed = false;
-    const startTime = performance.now();
-
-    function tick() {
-      if (disposed || !el) return;
-      const t = (performance.now() - startTime) / 1000;
-      if (t >= WIPE_DURATION_S) {
-        el.style.transform = `translateX(0%) skewX(${WIPE_SKEW_DEG}deg)`;
-        onDoneRef.current();
-        return;
-      }
-      // springValue itself already returns exactly `from` (0 here) for
-      // any t <= 0, so feeding it negative time during the hold -- no
-      // special-casing needed -- keeps the sweep motionless until the
-      // snap actually begins at t = WIPE_HOLD_S.
-      const p = springValue(t - WIPE_HOLD_S, 0, 1, WIPE_SNAP_TENSION, WIPE_SNAP_FRICTION);
-      el.style.transform = `translateX(${(p - 1) * 100}%) skewX(${WIPE_SKEW_DEG}deg)`;
-      raf = requestAnimationFrame(tick);
-    }
-    tick();
-
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(raf);
-    };
-    // Runs exactly once per mount -- this component is only ever
-    // mounted for the duration of one sweep, not kept around and
-    // re-triggered, so onDone is read via a ref rather than listed
-    // here (its identity can change across the parent's own re-renders
-    // without restarting the sweep).
-  }, []);
-
-  return (
-    <span
-      ref={ref}
-      aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0"
-      // The initial transform matches tick()'s own t=0 value exactly
-      // -- without it, this would render one frame with no transform
-      // at all (fully covering, untranslated) before the effect's
-      // first rAF callback ever runs, flashing solid yellow for a
-      // frame before the sweep starts.
-      style={{
-        left: `${-WIPE_MARGIN_PX}px`,
-        width: `calc(100% + ${2 * WIPE_MARGIN_PX + WIPE_BRUSH_PX}px)`,
-        transform: `translateX(-100%) skewX(${WIPE_SKEW_DEG}deg)`,
-      }}
-    >
-      <span className="absolute inset-y-0 left-0" style={{ width: `calc(100% - ${WIPE_BRUSH_PX}px)`, background: "var(--accent)" }} />
-      <span className="absolute inset-y-0 right-0" style={{ width: `${WIPE_BRUSH_PX}px`, backgroundImage: WIPE_BRUSH_GRADIENT }} />
-    </span>
-  );
-}
+// Wiper -- the element that actually renders and animates this sweep
+// -- is defined further down (after DOT_PHASES, which it reads to sync
+// its pre-enable "tugging" to the dots' own bounce cycle), but reads
+// all of the constants above.
 
 /**
  * The loading screen's call to action -- a from-scratch component
@@ -230,11 +150,10 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
   const [glow, glowApi] = useSpring(() => ({ x: 50, y: 50, opacity: 0, config: { tension: 220, friction: 20 } }));
   // Whether the enable transition has finished painting the button
   // yellow -- kept separate from `disabled` itself so the background
-  // can keep showing the disabled tan for the wipe overlay (see
-  // WipeSweep below) to sweep across, instead of snapping straight to
-  // yellow underneath it the instant `disabled` flips (which would
-  // make the whole wipe invisible -- there'd be nothing left for it to
-  // reveal).
+  // can keep showing the disabled tan for the wipe overlay (see Wiper
+  // below) to sweep across, instead of snapping straight to yellow
+  // underneath it the instant `disabled` flips (which would make the
+  // whole wipe invisible -- there'd be nothing left for it to reveal).
   const [wipeDone, setWipeDone] = useState(disabled ? false : true);
   const wasDisabled = useRef(disabled);
 
@@ -247,7 +166,7 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
         // The "pop": a bigger, bouncier version of the hover scale
         // bump, released back down after a fixed delay instead of
         // chained via react-spring's own async next()/onRest --
-        // confirmed directly (see WipeSweep's own comment) that
+        // confirmed directly (see Wiper's own comment) that
         // react-spring's rest detection is precise enough to add most
         // of a second beyond when a spring is visually settled, which
         // would make the "bounce back" half of the pop start visibly
@@ -331,7 +250,7 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
         opacity: disabled ? 0.6 : 1,
       }}
     >
-      {!disabled && !wipeDone && !reduced && <WipeSweep onDone={() => setWipeDone(true)} />}
+      {!wipeDone && !reduced && <Wiper disabled={disabled} onDone={() => setWipeDone(true)} />}
       {!disabled && (
         <animated.span
           aria-hidden="true"
@@ -461,6 +380,164 @@ function buildDotPhases(): DotPhase[] {
   return phases;
 }
 const DOT_PHASES = buildDotPhases();
+const DOT_CYCLE_S = DOT_PHASES.reduce((sum, p) => sum + p.duration, 0); // one full lap of the dots' own bounce loop
+
+// Stretch flourish: while still disabled, the wipe doesn't sit
+// perfectly still the whole time -- each time the dots finish a full
+// bounce "round" (one full DOT_CYCLE_S lap), it gives up a little
+// ground, as if the spring holding it taut is gradually losing its
+// grip. WIPER_TUG_CAP keeps that creep well short of fully revealing,
+// and each tug only closes WIPER_TUG_FRACTION of the *remaining*
+// distance to that cap -- a decaying series that approaches the cap
+// asymptotically, so no matter how many rounds pass before the button
+// actually enables, it can never accidentally finish the reveal on its
+// own. Only the real release (WIPE_HOLD_S/WIPE_SNAP_S) ever closes the
+// rest of the distance to 1.
+const WIPER_TUG_CAP = 0.4;
+const WIPER_TUG_FRACTION = 0.4;
+const WIPER_TUG_S = 0.35; // how long one tug's own little "give" takes to settle
+const WIPER_TUG_TENSION = 210;
+const WIPER_TUG_FRICTION = 14;
+
+type WiperMode = "creeping" | "holding" | "snapping";
+
+/**
+ * Renders and drives the enable-transition sweep -- mounted for the
+ * button's entire disabled *and* releasing lifetime (everything up to
+ * `onDone`), not just a one-shot post-enable animation, since it now
+ * has visible work to do before the button is ever clickable (see
+ * WIPER_TUG_* above). Internally it's a small state machine ("creeping"
+ * while disabled, "holding" then "snapping" once released -- see
+ * WIPE_HOLD_S/WIPE_SNAP_S above), driven by a single
+ * requestAnimationFrame loop evaluating springValue() directly rather
+ * than react-spring's useSpring, for the same reason as the dots and
+ * the original one-shot version of this sweep: react-spring's own
+ * onRest/rest-detection lags well behind when a spring is visibly
+ * settled, and whatever calls `onDone` here needs to fire right when
+ * the sweep actually *looks* finished, not up to a second or two later.
+ *
+ * `disabled` is read through a ref rather than listed as an effect
+ * dependency -- the whole point is that this component keeps running
+ * *through* disabled flipping to false without restarting, picking up
+ * wherever the creep left off rather than resetting to 0.
+ */
+function Wiper({ disabled, onDone }: { disabled: boolean; onDone: () => void }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) {
+      onDoneRef.current();
+      return;
+    }
+    let raf = 0;
+    let disposed = false;
+    const startTime = performance.now();
+
+    let mode: WiperMode = "creeping";
+    // "creeping" state -- baseline is the settled progress from any
+    // previously-finished tugs; a tug in flight animates from baseline
+    // toward tugTarget over WIPER_TUG_S before folding into baseline.
+    let baseline = 0;
+    let tugActive = false;
+    let tugStart = 0;
+    let tugTarget = 0;
+    let nextTugAt = DOT_CYCLE_S;
+    // "holding"/"snapping" state.
+    let releaseFrom = 0;
+    let releaseStart = 0;
+
+    function creepProgress(elapsed: number): number {
+      if (!tugActive) return baseline;
+      const t = elapsed - tugStart;
+      if (t >= WIPER_TUG_S) {
+        tugActive = false;
+        baseline = tugTarget;
+        return baseline;
+      }
+      return springValue(t, baseline, tugTarget, WIPER_TUG_TENSION, WIPER_TUG_FRICTION);
+    }
+
+    function paint(p: number) {
+      if (el) el.style.transform = `translateX(${(p - 1) * 100}%) skewX(${WIPE_SKEW_DEG}deg)`;
+    }
+
+    function tick() {
+      if (disposed || !el) return;
+      const elapsed = (performance.now() - startTime) / 1000;
+
+      if (mode === "creeping") {
+        if (!disabledRef.current) {
+          // Just enabled -- freeze wherever the creep currently sits
+          // and hand off to the real release from exactly there,
+          // evaluated the rest of this same tick (falls through below).
+          releaseFrom = creepProgress(elapsed);
+          mode = "holding";
+          releaseStart = elapsed;
+        } else {
+          if (!tugActive && elapsed >= nextTugAt) {
+            tugActive = true;
+            tugStart = elapsed;
+            tugTarget = baseline + (WIPER_TUG_CAP - baseline) * WIPER_TUG_FRACTION;
+            nextTugAt += DOT_CYCLE_S;
+          }
+          paint(creepProgress(elapsed));
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+      }
+
+      if (mode === "holding") {
+        if (elapsed - releaseStart >= WIPE_HOLD_S) {
+          mode = "snapping";
+        } else {
+          paint(releaseFrom);
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+      }
+
+      // mode === "snapping"
+      const snapT = elapsed - releaseStart - WIPE_HOLD_S;
+      if (snapT >= WIPE_SNAP_S) {
+        paint(1);
+        onDoneRef.current();
+        return;
+      }
+      paint(springValue(snapT, releaseFrom, 1, WIPE_SNAP_TENSION, WIPE_SNAP_FRICTION));
+      raf = requestAnimationFrame(tick);
+    }
+    tick();
+
+    return () => {
+      disposed = true;
+      cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  return (
+    <span
+      ref={ref}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-y-0"
+      // Matches tick()'s own progress-0 value exactly -- without it,
+      // this would render one frame fully covering (no transform at
+      // all) before the effect's first rAF callback ever runs.
+      style={{
+        left: `${-WIPE_MARGIN_PX}px`,
+        width: `calc(100% + ${2 * WIPE_MARGIN_PX + WIPE_BRUSH_PX}px)`,
+        transform: `translateX(-100%) skewX(${WIPE_SKEW_DEG}deg)`,
+      }}
+    >
+      <span className="absolute inset-y-0 left-0" style={{ width: `calc(100% - ${WIPE_BRUSH_PX}px)`, background: "var(--accent)" }} />
+      <span className="absolute inset-y-0 right-0" style={{ width: `${WIPE_BRUSH_PX}px`, backgroundImage: WIPE_BRUSH_GRADIENT }} />
+    </span>
+  );
+}
 
 // Three dots bouncing in a staggered wave, each one only ever resting
 // at the bottom between hops (never mid-air) -- launched upward, then
