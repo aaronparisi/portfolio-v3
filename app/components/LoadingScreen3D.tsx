@@ -14,10 +14,27 @@ import {
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 const ENTER_DELAY = 5000;
-// Radians/sec -- only applied while the visitor isn't actively dragging,
-// so the graph is never fighting their own orbiting, but never just
-// sits dead-still if they never touch it either.
-const AUTO_ROTATE_SPEED = 0.18;
+
+// OrbitControls' autoRotateSpeed isn't in rad/sec -- per its own docs,
+// a value of 2.0 is "30 seconds per orbit at 60fps," i.e. 2*PI radians
+// per 30 seconds for every 2.0 of speed. Working in rad/sec ourselves
+// and converting once here is easier to reason about than re-deriving
+// this ratio wherever it's used. Confirmed by measuring
+// getAzimuthalAngle() over time at a known autoRotateSpeed rather than
+// assumed: a *positive* autoRotateSpeed produces a *decreasing*
+// azimuthal angle -- this constant is a plain magnitude ratio, and the
+// call site that converts a measured drag velocity back into an
+// autoRotateSpeed value is the one that has to negate it.
+const AUTOROTATE_UNITS_PER_RAD_PER_SEC = 2 / ((2 * Math.PI) / 30);
+// The idle spin rate this settles back down to -- same 0.18 rad/sec as
+// before, just expressed in OrbitControls' unit now.
+const BASELINE_SPIN_SPEED = 0.18 * AUTOROTATE_UNITS_PER_RAD_PER_SEC;
+// A cap on how much of a flick's momentum carries over, so a very fast
+// drag can't leave the graph spinning absurdly quickly.
+const MAX_SPIN_SPEED = BASELINE_SPIN_SPEED * 10;
+// How quickly a flick's speed eases back down (or up) toward the
+// baseline -- larger = faster settle.
+const SPIN_DECAY_RATE = 1.4;
 
 /**
  * The loading screen as a real multivariable calculus surface --
@@ -27,8 +44,10 @@ const AUTO_ROTATE_SPEED = 0.18;
  * looping for as long as it takes someone to look at it. It's a real
  * THREE.js scene, not a video -- drag to orbit it (OrbitControls,
  * built into three itself, no extra dependency) any time, including
- * mid-animation, and it slowly turns on its own whenever nobody's
- * dragging it.
+ * mid-animation. Idle, it slowly turns on its own; flick it while
+ * dragging and it keeps coasting in that direction afterward, easing
+ * back down to that same idle speed rather than snapping back to a
+ * fixed default rotation.
  *
  * Unlike every other loading screen on this branch, this one doesn't
  * time itself out -- there's a real, if decorative, "load" happening
@@ -101,10 +120,10 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     fill.position.set(-4, 2, -3);
     scene.add(fill);
 
-    // Everything that should turn together under the idle auto-rotate
-    // (grid box, axes, surface) lives under one root, so rotating that
-    // single group is the whole implementation -- no need to touch the
-    // camera or duplicate the rotation across three separate objects.
+    // Grid box, axes, and surface all live under one root -- purely
+    // for scene organization and disposal now (see the note below on
+    // why the idle/flick rotation itself moved to the camera instead
+    // of spinning this group).
     const graphRoot = new THREE.Group();
     scene.add(graphRoot);
 
@@ -129,19 +148,61 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     controls.minDistance = 3;
     controls.maxDistance = 16;
     controls.target.set(0, 0, 0);
+
+    if (import.meta.env.DEV) {
+      // Dev-only inspection hook (matches OverheadProjector3D's
+      // __projectorReview) so the momentum/direction behavior can be
+      // measured directly instead of eyeballed from screenshots.
+      (window as unknown as { __loadingGraphReview: unknown }).__loadingGraphReview = { controls, camera };
+    }
     controls.update();
 
-    // OrbitControls' own built-in autoRotate has historically had
-    // quirks about how it interacts with active dragging across
-    // versions -- simpler and more predictable to track interaction
-    // state ourselves (these events fire on real pointer/touch
-    // engagement) and drive the rotation by hand in the render loop.
+    // The idle/flick rotation drives the CAMERA (via OrbitControls'
+    // own autoRotate), not the graph object. An earlier version spun
+    // graphRoot.rotation.y directly instead, which read fine for a
+    // constant idle spin but broke the moment "continue with the
+    // drag's momentum" was needed: OrbitControls orbits the *camera*
+    // around the graph, so a rightward drag and a "spin the object
+    // rightward" both look similar but are opposite in sign, and
+    // getting that conversion wrong would make the motion visibly
+    // reverse direction at the exact moment the user releases. Doing
+    // everything in camera-azimuth space sidesteps that entirely: the
+    // same quantity (controls.getAzimuthalAngle()) is what a drag
+    // changes, what autoRotate changes, and what gets measured and
+    // fed back in on release, so there's nothing to convert or get
+    // backwards.
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = BASELINE_SPIN_SPEED;
+    let currentSpinSpeed = BASELINE_SPIN_SPEED;
+    let recentDragVelocity = 0; // rad/sec, smoothed, measured only while dragging
+    let lastAzimuth = controls.getAzimuthalAngle();
+
     let userInteracting = false;
     const handleInteractionStart = () => {
       userInteracting = true;
+      recentDragVelocity = 0;
+      // Autorotate would otherwise keep adding its own contribution on
+      // top of the drag, muddying the velocity being measured below.
+      controls.autoRotate = false;
     };
     const handleInteractionEnd = () => {
       userInteracting = false;
+      // Seed the coast with whatever was actually just measured,
+      // capped, and pointed the same direction the drag was already
+      // going -- a near-zero reading (a tap, or a drag that ended
+      // stationary) falls back to continuing whatever direction was
+      // already playing rather than snapping to a default.
+      // Negated: measured directly (see AUTOROTATE_UNITS_PER_RAD_PER_SEC's
+      // own comment) -- a *positive* autoRotateSpeed produces a
+      // *decreasing* azimuthal angle, not an increasing one, so
+      // reproducing the drag's own measured azimuth velocity with the
+      // same sign would set the graph coasting backwards from the
+      // direction it was just dragged in.
+      const measured = -recentDragVelocity * AUTOROTATE_UNITS_PER_RAD_PER_SEC;
+      const sign = Math.abs(measured) > 0.001 ? Math.sign(measured) : Math.sign(currentSpinSpeed || 1);
+      currentSpinSpeed = sign * Math.min(MAX_SPIN_SPEED, Math.max(Math.abs(measured), BASELINE_SPIN_SPEED));
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = currentSpinSpeed;
     };
     controls.addEventListener("start", handleInteractionStart);
     controls.addEventListener("end", handleInteractionEnd);
@@ -186,8 +247,23 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       const dt = Math.min(0.1, Math.max(0, elapsed - lastElapsed));
       lastElapsed = elapsed;
 
-      if (!userInteracting) {
-        graphRoot.rotation.y += dt * AUTO_ROTATE_SPEED;
+      const azimuth = controls.getAzimuthalAngle();
+      const azDelta = azimuth - lastAzimuth;
+      lastAzimuth = azimuth;
+
+      if (userInteracting) {
+        // Exponential smoothing so the very last, possibly-jittery
+        // frame of a drag doesn't solely decide the release velocity.
+        const instVelocity = dt > 0 ? azDelta / dt : 0;
+        recentDragVelocity = recentDragVelocity * 0.72 + instVelocity * 0.28;
+      } else {
+        // Eases `currentSpinSpeed` back toward the signed baseline --
+        // a flick starts fast (or slow) and settles to the same idle
+        // rate as always, just still turning whichever way it was
+        // last sent.
+        const targetSpeed = Math.sign(currentSpinSpeed || 1) * BASELINE_SPIN_SPEED;
+        currentSpinSpeed += (targetSpeed - currentSpinSpeed) * Math.min(1, dt * SPIN_DECAY_RATE);
+        controls.autoRotateSpeed = currentSpinSpeed;
       }
 
       const axisList: Array<[THREE.Group, number]> = [
