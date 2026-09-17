@@ -306,26 +306,8 @@ export function disposeObject3D(root: THREE.Object3D): void {
   });
 }
 
-/**
- * The closed-form solution to a damped harmonic oscillator (mass 1,
- * starting at rest), evaluated directly from elapsed time rather than
- * numerically stepped like react-spring does -- this scene's motion
- * lives entirely inside a requestAnimationFrame loop driven by its own
- * THREE.Clock, not by React renders, so treating "value at time t" as a
- * pure function is simpler than wiring a second animation library into
- * a loop that already isn't React-driven. `tension`/`friction` mean the
- * same thing they do everywhere else react-spring is used on this site.
- */
-export function springValue(t: number, from: number, to: number, tension: number, friction: number): number {
-  if (t <= 0) return from;
-  const omega0 = Math.sqrt(tension);
-  const zeta = friction / (2 * Math.sqrt(tension));
-  const delta = to - from;
-  if (zeta < 1) {
-    const omegaD = omega0 * Math.sqrt(1 - zeta * zeta);
-    const envelope = Math.exp(-zeta * omega0 * t);
-    return to - delta * envelope * (Math.cos(omegaD * t) + ((zeta * omega0) / omegaD) * Math.sin(omegaD * t));
-  }
-  const envelope = Math.exp(-omega0 * t);
-  return to - delta * envelope * (1 + omega0 * t);
-}
+// springValue moved to ~/utils/springValue -- it's a genuinely generic
+// utility (paired with a manual requestAnimationFrame loop, no
+// react-spring involved), not something specific to this 3D scene, and
+// it's since been reused for the loading button's bouncing dots too.
+export { springValue } from "~/utils/springValue";
