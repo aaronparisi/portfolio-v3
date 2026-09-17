@@ -3,14 +3,15 @@ import * as THREE from "three";
 import { animated, useSpring } from "@react-spring/web";
 import {
   createAxesGroup,
-  createGridBox,
   createSurfaceMesh,
+  createSurfaceWireframe,
   disposeObject3D,
   prepareRadialReveal,
   revealCountForRadius,
   springValue,
 } from "~/three/createLoadingGraph";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
+import { SpringButton } from "~/components/SpringButton";
 
 const ENTER_DELAY = 5000;
 
@@ -128,20 +129,23 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     fill.position.set(-4, 2, -3);
     scene.add(fill);
 
-    // Grid box, axes, and surface all live under one root -- purely
-    // for scene organization and disposal now (see the note below on
-    // why the idle/flick rotation itself moved to the camera instead
-    // of spinning this group).
+    // Axes and surface (grid lines live directly on the surface mesh
+    // itself, see createSurfaceWireframe) share one root, both for
+    // scene organization/disposal and so rotateGraphByPixels() below
+    // can turn the whole thing with a single quaternion.
     const graphRoot = new THREE.Group();
+    // Scaled down so the axes read as a compact loading graphic rather
+    // than filling most of the screen -- per feedback that the graph
+    // felt "large and imposing" at full size.
+    graphRoot.scale.setScalar(0.5);
     scene.add(graphRoot);
-
-    graphRoot.add(createGridBox());
 
     const axes = createAxesGroup();
     graphRoot.add(axes.root);
 
     const surface = createSurfaceMesh();
     graphRoot.add(surface);
+    graphRoot.add(createSurfaceWireframe());
     // Sorts the surface's own triangles by distance from the origin and
     // hands back that sorted distance list -- draw range is then just
     // "how many of the nearest N triangles to show," which is what
@@ -238,14 +242,19 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     // exactly the reported "stops for a moment, then continues right"
     // symptom. There's no event to wait for that arrives any sooner --
     // instead, treat an unusually long gap since the last pointermove
-    // (while nominally still dragging) as an effective release. Chosen
-    // well under the few-hundred-ms OS delay this is specifically
-    // working around, but long enough that an ordinary brief pause
-    // mid-drag (someone's hand just hesitating) doesn't misfire it --
-    // and even if it does, the consequence is only a brief, harmless
-    // coast that gets overridden the instant real movement resumes
-    // (onPointerMove sets liveInputActive back to true unconditionally).
-    const STALE_TIMEOUT_MS = 120;
+    // (while nominally still dragging) as an effective release. A real,
+    // continuously-moving drag delivers pointermove events roughly every
+    // 8-16ms (matched to display refresh or faster), so even a fairly
+    // small threshold here comfortably clears normal event spacing; 50ms
+    // is over 3x that, while still resolving the OS's few-hundred-ms
+    // delay much faster than the original 120ms did. If an ordinary
+    // brief pause mid-drag (someone's hand just hesitating) ever
+    // misfires it, the consequence is only a brief, harmless coast that
+    // gets overridden the instant real movement resumes (onPointerMove
+    // sets liveInputActive back to true unconditionally) -- so there's
+    // room to tune this lower still if 50ms ever proves not aggressive
+    // enough.
+    const STALE_TIMEOUT_MS = 50;
 
     // Momentum is that tracked (direction, speed) pair, replayed every
     // idle frame through the exact same rotateGraphByPixels() the live
@@ -536,9 +545,9 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
           pointerEvents: ready && !exiting ? "auto" : "none",
         }}
       >
-        <button type="button" onClick={handleEnter} className="btn-primary rounded-full px-8 py-3 font-medium">
+        <SpringButton onClick={handleEnter} className="btn-primary cursor-pointer rounded-full px-8 py-3 font-medium">
           Enter the site
-        </button>
+        </SpringButton>
       </animated.div>
       <span className="sr-only">Loading the page.</span>
     </animated.div>

@@ -2,11 +2,15 @@ import * as THREE from "three";
 
 /**
  * A multivariable calculus surface, rendered CalcPlot3D-style: colored
- * axes, a floor grid, and a vertex-colored surface mesh for
- * f(x, y) = 7xy / e^(x^2+y^2) -- a saddle-like function with two
- * symmetric humps that decays to (almost) flat away from the origin,
- * chosen because that decay keeps the whole interesting shape inside a
- * modest domain instead of running off to infinity.
+ * axes and a vertex-colored surface mesh for f(x, y) = 7xy / e^(x^2+y^2)
+ * -- a saddle-like function with two symmetric humps that decays to
+ * (almost) flat away from the origin, chosen because that decay keeps
+ * the whole interesting shape inside a modest domain instead of running
+ * off to infinity. Grid lines (createSurfaceWireframe) are drawn
+ * directly on the surface itself, not as a separate bounding box of
+ * reference planes floating around it -- an earlier version tried the
+ * latter and it just read as a grid box with a surface inside it,
+ * rather than a grid *on* the surface.
  *
  * Three.js's own "up" axis is Y, but the usual math convention for a
  * z = f(x, y) surface puts z vertical -- rather than fight that, world
@@ -20,8 +24,6 @@ import * as THREE from "three";
 export const GRAPH_DOMAIN = 3;
 const SEGMENTS = 84;
 const AXIS_LENGTH = 3.5;
-const GRID_HALF_SIZE = 3.3;
-const GRID_HALF_HEIGHT = 1.7;
 
 export function evaluateF(x: number, y: number): number {
   return (7 * x * y) / Math.exp(x * x + y * y);
@@ -110,8 +112,50 @@ export function createSurfaceMesh(): THREE.Mesh {
     roughness: 0.55,
     metalness: 0.05,
     side: THREE.DoubleSide,
+    // Pushes this surface's own depth back a hair so createSurfaceWireframe's
+    // lines -- which sit at literally the same coordinates -- render
+    // cleanly on top instead of z-fighting/flickering against it.
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1,
   });
   return new THREE.Mesh(geo, material);
+}
+
+// Every Nth row/column of the *same* fine mesh above becomes a visible
+// grid line, traced as a run of short segments along the intervening
+// fine vertices rather than one straight line between distant nodes --
+// straight-line shortcuts would visibly cut across the surface's real
+// curvature (a chord instead of the arc) anywhere it isn't nearly flat.
+// Reusing the exact same evaluateF()/GRAPH_DOMAIN math as the shaded
+// surface guarantees these lines sit exactly on it, not a separate
+// grid floating nearby.
+const GRID_LINE_STRIDE = 7; // 84 / 7 = 12 divisions (13 lines) each direction
+
+export function createSurfaceWireframe(): THREE.LineSegments {
+  const positions: number[] = [];
+
+  function point(i: number, j: number): [number, number, number] {
+    const mathX = -GRAPH_DOMAIN + (i / SEGMENTS) * (2 * GRAPH_DOMAIN);
+    const mathY = -GRAPH_DOMAIN + (j / SEGMENTS) * (2 * GRAPH_DOMAIN);
+    return [mathX, evaluateF(mathX, mathY), mathY];
+  }
+
+  for (let j = 0; j <= SEGMENTS; j += GRID_LINE_STRIDE) {
+    for (let i = 0; i < SEGMENTS; i++) {
+      positions.push(...point(i, j), ...point(i + 1, j));
+    }
+  }
+  for (let i = 0; i <= SEGMENTS; i += GRID_LINE_STRIDE) {
+    for (let j = 0; j < SEGMENTS; j++) {
+      positions.push(...point(i, j), ...point(i, j + 1));
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  const material = new THREE.LineBasicMaterial({ color: 0x1d2021, transparent: true, opacity: 0.45 });
+  return new THREE.LineSegments(geo, material);
 }
 
 /**
@@ -243,47 +287,6 @@ export function createAxesGroup(): AxesGroup {
   return { root, worldXAxis, worldYAxis, worldZAxis };
 }
 
-// CalcPlot3D's box: grid lines on the floor, ceiling, and two walls, so
-// there's always a reference plane behind/below whatever you're looking
-// at from any orbit angle -- a single floor grid only reads as ground
-// while the other three sides of the bounding box show nothing at all.
-function makeGridPlane(): THREE.GridHelper {
-  const grid = new THREE.GridHelper(GRID_HALF_SIZE * 2, 12, 0x504945, 0x3c3836);
-  const material = grid.material as THREE.Material;
-  material.transparent = true;
-  material.opacity = 0.45;
-  return grid;
-}
-
-export function createGridBox(): THREE.Group {
-  const group = new THREE.Group();
-
-  const floor = makeGridPlane();
-  floor.position.y = -GRID_HALF_HEIGHT;
-  group.add(floor);
-
-  const ceiling = makeGridPlane();
-  ceiling.position.y = GRID_HALF_HEIGHT;
-  group.add(ceiling);
-
-  // GridHelper lies flat in XZ (spans local X and Z) by default;
-  // rotating -90 deg about X carries that plane to XY (a wall facing
-  // along Z), and -90 deg about Z carries it to YZ (a wall facing along
-  // X) -- both checked against the standard rotation matrices, not
-  // guessed, since a sign error here just silently faces a wall the
-  // wrong way with nothing to catch it.
-  const backWall = makeGridPlane();
-  backWall.rotation.x = Math.PI / 2;
-  backWall.position.z = -GRID_HALF_SIZE;
-  group.add(backWall);
-
-  const sideWall = makeGridPlane();
-  sideWall.rotation.z = Math.PI / 2;
-  sideWall.position.x = -GRID_HALF_SIZE;
-  group.add(sideWall);
-
-  return group;
-}
 
 export function disposeObject3D(root: THREE.Object3D): void {
   root.traverse((obj) => {
