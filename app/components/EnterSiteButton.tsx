@@ -102,17 +102,19 @@ const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLO
 // purpose -- a wipe that swept across and then *bounced back* would
 // read as a mistake, not a flourish, unlike the deliberately
 // underdamped press/glow springs elsewhere in this component.
-// Tension/friction are both scaled down from an earlier, snappier
-// pass by the same factor (1.4x slower), which keeps the curve's
-// *shape* (zeta, the damping ratio) identical while stretching it out
-// in time -- lowering tension alone would've changed how it decelerates,
-// not just how long it takes. 0.9s is ~99% of the way through this
-// exact config's closed-form curve (solved directly from springValue's
-// own math, not eyeballed) -- long enough that the handoff to solid
-// yellow at the end is never visually abrupt.
-const WIPE_TENSION = 61;
-const WIPE_FRICTION = 21;
-const WIPE_DURATION_S = 0.9;
+// Tension/friction are both scaled down from the original, snappier
+// pass by the same factor, which keeps the curve's *shape* (zeta, the
+// damping ratio) identical while stretching it out in time -- lowering
+// tension alone would've changed how it decelerates, not just how long
+// it takes. An earlier "slower" pass only scaled this by 1.4x (to
+// 0.9s), which still read as barely visible; this scales the original
+// by roughly 3.4x instead. 2.2s is ~99% of the way through this exact
+// config's closed-form curve (solved directly from springValue's own
+// math, not eyeballed) -- long enough that the handoff to solid yellow
+// at the end is never visually abrupt.
+const WIPE_TENSION = 10;
+const WIPE_FRICTION = 9;
+const WIPE_DURATION_S = 2.2;
 
 /**
  * Plays the enable transition's sweep once on mount, then calls
@@ -384,32 +386,47 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
 }
 
 const DOT_STAGGER_S = 0.15; // stagger between dots, so the bounce ripples across them as a wave
-const DOT_LAUNCH_S = 0.22; // the initial upward impulse -- quick, like being launched, not eased into
-const DOT_FALL_S = 0.3; // time for the full-height fall back to the ground
-const DOT_UP_TENSION = 145;
-const DOT_UP_FRICTION = 16;
-const DOT_DOWN_TENSION = 300;
-const DOT_DOWN_FRICTION = 19;
+
+// Real projectile-under-gravity kinematics (constant acceleration),
+// not springValue's damped-oscillator curve -- tried spring easing for
+// this twice (once as the up/down shape of scripted hops, once as a
+// single long decaying oscillation) and both looked like "pulled back
+// on a rubber band and let go," never like gravity. The reason is
+// structural, not a tuning miss: a spring released from a displaced
+// position starts at *zero velocity* and *speeds up* toward the
+// target -- exactly backwards from a thrown ball, which leaves the
+// ground at *maximum* velocity and *decelerates* to a stop at the
+// peak, then free-falls from rest at the top and hits the ground at
+// maximum velocity. A rubber band's snap and a dropped ball's fall are
+// different shapes, not just different speeds.
+//
+// progress is t/duration, clamped to [0,1]. Both are the same
+// constant-acceleration parabola, y = -h*(1-(1-p)^2) for rise and
+// y = -h*(1-p^2) for fall -- reversed in time from each other, which
+// is exactly the real symmetry of a projectile's up-leg and down-leg
+// under constant gravity (equal time, mirrored velocity profile).
+function gravityRise(progress: number, heightPx: number): number {
+  const p = Math.min(1, Math.max(0, progress));
+  return -heightPx * (1 - (1 - p) * (1 - p));
+}
+function gravityFall(progress: number, heightPx: number): number {
+  const p = Math.min(1, Math.max(0, progress));
+  return -heightPx * (1 - p * p);
+}
+
+// Time for one full ground<->peak-height traversal -- the *same*
+// duration serves both that height's rise and its fall, since real
+// gravity takes exactly as long to rise to a given height as it does
+// to fall back from it.
+const DOT_HOP_S = 0.26;
 // How much height survives each bounce, and how many bounces play
-// before it's settled. A *single* underdamped spring released from the
-// peak and just clamped at the ground (tried first) doesn't actually
-// produce this: its natural half-period overshoot dives *below* ground
-// before ever coming back up, and that overshoot is big enough (traced
-// the raw numbers directly) that the clamped-away dip eats most of the
-// available energy -- the next *visible* bounce that's left over comes
-// out under 15% of the previous one, barely readable as a bounce at
-// all before it's already flattened out. Scripting the peak heights
-// explicitly (each one this fraction of the last) is what actually
-// gives control over how gradually it reads as "losing height," while
-// each individual hop's up/down motion still comes from springValue
-// (see ~/utils/springValue) -- so the physics governs the *shape* of
-// every hop, just not the amplitude decay across hops.
+// before it's settled.
 const DOT_RESTITUTION = 0.45;
 const DOT_BOUNCE_COUNT = 3; // bounce-backs after the initial launch, each one smaller
 const DOT_REST_S = 0.7;
-const DOT_PEAK_HEIGHT = -10; // px, how high the launch throws each dot above rest
+const DOT_PEAK_HEIGHT_PX = 10; // how high the initial launch throws each dot above rest
 
-type DotPhase = { from: number; to: number; tension: number; friction: number; duration: number };
+type DotPhase = { kind: "rise" | "fall" | "rest"; heightPx: number; duration: number };
 
 /**
  * One full dot cycle as an explicit list of hops: launch straight up
@@ -424,17 +441,17 @@ type DotPhase = { from: number; to: number; tension: number; friction: number; d
  * hand-written phase enum.
  */
 function buildDotPhases(): DotPhase[] {
-  const phases: DotPhase[] = [{ from: 0, to: DOT_PEAK_HEIGHT, tension: DOT_UP_TENSION, friction: DOT_UP_FRICTION, duration: DOT_LAUNCH_S }];
-  let height = DOT_PEAK_HEIGHT;
+  let height = DOT_PEAK_HEIGHT_PX;
+  let duration = DOT_HOP_S;
+  const phases: DotPhase[] = [{ kind: "rise", heightPx: height, duration }];
   for (let i = 0; i <= DOT_BOUNCE_COUNT; i++) {
-    const fallDuration = DOT_FALL_S * Math.sqrt(height / DOT_PEAK_HEIGHT);
-    phases.push({ from: height, to: 0, tension: DOT_DOWN_TENSION, friction: DOT_DOWN_FRICTION, duration: fallDuration });
+    phases.push({ kind: "fall", heightPx: height, duration });
     if (i === DOT_BOUNCE_COUNT) break;
     height *= DOT_RESTITUTION;
-    const riseDuration = DOT_LAUNCH_S * Math.sqrt(height / DOT_PEAK_HEIGHT);
-    phases.push({ from: 0, to: height, tension: DOT_UP_TENSION, friction: DOT_UP_FRICTION, duration: riseDuration });
+    duration = DOT_HOP_S * Math.sqrt(height / DOT_PEAK_HEIGHT_PX);
+    phases.push({ kind: "rise", heightPx: height, duration });
   }
-  phases.push({ from: 0, to: 0, tension: 1, friction: 1, duration: DOT_REST_S });
+  phases.push({ kind: "rest", heightPx: 0, duration: DOT_REST_S });
   return phases;
 }
 const DOT_PHASES = buildDotPhases();
@@ -442,14 +459,16 @@ const DOT_PHASES = buildDotPhases();
 // Three dots bouncing in a staggered wave, each one only ever resting
 // at the bottom between hops (never mid-air) -- launched upward, then
 // brought back down and bounced by gravity, not a pendulum swinging
-// symmetrically. Driven by springValue() (see ~/utils/springValue) inside a
-// plain requestAnimationFrame loop -- the same technique the 3D loading
-// graph uses for its own animation, not react-spring. That's not just
-// consistency for its own sake: react-spring produced two real bugs
-// trying to do this exact thing, and this page is a uniquely hostile
-// environment for exactly the kind of timing assumption both bugs made,
-// since the 3D loading graph is *also* running concurrently, competing
-// hard for the same main thread and stalling it in irregular bursts.
+// symmetrically. Driven by gravityRise()/gravityFall() above inside a
+// plain requestAnimationFrame loop -- the same technique (though not
+// the same math -- see those functions' own comment for why springValue
+// specifically was wrong for this) the 3D loading graph uses for its
+// own animation, not react-spring. That's not just consistency for its
+// own sake: react-spring produced two real bugs trying to do this
+// exact thing, and this page is a uniquely hostile environment for
+// exactly the kind of timing assumption both bugs made, since the 3D
+// loading graph is *also* running concurrently, competing hard for the
+// same main thread and stalling it in irregular bursts.
 //
 // - useTrail wires each item to follow the next one's value (that's
 //   the whole point of a "trail"), which fought this component's own
@@ -551,8 +570,14 @@ function Dot({ delaySeconds }: { delaySeconds: number }) {
           t -= duration;
           phaseIndex = (phaseIndex + 1) % DOT_PHASES.length;
         }
-        const { from, to, tension, friction } = DOT_PHASES[phaseIndex];
-        const y = from === to ? 0 : springValue(t, from, to, tension, friction);
+        const phaseInfo = DOT_PHASES[phaseIndex];
+        const progress = t / phaseInfo.duration;
+        const y =
+          phaseInfo.kind === "rise"
+            ? gravityRise(progress, phaseInfo.heightPx)
+            : phaseInfo.kind === "fall"
+              ? gravityFall(progress, phaseInfo.heightPx)
+              : 0;
         el.style.transform = `translate3d(0, ${y}px, 0)`;
       }
       raf = requestAnimationFrame(tick);
