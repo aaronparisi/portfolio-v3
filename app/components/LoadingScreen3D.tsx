@@ -176,8 +176,12 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     const cameraRightVec = new THREE.Vector3();
     function rotateGraphByPixels(dx: number, dy: number) {
       cameraRightVec.setFromMatrixColumn(camera.matrixWorld, 0);
-      const yawQuat = new THREE.Quaternion().setFromAxisAngle(worldUp, -dx * DRAG_SENSITIVITY);
-      const pitchQuat = new THREE.Quaternion().setFromAxisAngle(cameraRightVec, -dy * DRAG_SENSITIVITY);
+      // Positive, not negated -- confirmed backwards by feedback (the
+      // graph turned opposite the drag), and it's the intuitive
+      // "grab and turn" direction: dragging right should carry the
+      // near surface to the right along with the pointer.
+      const yawQuat = new THREE.Quaternion().setFromAxisAngle(worldUp, dx * DRAG_SENSITIVITY);
+      const pitchQuat = new THREE.Quaternion().setFromAxisAngle(cameraRightVec, dy * DRAG_SENSITIVITY);
       graphRoot.quaternion.premultiply(yawQuat);
       graphRoot.quaternion.premultiply(pitchQuat);
     }
@@ -185,15 +189,38 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     let dragging = false;
     let lastPointerX = 0;
     let lastPointerY = 0;
-    let lastPointerTime = 0;
-    let recentVelX = 0;
-    let recentVelY = 0;
+    let lastMoveTime = 0;
 
-    // Momentum is a fixed 2D direction (the drag's own px/sec ratio,
-    // replayed every idle frame through the exact same
-    // rotateGraphByPixels() the live drag uses, so the replay is
-    // guaranteed to match, not just resemble, the live motion) and a
-    // speed that eases from wherever the drag left it down to the
+    // Speed is tracked as a "peak hold with decay" envelope, not a
+    // trailing time window and not a recency-weighted exponential
+    // smooth -- both of those were tried and both broke on an
+    // extremely common real gesture: a hand naturally decelerating or
+    // pausing for a moment right before actually lifting the mouse
+    // button. The exponential version reacts downward just as fast as
+    // upward, so a couple of near-zero-delta samples right at the end
+    // erased the drag's real speed entirely; the windowed version
+    // depends on enough samples actually landing inside an arbitrary
+    // time window, which a pause of any length comparable to the
+    // window defeats just as badly (and made this hard to even test
+    // reliably, since simulated pointer events don't land at
+    // perfectly even intervals). A peak-hold jumps UP instantly to
+    // match any new fast instant, but only decays slowly otherwise --
+    // confirmed by simulating a fast drag followed by a deliberate
+    // 100-250ms pause before release: the earlier approaches both
+    // measured a release speed collapsed to barely above the idle
+    // baseline (which is what actually produced the reported "stops
+    // for a moment," since coasting at that baseline is slow enough to
+    // read as stopped); this one still remembers the drag was fast a
+    // moment ago.
+    const PEAK_HOLD_HALF_LIFE_MS = 180;
+    let trackedSpeed = 0;
+    let trackedDirX = 1;
+    let trackedDirY = 0;
+
+    // Momentum is that tracked (direction, speed) pair, replayed every
+    // idle frame through the exact same rotateGraphByPixels() the live
+    // drag uses, so the replay is guaranteed to match, not just
+    // resemble, the live motion, with the speed easing down toward the
     // baseline via springValue(), parametrized by time-since-release --
     // not recomputed from a moving target every frame, so there's no
     // "settles at zero, then restarts" seam: it's always actually
@@ -208,27 +235,33 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       dragging = true;
       lastPointerX = e.clientX;
       lastPointerY = e.clientY;
-      lastPointerTime = performance.now();
-      recentVelX = 0;
-      recentVelY = 0;
+      lastMoveTime = performance.now();
+      trackedSpeed = 0;
       renderer.domElement.setPointerCapture(e.pointerId);
     }
     function onPointerMove(e: PointerEvent) {
       if (!dragging) return;
       const now = performance.now();
-      const dtMs = Math.max(1, now - lastPointerTime);
+      const dtMs = Math.max(1, now - lastMoveTime);
       const dx = e.clientX - lastPointerX;
       const dy = e.clientY - lastPointerY;
       rotateGraphByPixels(dx, dy);
-      // Exponential smoothing so the very last, possibly-jittery frame
-      // of a drag doesn't solely decide the release velocity.
-      const instVelX = (dx / dtMs) * 1000;
-      const instVelY = (dy / dtMs) * 1000;
-      recentVelX = recentVelX * 0.7 + instVelX * 0.3;
-      recentVelY = recentVelY * 0.7 + instVelY * 0.3;
+
+      const dist = Math.hypot(dx, dy);
+      const instSpeed = (dist / dtMs) * 1000;
+      const decay = Math.pow(0.5, dtMs / PEAK_HOLD_HALF_LIFE_MS);
+      trackedSpeed = Math.max(instSpeed, trackedSpeed * decay);
+      // Only real motion gets to set the direction -- a near-zero-delta
+      // sample (exactly the kind a pause produces) shouldn't overwrite
+      // which way the drag was actually heading.
+      if (dist > 0.5) {
+        trackedDirX = dx / dist;
+        trackedDirY = dy / dist;
+      }
+
       lastPointerX = e.clientX;
       lastPointerY = e.clientY;
-      lastPointerTime = now;
+      lastMoveTime = now;
     }
     function onPointerUp(e: PointerEvent) {
       if (!dragging) return;
@@ -238,15 +271,15 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       } catch {
         /* already released */
       }
-      const speed = Math.hypot(recentVelX, recentVelY);
-      if (speed > MIN_FLICK_SPEED_PX) {
-        momentumDirX = recentVelX / speed;
-        momentumDirY = recentVelY / speed;
-        releaseSpeed = Math.min(speed, MAX_FLICK_SPEED_PX);
+      if (trackedSpeed > MIN_FLICK_SPEED_PX) {
+        momentumDirX = trackedDirX;
+        momentumDirY = trackedDirY;
+        releaseSpeed = Math.min(trackedSpeed, MAX_FLICK_SPEED_PX);
       } else {
-        // A tap, or a drag that ended stationary -- keep whatever
-        // direction was already playing rather than resetting it, and
-        // don't let the speed itself drop below the idle baseline.
+        // A tap, or a drag that ended stationary long enough for the
+        // peak-hold itself to decay -- keep whatever direction was
+        // already playing rather than resetting it, and don't let the
+        // speed drop below the idle baseline.
         releaseSpeed = Math.max(releaseSpeed, BASELINE_SPEED_PX);
       }
       releaseTime = (performance.now() - startTime) / 1000;
@@ -261,7 +294,20 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
       // Dev-only inspection hook (matches OverheadProjector3D's
       // __projectorReview) so the momentum/direction behavior can be
       // measured directly instead of eyeballed from screenshots.
-      (window as unknown as { __loadingGraphReview: unknown }).__loadingGraphReview = { camera, graphRoot };
+      (window as unknown as { __loadingGraphReview: unknown }).__loadingGraphReview = {
+        camera,
+        graphRoot,
+        getMomentumState: () => ({
+          dragging,
+          momentumDirX,
+          momentumDirY,
+          releaseSpeed,
+          releaseTime,
+          hasReleased,
+          trackedSpeed,
+          elapsed: (performance.now() - startTime) / 1000,
+        }),
+      };
     }
 
     function resize() {
