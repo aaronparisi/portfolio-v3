@@ -17,7 +17,7 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 // silently flooding the whole background outside a small circle.
 // Fading to transparent instead means anywhere outside the ring
 // pattern shows the real, unblended accent yellow underneath.
-const RING_COLORS = ["#d3869b", "#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "transparent"];
+const RING_COLORS = ["#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b", "transparent"];
 
 /**
  * Each color gets two stops, straddling its own position -- holding
@@ -48,22 +48,21 @@ const JAWBREAKER_RADIUS_PX = 55;
 // The center disc is deliberately a *separate* layer from the rings
 // above, rendered with ordinary alpha compositing instead of
 // mix-blend-mode: color. That's not a style inconsistency -- it's the
-// only way to make it actually read as blue. mix-blend-mode: color
-// locks the result's luminance to whatever's underneath, and the
+// only way to make it actually read as its true color. mix-blend-mode:
+// color locks the result's luminance to whatever's underneath, and the
 // accent yellow backdrop is bright enough that *any* hue rendered
-// through it that way comes out pale and washed, blue included --
-// confirmed directly against the browser's own compositor (a canvas
-// with globalCompositeOperation: "color", not just a guess from the
-// spec): blue over this exact yellow at full opacity comes out
-// rgb(169,203,190), a pale mint, and at the 0.5 opacity the rings use
-// it's rgb(210,196,119) -- textbook "tan". No amount of retuning
-// blend-mode opacity fixes that; it's a ceiling built into the blend
-// mode itself against a backdrop this bright. Plain alpha blending at
-// high opacity doesn't have that ceiling -- at 0.9 it already reads
-// clearly as blue -- so the center gets its own normal-blend layer on
-// top of the ring layer, sized just big enough to fully cover the
+// through it that way comes out pale and washed -- confirmed directly
+// against the browser's own compositor (a canvas with
+// globalCompositeOperation: "color", not just a guess from the spec):
+// blue over this exact yellow at full opacity comes out rgb(169,203,190),
+// a pale mint, and at the 0.5 opacity the rings use it's rgb(210,196,119)
+// -- textbook "tan". No amount of retuning blend-mode opacity fixes
+// that; it's a ceiling built into the blend mode itself against a
+// backdrop this bright. Plain alpha blending at high opacity doesn't
+// have that ceiling -- so the center gets its own normal-blend layer
+// on top of the ring layer, sized just big enough to fully cover the
 // rings' own color at position 0 (which no longer matters what it is).
-const CENTER_COLOR = "#83a598";
+const CENTER_COLOR = "#fb4934";
 const CENTER_RADIUS_PX = 16;
 const CENTER_FADE_PX = 10;
 
@@ -273,7 +272,7 @@ const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
 // this dot never uses), so items-end alone left it visibly floating
 // above the bottom of the "L". DOT_REST_OFFSET_PX pulls its resting
 // position down to sit flush with the letters' baseline instead.
-const DOT_REST_OFFSET_PX = 4;
+const DOT_REST_OFFSET_PX = 1;
 
 function LoadingDots() {
   return (
