@@ -3,17 +3,38 @@ import { animated, to, useSpring } from "@react-spring/web";
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-// The full Gruvbox bright palette, in hue order, as evenly-spaced
-// radial-gradient stops -- concentric rings radiating out from the
-// cursor (a jawbreaker's actual layered-candy look), not a conic sweep.
-// An earlier version used a conic gradient instead, which -- on a
-// short, wide button where much of a full 360-degree wheel sits
-// outside the visible bounds -- read as a gradient sliding in from one
-// side rather than anything centered on the cursor.
+// The full Gruvbox bright palette, in hue order, as concentric
+// radial-gradient rings radiating from the cursor (a jawbreaker's
+// actual layered-candy look), not a conic sweep. An earlier version
+// used a conic gradient instead, which -- on a short, wide button
+// where much of a full 360-degree wheel sits outside the visible
+// bounds -- read as a gradient sliding in from one side rather than
+// anything centered on the cursor.
 const RAINBOW_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
-const JAWBREAKER_STOPS = [...RAINBOW_HUES, RAINBOW_HUES[0]]
-  .map((color, i) => `${color} ${((i / RAINBOW_HUES.length) * 100).toFixed(1)}%`)
-  .join(", ");
+
+/**
+ * Each color gets two stops, straddling its own position -- holding
+ * solid across most of the distance to its neighbors, with only a
+ * narrow zone right at each boundary actually blending into the next
+ * color, rather than one stop per color smoothly interpolating the
+ * entire way to the next (which read as a soft gradient, not the
+ * "solid rainbow rings" a jawbreaker actually has). `blendFraction` is
+ * how much of the space between two colors is spent blending, vs.
+ * solid -- lower reads closer to hard-edged stripes, 1 would be back
+ * to the fully-smooth original.
+ */
+function buildJawbreakerStops(colors: string[], blendFraction: number): string {
+  const sequence = [...colors, colors[0]];
+  const step = 100 / (sequence.length - 1);
+  const solidHalf = (step / 2) * (1 - blendFraction);
+  const stops: string[] = [];
+  sequence.forEach((color, i) => {
+    const pos = i * step;
+    stops.push(`${color} ${Math.max(0, pos - solidHalf).toFixed(1)}%`, `${color} ${Math.min(100, pos + solidHalf).toFixed(1)}%`);
+  });
+  return stops.join(", ");
+}
+const JAWBREAKER_STOPS = buildJawbreakerStops(RAINBOW_HUES, 0.25);
 
 /**
  * The loading screen's call to action -- a from-scratch component
@@ -138,14 +159,15 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
   );
 }
 
-const DOT_STAGGER_S = 0.12; // stagger between dots, so the bounce ripples across them as a wave
+const DOT_STAGGER_S = 0.15; // stagger between dots, so the bounce ripples across them as a wave
 // Rise is slower than fall on purpose -- gravity should read as *pulling
 // it back down*, not just an identical reversal of the same motion.
 // Fall's lower friction relative to its tension gives it a small,
 // natural-feeling settle on landing rather than stopping dead.
-const DOT_RISE_S = 0.26;
-const DOT_FALL_S = 0.22;
-const DOT_REST_S = 0.26;
+const DOT_RISE_S = 0.38;
+const DOT_FALL_S = 0.32;
+const DOT_REST_S = 0.42;
+const DOT_PEAK_HEIGHT = -10; // px, how high each dot rises above rest
 
 // Three dots bouncing in a staggered wave, each one only ever resting
 // at the bottom between hops (never mid-air) -- gravity, not a
@@ -247,7 +269,11 @@ function Dot({ delaySeconds }: { delaySeconds: number }) {
           phase = phase === "rise" ? "fall" : phase === "fall" ? "rest" : "rise";
         }
         const y =
-          phase === "rise" ? springValue(t, 0, -6, 210, 20) : phase === "fall" ? springValue(t, -6, 0, 420, 22) : 0;
+          phase === "rise"
+            ? springValue(t, 0, DOT_PEAK_HEIGHT, 145, 16)
+            : phase === "fall"
+              ? springValue(t, DOT_PEAK_HEIGHT, 0, 300, 19)
+              : 0;
         el.style.transform = `translate3d(0, ${y}px, 0)`;
       }
       raf = requestAnimationFrame(tick);
