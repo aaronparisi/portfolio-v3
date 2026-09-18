@@ -66,37 +66,26 @@ const CENTER_COLOR = "#fb4934";
 const CENTER_RADIUS_PX = 10;
 const CENTER_FADE_PX = 7;
 
-// The wipe's visual mechanics: a diagonal band of Gruvbox colors, with
-// solid accent yellow trailing behind it and the disabled tan still
-// showing ahead of it (wherever the band hasn't reached yet) -- like
-// the band is repainting the button as it passes, rather than a plain
-// crossfade. See Wiper (below, after DOT_PHASES) for the full sequence
-// this plays through: two teasing "tug" cycles during loading, then a
-// big pull-and-release once actually enabled.
+// The one-shot transition that plays when the button flips from
+// disabled to enabled: a diagonal band of Gruvbox colors sweeps left
+// to right, with solid accent yellow trailing behind it and the
+// disabled tan still showing ahead of it (wherever the sweep hasn't
+// reached yet) -- like the band is repainting the button as it
+// passes, rather than a plain crossfade.
 //
-// Rendered as one element containing up to two children -- a big solid
+// Built as a single element containing two children -- a big solid
 // block of yellow, followed by a narrow strip of striped colors --
 // both riding inside one skewX()'d, translateX()'d container. Skewing
 // the *container* rather than hand-computing a diagonal clip-path
 // polygon means both the yellow's leading edge and the stripe band's
 // internal edges tilt together automatically, from plain vertical
-// stripes in the container's own local coordinates. The yellow child
-// is what gets dropped once the background has actually committed to
-// solid accent yellow for good (see BAND_ONLY_PROGRESS's user, below)
-// -- from that point on this element carries only the band, free to
-// keep moving independently of the (now permanently painted) yellow.
+// stripes in the container's own local coordinates.
 //
 // Sized and positioned entirely in the parent button's own terms --
 // `calc(100% + ...)` for width and a plain -100%/0% translateX range
-// for "hidden" and "fully covering" -- rather than measuring the
-// button's pixel width in JS, so this doesn't need a ref or a resize
-// observer to stay correct if the button's size ever changes. A nice
-// side effect: since the element's own width already bakes in
-// MARGIN/BRUSH, the progress value at which the band sits exactly
-// centered and fully visible (not clipped by either edge) works out to
-// precisely 0.5 regardless of the button's actual rendered width --
-// solved algebraically, not measured -- which is what WIPER_TUG_PEAK
-// below relies on.
+// -- rather than measuring the button's pixel width in JS, so this
+// doesn't need a ref or a resize observer to stay correct if the
+// button's size ever changes.
 const WIPE_SKEW_DEG = -16;
 // However large the skew shear ends up being at this button's actual
 // height, WIPE_MARGIN_PX just needs to safely exceed it so the leading
@@ -110,30 +99,25 @@ const WIPE_STRIPE_PX = 7; // width of each individual color stripe
 const WIPE_BRUSH_PX = WIPE_STRIPE_COLORS.length * WIPE_STRIPE_PX; // the band shows exactly one pass of the full palette
 const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLORS.map((c, i) => `${c} ${i * WIPE_STRIPE_PX}px ${(i + 1) * WIPE_STRIPE_PX}px`).join(", ")})`;
 
-// A brief pause once actually enabled -- a beat of anticipation --
-// before the big pull begins.
-const WIPE_HOLD_S = 0.6;
-// The "load": pulled from 0 (hidden) out to 1.3, well past 1 (which is
-// already "fully covers the button") so the band is unmistakably
-// pushed off the right edge, not just barely at it -- "off the side,"
-// not "at the side."
-const WIPE_LOAD_S = 0.8;
-const WIPE_LOAD_PEAK = 1.3;
-const WIPE_LOAD_TENSION = 70;
-const WIPE_LOAD_FRICTION = 11;
-// The final release: once the load settles, the background commits to
-// solid yellow for good and the band -- now moving alone, no longer
-// dragging a yellow child with it -- springs back from 1.3 to 0,
-// landing with a small overshoot/settle wobble, the same springiness
-// as everywhere else in this sequence.
-const WIPE_RELEASE_S = 0.8;
-const WIPE_RELEASE_TENSION = 90;
-const WIPE_RELEASE_FRICTION = 9;
-
-// Wiper -- the element that actually renders and animates this sweep
-// -- is defined further down (after DOT_PHASES, which it reads to sync
-// its pre-enable "tugging" to the dots' own bounce cycle), but reads
-// all of the constants above.
+// Slow at the start, fast at the end -- genuinely accelerating the
+// whole way, not just "mostly still, then a burst" -- using real
+// spring math rather than a plain ease-in curve, per request. The
+// trick: an underdamped spring released from a displaced position
+// starts at zero velocity and *speeds up*, but only up to a point --
+// past roughly t = 1/omega0 it starts slowing back down as it
+// approaches its target. Stopping (and normalizing so the output lands
+// exactly on 1) right at that peak-velocity instant, instead of
+// letting the spring actually settle, keeps the entire visible motion
+// inside the accelerating half of the curve -- confirmed numerically
+// (a fine-grained frame-by-frame diff of the normalized curve below),
+// not just assumed: every single step is larger than the one before it,
+// all the way to the end. WIPE_SCALE is that raw (pre-normalization)
+// spring value at WIPE_DURATION_S -- computed once so `paint()` can
+// just divide by it every frame instead of recomputing.
+const WIPE_TENSION = 1.03;
+const WIPE_FRICTION = 0.64;
+const WIPE_DURATION_S = 1.3;
+const WIPE_SCALE = springValue(WIPE_DURATION_S, 0, 1, WIPE_TENSION, WIPE_FRICTION);
 
 /**
  * The loading screen's call to action -- a from-scratch component
@@ -161,19 +145,13 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
   // frame to frame, the same "magnetic" feel PhotoCard's tilt effect
   // uses for its own cursor tracking.
   const [glow, glowApi] = useSpring(() => ({ x: 50, y: 50, opacity: 0, config: { tension: 220, friction: 20 } }));
-  // Whether the button's real background has committed to solid accent
-  // yellow yet -- kept separate from `disabled` itself so the
-  // background can keep showing the disabled tan for the wipe overlay
-  // (see Wiper below) to sweep across, instead of snapping straight to
-  // yellow underneath it the instant `disabled` flips (which would
-  // make the whole wipe invisible -- there'd be nothing left for it to
-  // reveal). Set once Wiper's "load" phase settles (its onFilled), not
-  // once the whole sequence finishes -- the band still has its own
-  // independent release left to play after this fires (see Wiper).
+  // Whether the enable transition has finished painting the button
+  // yellow -- kept separate from `disabled` itself so the background
+  // can keep showing the disabled tan for the wipe overlay (see Wiper
+  // below) to sweep across, instead of snapping straight to yellow
+  // underneath it the instant `disabled` flips (which would make the
+  // whole wipe invisible -- there'd be nothing left for it to reveal).
   const [wipeDone, setWipeDone] = useState(disabled ? false : true);
-  // Whether Wiper's entire sequence -- including that post-fill band
-  // release -- has finished and it can unmount for good.
-  const [wiperFinished, setWiperFinished] = useState(disabled ? false : true);
   const wasDisabled = useRef(disabled);
 
   useEffect(() => {
@@ -181,7 +159,6 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
       if (reduced) {
         // No sweep to watch, so nothing to gate on -- go straight there.
         setWipeDone(true);
-        setWiperFinished(true);
       } else {
         // The "pop": a bigger, bouncier version of the hover scale
         // bump, released back down after a fixed delay instead of
@@ -269,9 +246,7 @@ export function EnterSiteButton({ disabled, onClick }: { disabled: boolean; onCl
         opacity: disabled ? 0.6 : 1,
       }}
     >
-      {!wiperFinished && !reduced && (
-        <Wiper disabled={disabled} onFilled={() => setWipeDone(true)} onDone={() => setWiperFinished(true)} />
-      )}
+      {!wipeDone && !reduced && <Wiper disabled={disabled} onDone={() => setWipeDone(true)} />}
       {!disabled && (
         <animated.span
           aria-hidden="true"
@@ -401,85 +376,38 @@ function buildDotPhases(): DotPhase[] {
   return phases;
 }
 const DOT_PHASES = buildDotPhases();
-const DOT_CYCLE_S = DOT_PHASES.reduce((sum, p) => sum + p.duration, 0); // one full lap of the dots' own bounce loop
-
-// Stretch flourish: while still disabled, the band doesn't sit
-// perfectly still -- twice during loading (once every DOT_CYCLE_S lap
-// of the dots' own bounce loop), it's pulled to the right far enough
-// to reveal the whole band, then released back to the left, as if it's
-// anchored on the left and something keeps testing how taut the spring
-// is. Unlike a one-way creep, this always fully releases back to 0
-// afterward -- it's a preview of the motion, not a running head start
-// on the real reveal.
-const WIPER_TUG_COUNT = 2;
-// Exactly 0.5 -- not tuned, solved algebraically (see WIPE_SKEW_DEG's
-// own comment above) as the progress value where the band sits
-// perfectly centered and fully clear of both edges, regardless of the
-// button's actual rendered width.
-const WIPER_TUG_PEAK = 0.5;
-const WIPER_TUG_PULL_S = 0.4;
-const WIPER_TUG_PULL_TENSION = 100;
-const WIPER_TUG_PULL_FRICTION = 14;
-const WIPER_TUG_RELEASE_S = 0.35;
-const WIPER_TUG_RELEASE_TENSION = 150;
-const WIPER_TUG_RELEASE_FRICTION = 9;
-
-type WiperMode = "waiting" | "tugPull" | "tugRelease" | "holding" | "loading" | "releasing";
-
 /**
- * Renders and drives the enable-transition sweep -- mounted for the
- * button's entire disabled *and* releasing lifetime (everything up to
- * `onDone`), not just a one-shot post-enable animation, since it now
- * has visible work to do before the button is ever clickable (the
- * WIPER_TUG_* preview cycles above). The full sequence: two tug
- * cycles spaced DOT_CYCLE_S apart (or however many still fit before
- * enabling, capped at WIPER_TUG_COUNT) each pulling out to
- * WIPER_TUG_PEAK and fully releasing back to 0; once actually enabled,
- * a brief hold, then the "load" out to WIPE_LOAD_PEAK (see the
- * constants above); once that settles, `onFilled` fires (the real
- * background commits to solid yellow) and the yellow child unmounts,
- * leaving only the band to spring back down to 0 alone, after which
- * `onDone` fires and this whole element unmounts.
- *
- * Driven by a single requestAnimationFrame loop evaluating
+ * Plays the enable transition's sweep once on mount, then calls
+ * `onDone`. Driven by a plain requestAnimationFrame loop evaluating
  * springValue() directly (see ~/utils/springValue) rather than
- * react-spring's useSpring, for the same reason as the dots and the
- * original one-shot version of this sweep: react-spring's own
- * onRest/rest-detection lags well behind when a spring is visibly
- * settled, and whatever calls `onFilled`/`onDone` here needs to fire
- * right when the sweep actually *looks* finished, not up to a second
- * or two later.
- *
- * `disabled` is read through a ref rather than listed as an effect
- * dependency -- the whole point is that this component keeps running
- * *through* disabled flipping to false without restarting.
+ * react-spring's useSpring -- not for the dots' lockstep reasons this
+ * time, but because react-spring's onRest firing needs its own rest
+ * detection to pass first, and that turned out to lag well behind
+ * when this exact spring is visibly settled in an earlier version of
+ * this sweep. Whatever's driving `onDone` needs to fire close to when
+ * the sweep actually *looks* done, since it's what hands the button's
+ * own background off from the animated sweep to a plain solid yellow
+ * -- a callback that lags behind would leave the button visibly stuck
+ * mid-transition. A fixed-duration rAF loop has no such lag: it calls
+ * onDone the instant its own known-in-advance duration elapses.
  */
-function Wiper({ disabled, onFilled, onDone }: { disabled: boolean; onFilled: () => void; onDone: () => void }) {
+function Wiper({ disabled, onDone }: { disabled: boolean; onDone: () => void }) {
   const ref = useRef<HTMLSpanElement>(null);
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
-  const onFilledRef = useRef(onFilled);
-  onFilledRef.current = onFilled;
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
-  // Once the load settles and the real background has committed to
-  // yellow, the yellow child is dropped -- from then on this element
-  // carries only the band, free to move independently.
-  const [bandOnly, setBandOnly] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) {
-      onFilledRef.current();
       onDoneRef.current();
       return;
     }
     let raf = 0;
     let disposed = false;
     const startTime = performance.now();
-
-    let mode: WiperMode = "waiting";
-    let tugsDone = 0;
+    let wiping = false;
     let phaseStart = 0;
 
     function paint(p: number) {
@@ -490,68 +418,23 @@ function Wiper({ disabled, onFilled, onDone }: { disabled: boolean; onFilled: ()
       if (disposed || !el) return;
       const elapsed = (performance.now() - startTime) / 1000;
 
-      if (mode === "waiting") {
-        if (!disabledRef.current) {
-          mode = "holding";
-          phaseStart = elapsed;
+      if (!wiping) {
+        if (disabledRef.current) {
           paint(0);
-        } else if (tugsDone < WIPER_TUG_COUNT && elapsed >= (tugsDone + 1) * DOT_CYCLE_S) {
-          mode = "tugPull";
-          phaseStart = elapsed;
-        } else {
-          paint(0);
-        }
-      }
-
-      if (mode === "tugPull") {
-        const t = elapsed - phaseStart;
-        if (t >= WIPER_TUG_PULL_S) {
-          mode = "tugRelease";
-          phaseStart = elapsed;
-          paint(WIPER_TUG_PEAK);
-        } else {
-          paint(springValue(t, 0, WIPER_TUG_PEAK, WIPER_TUG_PULL_TENSION, WIPER_TUG_PULL_FRICTION));
-        }
-      } else if (mode === "tugRelease") {
-        const t = elapsed - phaseStart;
-        if (t >= WIPER_TUG_RELEASE_S) {
-          tugsDone += 1;
-          mode = "waiting";
-          paint(0);
-        } else {
-          paint(springValue(t, WIPER_TUG_PEAK, 0, WIPER_TUG_RELEASE_TENSION, WIPER_TUG_RELEASE_FRICTION));
-        }
-      } else if (mode === "holding") {
-        const t = elapsed - phaseStart;
-        if (t >= WIPE_HOLD_S) {
-          mode = "loading";
-          phaseStart = elapsed;
-        } else {
-          paint(0);
-        }
-      }
-
-      if (mode === "loading") {
-        const t = elapsed - phaseStart;
-        if (t >= WIPE_LOAD_S) {
-          paint(WIPE_LOAD_PEAK);
-          onFilledRef.current();
-          setBandOnly(true);
-          mode = "releasing";
-          phaseStart = elapsed;
-        } else {
-          paint(springValue(t, 0, WIPE_LOAD_PEAK, WIPE_LOAD_TENSION, WIPE_LOAD_FRICTION));
-        }
-      } else if (mode === "releasing") {
-        const t = elapsed - phaseStart;
-        if (t >= WIPE_RELEASE_S) {
-          paint(0);
-          onDoneRef.current();
+          raf = requestAnimationFrame(tick);
           return;
         }
-        paint(springValue(t, WIPE_LOAD_PEAK, 0, WIPE_RELEASE_TENSION, WIPE_RELEASE_FRICTION));
+        wiping = true;
+        phaseStart = elapsed;
       }
 
+      const t = elapsed - phaseStart;
+      if (t >= WIPE_DURATION_S) {
+        paint(1);
+        onDoneRef.current();
+        return;
+      }
+      paint(springValue(t, 0, 1, WIPE_TENSION, WIPE_FRICTION) / WIPE_SCALE);
       raf = requestAnimationFrame(tick);
     }
     tick();
@@ -567,16 +450,18 @@ function Wiper({ disabled, onFilled, onDone }: { disabled: boolean; onFilled: ()
       ref={ref}
       aria-hidden="true"
       className="pointer-events-none absolute inset-y-0"
-      // Matches tick()'s own progress-0 value exactly -- without it,
-      // this would render one frame fully covering (no transform at
-      // all) before the effect's first rAF callback ever runs.
+      // The initial transform matches tick()'s own t=0 value exactly
+      // -- without it, this would render one frame with no transform
+      // at all (fully covering, untranslated) before the effect's
+      // first rAF callback ever runs, flashing solid yellow for a
+      // frame before the sweep starts.
       style={{
         left: `${-WIPE_MARGIN_PX}px`,
         width: `calc(100% + ${2 * WIPE_MARGIN_PX + WIPE_BRUSH_PX}px)`,
         transform: `translateX(-100%) skewX(${WIPE_SKEW_DEG}deg)`,
       }}
     >
-      {!bandOnly && <span className="absolute inset-y-0 left-0" style={{ width: `calc(100% - ${WIPE_BRUSH_PX}px)`, background: "var(--accent)" }} />}
+      <span className="absolute inset-y-0 left-0" style={{ width: `calc(100% - ${WIPE_BRUSH_PX}px)`, background: "var(--accent)" }} />
       <span className="absolute inset-y-0 right-0" style={{ width: `${WIPE_BRUSH_PX}px`, backgroundImage: WIPE_BRUSH_GRADIENT }} />
     </span>
   );
