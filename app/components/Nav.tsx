@@ -15,17 +15,19 @@ export function Nav() {
   const reduced = usePrefersReducedMotion();
 
   // The site "turning on" -- but the nav isn't the first thing to move.
-  // The hero photo gets its own moment center-stage first (pop in, then
-  // its hover-wipe "peek" as a demo), and only once that's had its beat
-  // does the nav drop down from off-screen, followed by the text column.
-  // The 2.2s delay is tuned against that photo sequence in Hero.tsx --
-  // change one, sanity-check the other. A small overshoot past 0 (low
-  // friction relative to tension) reads as a physical thing settling
-  // into its slot, not a panel sliding to a stop.
+  // Hero's own reveal runs first in full: the 3D calculus surface boots
+  // up, the equation gets its featured beat, then the heading/bio/CTA
+  // text arrives -- only once all of *that* has settled does the nav
+  // drop down from off-screen, with the scroll cue arriving last after
+  // it. The 4.3s delay is tuned against that sequence in Hero.tsx
+  // (EQUATION_DELAY/SURFACE_SETTLE_DELAY/TEXT_DELAY) -- change one,
+  // sanity-check the other. A small overshoot past 0 (low friction
+  // relative to tension) reads as a physical thing settling into its
+  // slot, not a panel sliding to a stop.
   const entrance = useSpring({
     from: { y: -80, opacity: 0 },
     to: { y: 0, opacity: 1 },
-    delay: reduced ? 0 : 2200,
+    delay: reduced ? 0 : 4300,
     immediate: reduced,
     config: { tension: 210, friction: 18 },
   });
