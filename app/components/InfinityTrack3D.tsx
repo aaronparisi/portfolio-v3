@@ -45,6 +45,104 @@ const MOMENTUM_FRICTION = 4;
 const PEAK_HOLD_HALF_LIFE_MS = 180;
 const STALE_TIMEOUT_MS = 50;
 
+// The full Gruvbox bright palette, in hue order -- same array used for
+// the loading button's own rainbow effects (EnterSiteButton.tsx),
+// reused here for visual consistency across the site's two hand-built
+// color effects rather than picking a second, slightly different set.
+const GRUVBOX_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
+
+// The Gruvbox pulse: a band of the full palette sweeps once around the
+// entire loop every so often, then disappears until the next one --
+// "from time to time," not a constant loop. A little randomness on the
+// interval (see nextPulseAt below) keeps it from feeling metronomic.
+const PULSE_INTERVAL_S = 6;
+const PULSE_INTERVAL_JITTER_S = 2;
+const PULSE_DURATION_S = 2.2; // time for the band to complete one full lap
+
+const CYBER_SCROLL_SPEED = 0.12; // texture-widths per second
+
+/**
+ * A soft-edged gradient band running through the whole Gruvbox
+ * palette, on an otherwise fully transparent canvas -- everything
+ * *except* the band stays invisible, so animating this texture's own
+ * `offset.x` from 0 to 1 sweeps just that one band once around
+ * whatever geometry it's mapped onto (a closed tube's U coordinate
+ * follows its length, wrapping cleanly back to the start), rather than
+ * needing a shader to mask a repeating pattern down to one instance.
+ * The fade at each edge (a "destination-in" alpha mask multiplied over
+ * the gradient) is what keeps the band's leading/trailing edges soft
+ * instead of a hard-edged rectangle sweeping past.
+ */
+function createPulseTexture(): THREE.CanvasTexture {
+  const w = 256;
+  const h = 16;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    const bandEnd = w * 0.3;
+    const rainbow = ctx.createLinearGradient(0, 0, bandEnd, 0);
+    GRUVBOX_HUES.forEach((color, i) => rainbow.addColorStop(i / (GRUVBOX_HUES.length - 1), color));
+    ctx.fillStyle = rainbow;
+    ctx.fillRect(0, 0, bandEnd, h);
+
+    ctx.globalCompositeOperation = "destination-in";
+    const fade = ctx.createLinearGradient(0, 0, bandEnd, 0);
+    fade.addColorStop(0, "rgba(255,255,255,0)");
+    fade.addColorStop(0.18, "rgba(255,255,255,1)");
+    fade.addColorStop(0.82, "rgba(255,255,255,1)");
+    fade.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = fade;
+    ctx.fillRect(0, 0, bandEnd, h);
+    ctx.globalCompositeOperation = "source-over";
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/**
+ * The inner tube's resting look: a dim gold base with brighter, soft-
+ * edged bands repeating along its length, continuously scrolled (see
+ * this texture's own `offset.x` update in tick()) to read as energy
+ * actually flowing through a conduit rather than a static glow -- the
+ * "more cyber" version of what was previously one flat emissive color.
+ */
+function createCyberGlowTexture(): THREE.CanvasTexture {
+  const w = 128;
+  const h = 16;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#6b4a10";
+    ctx.fillRect(0, 0, w, h);
+    const dashCount = 4;
+    const dashWidth = w / dashCount;
+    for (let i = 0; i < dashCount; i++) {
+      const cx = (i + 0.5) * dashWidth;
+      const grad = ctx.createLinearGradient(cx - dashWidth / 2, 0, cx + dashWidth / 2, 0);
+      grad.addColorStop(0, "rgba(255,233,168,0)");
+      grad.addColorStop(0.5, "rgba(255,233,168,1)");
+      grad.addColorStop(1, "rgba(255,233,168,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(cx - dashWidth / 2, 0, dashWidth, h);
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(36, 1);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 /**
  * The site's new hero centerpiece: an infinity symbol that's actually a
  * closed 3D "racetrack" (see createInfinityTrack.ts for the curve
@@ -90,10 +188,17 @@ export function InfinityTrack3D() {
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
 
-    const key = new THREE.DirectionalLight(0xfff4e0, 1.1);
-    key.position.set(4, 5, 4);
+    // One deliberate light source, not two competing ones: a single
+    // strong key from the upper right (a classic 3/4 studio angle),
+    // which is what actually sells "polished metal catching a light"
+    // -- a clear, decisive highlight direction rather than evenly-lit
+    // flatness. The cool rim behind/below is only a faint fill now, just
+    // enough to keep the far side from going pure black, not a second
+    // light competing for attention.
+    const key = new THREE.DirectionalLight(0xfff4e0, 1.5);
+    key.position.set(5, 7, 4);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0xa8c8ff, 0.6);
+    const rim = new THREE.DirectionalLight(0xa8c8ff, 0.25);
     rim.position.set(-5, -2, -3);
     scene.add(rim);
 
@@ -107,8 +212,9 @@ export function InfinityTrack3D() {
     );
     const tileMaterial = new THREE.MeshStandardMaterial({
       color: 0x2b2622,
-      metalness: 0.92,
-      roughness: 0.32,
+      metalness: 1,
+      roughness: 0.2,
+      envMapIntensity: 1.25,
     });
     const tileMesh = new THREE.InstancedMesh(tileGeometry, tileMaterial, tileCount);
     tileMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -131,9 +237,36 @@ export function InfinityTrack3D() {
     }
     const glowCurve = new THREE.CatmullRomCurve3(glowPoints, true);
     const glowGeometry = new THREE.TubeGeometry(glowCurve, STATIONS * 2, INNER_RADIUS, 12, true);
-    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0xfabd2f, toneMapped: false });
+    const cyberGlowTexture = createCyberGlowTexture();
+    const glowMaterial = new THREE.MeshBasicMaterial({ map: cyberGlowTexture, toneMapped: false });
     const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
     trackRoot.add(glowMesh);
+
+    // The Gruvbox pulse -- a second, separate mesh on the exact same
+    // geometry, its own additive-blended texture almost entirely
+    // transparent except for one traveling band (see
+    // createPulseTexture's own comment). Additive blending plus
+    // depthWrite: false is what lets it ride directly on top of the
+    // glow tube without z-fighting or needing its own slightly-
+    // different radius.
+    const pulseTexture = createPulseTexture();
+    // Normal (over) blending, not additive -- additive was the first
+    // attempt, and stacking a bright rainbow gradient on top of the
+    // already-bright cyber glow pushed most of the band's own hues past
+    // white before they ever reached the screen (confirmed directly:
+    // the pulse rendered as a plain white-yellow flash, not
+    // recognizable Gruvbox colors). Plain alpha-over replaces the glow
+    // underneath instead of adding to it, so the actual hues -- the
+    // whole point of a "Gruvbox pulse" -- stay legible.
+    const pulseMaterial = new THREE.MeshBasicMaterial({
+      map: pulseTexture,
+      transparent: true,
+      depthWrite: false,
+      toneMapped: false,
+    });
+    const pulseMesh = new THREE.Mesh(glowGeometry, pulseMaterial);
+    pulseMesh.visible = false;
+    trackRoot.add(pulseMesh);
 
     function resize() {
       if (!container) return;
@@ -174,6 +307,9 @@ export function InfinityTrack3D() {
         tileMaterial.dispose();
         glowGeometry.dispose();
         glowMaterial.dispose();
+        cyberGlowTexture.dispose();
+        pulseMaterial.dispose();
+        pulseTexture.dispose();
         pmrem.dispose();
         container.removeChild(renderer.domElement);
       };
@@ -347,6 +483,11 @@ export function InfinityTrack3D() {
     let lastElapsed = 0;
     const startTime = performance.now();
 
+    // Gruvbox pulse scheduling -- see PULSE_INTERVAL_S's own comment.
+    let pulseActive = false;
+    let pulseStart = 0;
+    let nextPulseAt = PULSE_INTERVAL_S;
+
     function tick() {
       if (disposed) return;
       const elapsed = (performance.now() - startTime) / 1000;
@@ -439,7 +580,35 @@ export function InfinityTrack3D() {
       // The glow tube only ever needs to be as "grown" as the furthest
       // tile ring, and doesn't lift on hover -- it just needs to exist
       // behind wherever tiles have opened up.
-      glowMesh.scale.setScalar(Math.min(1, frontier * 1.05));
+      const glowScale = Math.min(1, frontier * 1.05);
+      glowMesh.scale.setScalar(glowScale);
+      pulseMesh.scale.setScalar(glowScale);
+
+      // Cyber glow: always scrolling, from the moment any of the tube
+      // exists -- reads as "alive" rather than waiting for growth to
+      // finish first.
+      cyberGlowTexture.offset.x -= dt * CYBER_SCROLL_SPEED;
+
+      // Gruvbox pulse: only once the track is fully grown (a rainbow
+      // band sweeping a still-forming loop would read as broken, not
+      // deliberate), a band sweeps once around every so often.
+      if (frontier >= 1) {
+        if (!pulseActive && elapsed >= nextPulseAt) {
+          pulseActive = true;
+          pulseStart = elapsed;
+          pulseMesh.visible = true;
+        }
+        if (pulseActive) {
+          const p = (elapsed - pulseStart) / PULSE_DURATION_S;
+          if (p >= 1) {
+            pulseActive = false;
+            pulseMesh.visible = false;
+            nextPulseAt = elapsed + PULSE_INTERVAL_S + (Math.random() - 0.5) * 2 * PULSE_INTERVAL_JITTER_S;
+          } else {
+            pulseTexture.offset.x = p;
+          }
+        }
+      }
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
@@ -460,6 +629,9 @@ export function InfinityTrack3D() {
       tileMaterial.dispose();
       glowGeometry.dispose();
       glowMaterial.dispose();
+      cyberGlowTexture.dispose();
+      pulseMaterial.dispose();
+      pulseTexture.dispose();
       pmrem.dispose();
       container.removeChild(renderer.domElement);
     };
