@@ -5,8 +5,13 @@ import { buildTrackGeometry, curvePoint, type TileInstance } from "~/three/creat
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-const STATIONS = 90;
-const TILES_AROUND = 8;
+// Both scaled by the same factor (sqrt(1.3), not just one or the
+// other) so the tile grid gets ~30% denser overall (103*9 = 927 vs.
+// the original 90*8 = 720) while keeping each tile's own aspect ratio
+// -- scaling only STATIONS would have made tiles skinnier along the
+// track's length without changing their width around it.
+const STATIONS = 103;
+const TILES_AROUND = 9;
 const TUBE_RADIUS = 0.34;
 const INNER_RADIUS = 0.22; // the glow tube, hidden just behind the tiles at rest
 
@@ -58,6 +63,20 @@ const GRUVBOX_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#8
 const PULSE_INTERVAL_S = 6;
 const PULSE_INTERVAL_JITTER_S = 2;
 const PULSE_DURATION_S = 2.2; // time for the band to complete one full lap
+
+// The pulse doesn't just recolor the inner tube -- it also blows a
+// traveling wave of tiles outward as it passes, bigger and rougher
+// than the smooth, controlled hover lift. PULSE_TILE_WINDOW is how
+// wide a slice of the loop (in the same 0..1 `along` units as the
+// pulse's own position) is "currently blowing out" at any instant;
+// PULSE_TILE_LIFT is deliberately well past hover's own MAX_LIFT, and
+// PULSE_CHAOS_ROTATION adds a fast, re-rolled-every-frame rotational
+// wobble on top of the lift -- a smooth, uniform wave reads as
+// mechanical, and this needed to read as something closer to breaking
+// apart.
+const PULSE_TILE_WINDOW = 0.04;
+const PULSE_TILE_LIFT = 0.65;
+const PULSE_CHAOS_ROTATION = 0.6; // radians, max random wobble
 
 const CYBER_SCROLL_SPEED = 0.12; // texture-widths per second
 
@@ -285,10 +304,28 @@ export function InfinityTrack3D() {
     const liftCurrent = new Float32Array(tileCount);
     const liftTarget = new Float32Array(tileCount);
     const poppedAt = new Float32Array(tileCount).fill(-1);
+    // Each tile's own fixed share of the pulse blowout's randomness --
+    // rolled once, at build time, not re-rolled per pulse, so a given
+    // tile is consistently a little more or less dramatic than its
+    // neighbors every time a pulse passes it, rather than the whole
+    // wave looking identical (just uniformly scaled) on every pass.
+    const chaosSeeds = new Float32Array(tileCount).map(() => Math.random());
+    const chaosAxis = new THREE.Vector3();
+    const chaosQuat = new THREE.Quaternion();
 
-    function paintTile(i: number, tile: TileInstance, growScale: number, lift: number) {
+    function paintTile(i: number, tile: TileInstance, growScale: number, lift: number, chaosJitter = 0) {
       dummy.position.copy(tile.basePosition).addScaledVector(tile.outward, lift);
-      dummy.quaternion.copy(tile.quaternion);
+      if (chaosJitter > 0) {
+        // A fresh random axis/angle every single frame it's active,
+        // not an animated tilt eased toward a target -- a genuine
+        // jittery shake reads as "chaotic"; a smoothly interpolated
+        // rotation would just read as a controlled tilt, however big.
+        chaosAxis.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+        chaosQuat.setFromAxisAngle(chaosAxis, (Math.random() - 0.5) * 2 * chaosJitter * PULSE_CHAOS_ROTATION);
+        dummy.quaternion.copy(tile.quaternion).multiply(chaosQuat);
+      } else {
+        dummy.quaternion.copy(tile.quaternion);
+      }
       dummy.scale.setScalar(growScale);
       dummy.updateMatrix();
       tileMesh.setMatrixAt(i, dummy.matrix);
@@ -565,33 +602,16 @@ export function InfinityTrack3D() {
         liftCurrent[i] += (liftTarget[i] - liftCurrent[i]) * (1 - Math.exp(-LIFT_RESPONSIVENESS * dt));
       }
 
-      // Growth: a frontier sweeps around the loop (0..1 of `along`);
-      // once it passes a tile, that tile's own pop-in spring starts
-      // (timestamped once, not re-triggered), growing it from 0 to 1.
       const frontier = Math.min(1, elapsed / GROWTH_DURATION_S);
-      for (let i = 0; i < tileCount; i++) {
-        const tile = tiles[i];
-        if (poppedAt[i] < 0 && tile.along <= frontier) poppedAt[i] = elapsed;
-        const growScale = poppedAt[i] < 0 ? 0 : Math.max(0, springValue(elapsed - poppedAt[i], 0, 1, POP_TENSION, POP_FRICTION));
-        paintTile(i, tile, growScale, liftCurrent[i]);
-      }
-      tileMesh.instanceMatrix.needsUpdate = true;
 
-      // The glow tube only ever needs to be as "grown" as the furthest
-      // tile ring, and doesn't lift on hover -- it just needs to exist
-      // behind wherever tiles have opened up.
-      const glowScale = Math.min(1, frontier * 1.05);
-      glowMesh.scale.setScalar(glowScale);
-      pulseMesh.scale.setScalar(glowScale);
-
-      // Cyber glow: always scrolling, from the moment any of the tube
-      // exists -- reads as "alive" rather than waiting for growth to
-      // finish first.
-      cyberGlowTexture.offset.x -= dt * CYBER_SCROLL_SPEED;
-
-      // Gruvbox pulse: only once the track is fully grown (a rainbow
-      // band sweeping a still-forming loop would read as broken, not
-      // deliberate), a band sweeps once around every so often.
+      // Gruvbox pulse scheduling -- resolved *before* painting tiles
+      // below, since a pulse now also drives a tile blowout timed to
+      // its own sweep position, not just the inner tube's color. Only
+      // once the track is fully grown (a rainbow band -- or a blowout
+      // -- sweeping a still-forming loop would read as broken, not
+      // deliberate). pulseProgress stays -1 whenever no pulse is
+      // currently in flight.
+      let pulseProgress = -1;
       if (frontier >= 1) {
         if (!pulseActive && elapsed >= nextPulseAt) {
           pulseActive = true;
@@ -606,9 +626,55 @@ export function InfinityTrack3D() {
             nextPulseAt = elapsed + PULSE_INTERVAL_S + (Math.random() - 0.5) * 2 * PULSE_INTERVAL_JITTER_S;
           } else {
             pulseTexture.offset.x = p;
+            pulseProgress = p;
           }
         }
       }
+
+      // Growth: a frontier sweeps around the loop (0..1 of `along`);
+      // once it passes a tile, that tile's own pop-in spring starts
+      // (timestamped once, not re-triggered), growing it from 0 to 1.
+      for (let i = 0; i < tileCount; i++) {
+        const tile = tiles[i];
+        if (poppedAt[i] < 0 && tile.along <= frontier) poppedAt[i] = elapsed;
+        const growScale = poppedAt[i] < 0 ? 0 : Math.max(0, springValue(elapsed - poppedAt[i], 0, 1, POP_TENSION, POP_FRICTION));
+
+        let lift = liftCurrent[i];
+        let chaosJitter = 0;
+        if (pulseProgress >= 0) {
+          // Shortest distance around the loop between this tile and
+          // the pulse's current position, not a flat difference -- the
+          // loop wraps, so a tile just behind along=0 and the pulse
+          // just past along=1 are actually close together.
+          let d = Math.abs(tile.along - pulseProgress);
+          if (d > 0.5) d = 1 - d;
+          if (d < PULSE_TILE_WINDOW) {
+            const w = 1 - d / PULSE_TILE_WINDOW; // 1 right at the pulse's position, 0 at the window's edge
+            // Each tile's own peak lift varies with its fixed seed, on
+            // top of the window's own smooth falloff -- a perfectly
+            // uniform wave across a whole ring reads as mechanical;
+            // per-tile variation reads as something breaking apart.
+            const tileLift = PULSE_TILE_LIFT * (0.4 + chaosSeeds[i] * 0.6) * w;
+            if (tileLift > lift) lift = tileLift;
+            chaosJitter = w;
+          }
+        }
+
+        paintTile(i, tile, growScale, lift, chaosJitter);
+      }
+      tileMesh.instanceMatrix.needsUpdate = true;
+
+      // The glow tube only ever needs to be as "grown" as the furthest
+      // tile ring, and doesn't lift on hover -- it just needs to exist
+      // behind wherever tiles have opened up.
+      const glowScale = Math.min(1, frontier * 1.05);
+      glowMesh.scale.setScalar(glowScale);
+      pulseMesh.scale.setScalar(glowScale);
+
+      // Cyber glow: always scrolling, from the moment any of the tube
+      // exists -- reads as "alive" rather than waiting for growth to
+      // finish first.
+      cyberGlowTexture.offset.x -= dt * CYBER_SCROLL_SPEED;
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
