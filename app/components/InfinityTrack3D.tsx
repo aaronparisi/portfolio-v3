@@ -55,6 +55,13 @@ const STALE_TIMEOUT_MS = 50;
 // color effects rather than picking a second, slightly different set.
 const GRUVBOX_HUES = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
 
+// Temporarily off: both the periodic Gruvbox color sweep and the tile
+// blowout wave it drives are disabled while the glow strand's own look
+// is being tuned, so the two aren't fighting for attention on screen
+// at once. Flip back on later -- none of the scheduling/logic below
+// was removed, just gated.
+const PULSE_ENABLED = false;
+
 // The Gruvbox pulse: a band of the full palette sweeps once around the
 // entire loop every so often, then disappears until the next one --
 // "from time to time," not a constant loop. A little randomness on the
@@ -92,7 +99,14 @@ const PULSE_GLOW_WINDOW = 0.09;
 // no silhouette of its own to read as a solid surface, only a soft
 // glow that gets brighter wherever sprites overlap.
 const GLOW_POINT_COUNT = 260;
-const GLOW_POINT_SIZE = 0.5;
+// Sized directly against TUBE_RADIUS (the tiles' own distance from the
+// centerline) rather than picked in isolation: at the old 0.5 (radius
+// 0.25, well inside TUBE_RADIUS's 0.34) the glow read as a thin beam
+// sitting deep inside a hollow shell. This puts the sprite's own soft
+// edge well past the tiles' inner surface, so the light reads as
+// filling the tube's whole cross-section -- tiles floating right on
+// top of it -- rather than something glimpsed through a gap behind them.
+const GLOW_POINT_SIZE = TUBE_RADIUS * 3.2;
 const GLOW_BASE_COLOR = new THREE.Color(0xfabd2f);
 // The "energy flowing" brightness wave along the strand -- how many
 // full bright/dim cycles fit around the whole loop, and how fast that
@@ -602,7 +616,7 @@ export function InfinityTrack3D() {
       // deliberate). pulseProgress stays -1 whenever no pulse is
       // currently in flight.
       let pulseProgress = -1;
-      if (frontier >= 1) {
+      if (PULSE_ENABLED && frontier >= 1) {
         if (!pulseActive && elapsed >= nextPulseAt) {
           pulseActive = true;
           pulseStart = elapsed;
