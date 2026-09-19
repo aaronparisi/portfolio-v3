@@ -5,18 +5,17 @@ import { buildTrackGeometry, curvePoint, type TileInstance } from "~/three/creat
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
-// Both scaled by the same factor (sqrt(1.3), not just one or the
-// other) so the tile grid gets ~30% denser overall (103*9 = 927 vs.
-// the original 90*8 = 720) while keeping each tile's own aspect ratio
-// -- scaling only STATIONS would have made tiles skinnier along the
-// track's length without changing their width around it.
-const STATIONS = 103;
-const TILES_AROUND = 9;
+// Solved, not eyeballed: at the previous 103/9, tileWidth (along the
+// track's length) and tileHeight (around its circumference) were
+// 0.137 and 0.237 -- a 0.58 aspect ratio, visibly rectangular. 130/20
+// brings that to a near-exact 1:1 square while landing on a notably
+// higher total (2600 vs. 927) rather than just barely more.
+const STATIONS = 130;
+const TILES_AROUND = 20;
 const TUBE_RADIUS = 0.34;
-const INNER_RADIUS = 0.22; // the glow tube, hidden just behind the tiles at rest
 
 const TILE_GAP_FRACTION = 0.86; // tiles fill this much of their allotted space, leaving a visible seam
-const TILE_THICKNESS = 0.05;
+const TILE_THICKNESS = 0.03; // scaled down along with the smaller tiles, to keep the same visual proportions
 
 // Growth entrance: the track lays itself down tile-ring by tile-ring
 // around the loop, each ring popping into place with a springy
@@ -64,7 +63,7 @@ const PULSE_INTERVAL_S = 6;
 const PULSE_INTERVAL_JITTER_S = 2;
 const PULSE_DURATION_S = 2.2; // time for the band to complete one full lap
 
-// The pulse doesn't just recolor the inner tube -- it also blows a
+// The pulse doesn't just recolor the glow strand -- it also blows a
 // traveling wave of tiles outward as it passes, bigger and rougher
 // than the smooth, controlled hover lift. PULSE_TILE_WINDOW is how
 // wide a slice of the loop (in the same 0..1 `along` units as the
@@ -77,89 +76,70 @@ const PULSE_DURATION_S = 2.2; // time for the band to complete one full lap
 const PULSE_TILE_WINDOW = 0.04;
 const PULSE_TILE_LIFT = 0.65;
 const PULSE_CHAOS_ROTATION = 0.6; // radians, max random wobble
+// How much of the loop (in the same 0..1 `along` units) the pulse's
+// own rainbow gradient spans on the glow strand -- wider than the tile
+// blowout's own window, since the color band reads better with some
+// visible spread across the palette rather than a tight sliver.
+const PULSE_GLOW_WINDOW = 0.09;
 
-const CYBER_SCROLL_SPEED = 0.12; // texture-widths per second
+// The glow: no tube geometry at all now -- a tube has real volume and
+// a rounded cross-section, and looked like exactly that regardless of
+// what texture rode on its surface (confirmed directly: it read as a
+// lit PVC pipe, not light). This is instead a string of camera-facing,
+// additively-blended sprites sitting right on the curve's own
+// centerline (see createGlowSprite() and the Points object below) --
+// the standard technique for "light with no mass," since a sprite has
+// no silhouette of its own to read as a solid surface, only a soft
+// glow that gets brighter wherever sprites overlap.
+const GLOW_POINT_COUNT = 260;
+const GLOW_POINT_SIZE = 0.5;
+const GLOW_BASE_COLOR = new THREE.Color(0xfabd2f);
+// The "energy flowing" brightness wave along the strand -- how many
+// full bright/dim cycles fit around the whole loop, and how fast that
+// pattern travels.
+const GLOW_WAVE_COUNT = 14;
+const GLOW_SCROLL_SPEED = 0.35; // cycles per second
 
 /**
- * A soft-edged gradient band running through the whole Gruvbox
- * palette, on an otherwise fully transparent canvas -- everything
- * *except* the band stays invisible, so animating this texture's own
- * `offset.x` from 0 to 1 sweeps just that one band once around
- * whatever geometry it's mapped onto (a closed tube's U coordinate
- * follows its length, wrapping cleanly back to the start), rather than
- * needing a shader to mask a repeating pattern down to one instance.
- * The fade at each edge (a "destination-in" alpha mask multiplied over
- * the gradient) is what keeps the band's leading/trailing edges soft
- * instead of a hard-edged rectangle sweeping past.
+ * One soft white radial blob -- tinted per-point via vertex colors
+ * (see the Points material below) rather than baking any actual color
+ * into the sprite itself, so the same texture serves both the resting
+ * gold glow and the traveling Gruvbox pulse. White multiplied by a
+ * color is just that color; there's no reason to draw the gradient
+ * twice.
  */
-function createPulseTexture(): THREE.CanvasTexture {
-  const w = 256;
-  const h = 16;
+function createGlowSprite(): THREE.CanvasTexture {
+  const size = 64;
   const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = size;
+  canvas.height = size;
   const ctx = canvas.getContext("2d");
   if (ctx) {
-    const bandEnd = w * 0.3;
-    const rainbow = ctx.createLinearGradient(0, 0, bandEnd, 0);
-    GRUVBOX_HUES.forEach((color, i) => rainbow.addColorStop(i / (GRUVBOX_HUES.length - 1), color));
-    ctx.fillStyle = rainbow;
-    ctx.fillRect(0, 0, bandEnd, h);
-
-    ctx.globalCompositeOperation = "destination-in";
-    const fade = ctx.createLinearGradient(0, 0, bandEnd, 0);
-    fade.addColorStop(0, "rgba(255,255,255,0)");
-    fade.addColorStop(0.18, "rgba(255,255,255,1)");
-    fade.addColorStop(0.82, "rgba(255,255,255,1)");
-    fade.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = fade;
-    ctx.fillRect(0, 0, bandEnd, h);
-    ctx.globalCompositeOperation = "source-over";
+    const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grad.addColorStop(0, "rgba(255,255,255,1)");
+    grad.addColorStop(0.4, "rgba(255,255,255,0.7)");
+    grad.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
   }
-
   const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.colorSpace = THREE.SRGBColorSpace;
   return texture;
 }
 
-/**
- * The inner tube's resting look: a dim gold base with brighter, soft-
- * edged bands repeating along its length, continuously scrolled (see
- * this texture's own `offset.x` update in tick()) to read as energy
- * actually flowing through a conduit rather than a static glow -- the
- * "more cyber" version of what was previously one flat emissive color.
- */
-function createCyberGlowTexture(): THREE.CanvasTexture {
-  const w = 128;
-  const h = 16;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    ctx.fillStyle = "#6b4a10";
-    ctx.fillRect(0, 0, w, h);
-    const dashCount = 4;
-    const dashWidth = w / dashCount;
-    for (let i = 0; i < dashCount; i++) {
-      const cx = (i + 0.5) * dashWidth;
-      const grad = ctx.createLinearGradient(cx - dashWidth / 2, 0, cx + dashWidth / 2, 0);
-      grad.addColorStop(0, "rgba(255,233,168,0)");
-      grad.addColorStop(0.5, "rgba(255,233,168,1)");
-      grad.addColorStop(1, "rgba(255,233,168,0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(cx - dashWidth / 2, 0, dashWidth, h);
-    }
-  }
+// Precomputed once -- THREE.Color instances, not hex strings, so
+// gruvboxColorAt() below can lerp between adjacent stops directly
+// instead of parsing a string every call (every point, every frame the
+// pulse is active).
+const GRUVBOX_COLORS = GRUVBOX_HUES.map((hex) => new THREE.Color(hex));
 
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(36, 1);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
+/** Samples the Gruvbox palette as a continuous gradient at t in [0, 1], lerping between its two nearest stops. */
+function gruvboxColorAt(t: number, out: THREE.Color): THREE.Color {
+  const clamped = Math.max(0, Math.min(1, t));
+  const scaled = clamped * (GRUVBOX_COLORS.length - 1);
+  const i0 = Math.floor(scaled);
+  const i1 = Math.min(GRUVBOX_COLORS.length - 1, i0 + 1);
+  return out.copy(GRUVBOX_COLORS[i0]).lerp(GRUVBOX_COLORS[i1], scaled - i0);
 }
 
 /**
@@ -167,11 +147,15 @@ function createCyberGlowTexture(): THREE.CanvasTexture {
  * closed 3D "racetrack" (see createInfinityTrack.ts for the curve
  * math), built from small metal tiles rather than a smooth tube. Hover
  * anywhere on it and nearby tiles lift outward along their own surface
- * normal, revealing a glowing inner tube that's otherwise hidden just
- * behind them -- "breaking through" the plating. On mount it grows
- * itself into existence, ring by ring around the loop, each ring
- * popping in with a small spring overshoot right as the growth
- * frontier reaches it.
+ * normal, revealing a glowing strand of light that otherwise sits
+ * hidden just behind them -- "breaking through" the plating. That
+ * strand is a string of soft, additively-blended sprites right on the
+ * curve's own centerline, not a tube -- a tube has real volume and a
+ * silhouette of its own no matter what's painted on it, which read as
+ * a lit pipe rather than actual light (see createGlowSprite's own
+ * comment). On mount the whole thing grows itself into existence, ring
+ * by ring around the loop, each ring popping in with a small spring
+ * overshoot right as the growth frontier reaches it.
  *
  * All tiles share one InstancedMesh (their base positions/orientations
  * never change, only each one's own outward lift offset and growth
@@ -247,45 +231,44 @@ export function InfinityTrack3D() {
     trackRoot.add(tileMesh);
     scene.add(trackRoot);
 
-    // The glow tube: a smooth, continuous tube along the same curve, a
-    // little smaller than the tiles' own radius so it sits just behind
-    // them at rest -- only visible in the gaps a lifted tile opens up.
-    const glowPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= STATIONS; i++) {
-      glowPoints.push(curvePoint((i / STATIONS) * Math.PI * 2));
+    // The glow strand: GLOW_POINT_COUNT points sitting right on the
+    // curve's own centerline (radius 0 -- no tube, no cross-section at
+    // all), each carrying its own live-updated color. Position and
+    // `along` (0..1 around the loop, same units the tile blowout/pulse
+    // scheduling already use) are fixed per point at build time; color
+    // is the only thing that changes, every frame, in tick() below.
+    const glowPositions = new Float32Array(GLOW_POINT_COUNT * 3);
+    const glowAlong = new Float32Array(GLOW_POINT_COUNT);
+    const glowColors = new Float32Array(GLOW_POINT_COUNT * 3);
+    const glowPointVec = new THREE.Vector3();
+    for (let i = 0; i < GLOW_POINT_COUNT; i++) {
+      const t = (i / GLOW_POINT_COUNT) * Math.PI * 2;
+      curvePoint(t, glowPointVec);
+      glowPositions[i * 3] = glowPointVec.x;
+      glowPositions[i * 3 + 1] = glowPointVec.y;
+      glowPositions[i * 3 + 2] = glowPointVec.z;
+      glowAlong[i] = i / GLOW_POINT_COUNT;
     }
-    const glowCurve = new THREE.CatmullRomCurve3(glowPoints, true);
-    const glowGeometry = new THREE.TubeGeometry(glowCurve, STATIONS * 2, INNER_RADIUS, 12, true);
-    const cyberGlowTexture = createCyberGlowTexture();
-    const glowMaterial = new THREE.MeshBasicMaterial({ map: cyberGlowTexture, toneMapped: false });
-    const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
-    trackRoot.add(glowMesh);
+    const glowGeometry = new THREE.BufferGeometry();
+    glowGeometry.setAttribute("position", new THREE.BufferAttribute(glowPositions, 3));
+    const glowColorAttr = new THREE.BufferAttribute(glowColors, 3);
+    glowGeometry.setAttribute("color", glowColorAttr);
 
-    // The Gruvbox pulse -- a second, separate mesh on the exact same
-    // geometry, its own additive-blended texture almost entirely
-    // transparent except for one traveling band (see
-    // createPulseTexture's own comment). Additive blending plus
-    // depthWrite: false is what lets it ride directly on top of the
-    // glow tube without z-fighting or needing its own slightly-
-    // different radius.
-    const pulseTexture = createPulseTexture();
-    // Normal (over) blending, not additive -- additive was the first
-    // attempt, and stacking a bright rainbow gradient on top of the
-    // already-bright cyber glow pushed most of the band's own hues past
-    // white before they ever reached the screen (confirmed directly:
-    // the pulse rendered as a plain white-yellow flash, not
-    // recognizable Gruvbox colors). Plain alpha-over replaces the glow
-    // underneath instead of adding to it, so the actual hues -- the
-    // whole point of a "Gruvbox pulse" -- stay legible.
-    const pulseMaterial = new THREE.MeshBasicMaterial({
-      map: pulseTexture,
+    const glowSprite = createGlowSprite();
+    const glowMaterial = new THREE.PointsMaterial({
+      map: glowSprite,
+      size: GLOW_POINT_SIZE,
+      sizeAttenuation: true,
+      vertexColors: true,
       transparent: true,
+      blending: THREE.AdditiveBlending,
       depthWrite: false,
       toneMapped: false,
     });
-    const pulseMesh = new THREE.Mesh(glowGeometry, pulseMaterial);
-    pulseMesh.visible = false;
-    trackRoot.add(pulseMesh);
+    const glowPoints = new THREE.Points(glowGeometry, glowMaterial);
+    trackRoot.add(glowPoints);
+    const scratchColor = new THREE.Color();
+    const rainbowColor = new THREE.Color();
 
     function resize() {
       if (!container) return;
@@ -332,9 +315,16 @@ export function InfinityTrack3D() {
     }
 
     if (reduced) {
-      // No growth, no hover response -- the finished track, motionless.
+      // No growth, no hover response, no scroll/pulse -- the finished
+      // track at a steady resting glow, motionless.
       tiles.forEach((tile, i) => paintTile(i, tile, 1, 0));
       tileMesh.instanceMatrix.needsUpdate = true;
+      for (let i = 0; i < GLOW_POINT_COUNT; i++) {
+        glowColors[i * 3] = GLOW_BASE_COLOR.r;
+        glowColors[i * 3 + 1] = GLOW_BASE_COLOR.g;
+        glowColors[i * 3 + 2] = GLOW_BASE_COLOR.b;
+      }
+      glowColorAttr.needsUpdate = true;
       resize();
       renderer.render(scene, camera);
       return () => {
@@ -344,9 +334,7 @@ export function InfinityTrack3D() {
         tileMaterial.dispose();
         glowGeometry.dispose();
         glowMaterial.dispose();
-        cyberGlowTexture.dispose();
-        pulseMaterial.dispose();
-        pulseTexture.dispose();
+        glowSprite.dispose();
         pmrem.dispose();
         container.removeChild(renderer.domElement);
       };
@@ -512,6 +500,8 @@ export function InfinityTrack3D() {
         tileMesh,
         getMomentumState: () => ({ dragging, liveInputActive, momentumDirX, momentumDirY, releaseSpeed, releaseTime, hasReleased, trackedSpeed }),
         getHoverState: () => ({ hovering, haveHit: lastHaveHit, hitPoint: hitPoint.clone() }),
+        getPulseState: () => ({ pulseActive, pulseStart, nextPulseAt }),
+        getGlowSample: () => Array.from(glowColors.slice(0, 9)),
       };
     }
 
@@ -606,7 +596,7 @@ export function InfinityTrack3D() {
 
       // Gruvbox pulse scheduling -- resolved *before* painting tiles
       // below, since a pulse now also drives a tile blowout timed to
-      // its own sweep position, not just the inner tube's color. Only
+      // its own sweep position, not just the glow strand's color. Only
       // once the track is fully grown (a rainbow band -- or a blowout
       // -- sweeping a still-forming loop would read as broken, not
       // deliberate). pulseProgress stays -1 whenever no pulse is
@@ -616,16 +606,13 @@ export function InfinityTrack3D() {
         if (!pulseActive && elapsed >= nextPulseAt) {
           pulseActive = true;
           pulseStart = elapsed;
-          pulseMesh.visible = true;
         }
         if (pulseActive) {
           const p = (elapsed - pulseStart) / PULSE_DURATION_S;
           if (p >= 1) {
             pulseActive = false;
-            pulseMesh.visible = false;
             nextPulseAt = elapsed + PULSE_INTERVAL_S + (Math.random() - 0.5) * 2 * PULSE_INTERVAL_JITTER_S;
           } else {
-            pulseTexture.offset.x = p;
             pulseProgress = p;
           }
         }
@@ -664,17 +651,47 @@ export function InfinityTrack3D() {
       }
       tileMesh.instanceMatrix.needsUpdate = true;
 
-      // The glow tube only ever needs to be as "grown" as the furthest
-      // tile ring, and doesn't lift on hover -- it just needs to exist
-      // behind wherever tiles have opened up.
-      const glowScale = Math.min(1, frontier * 1.05);
-      glowMesh.scale.setScalar(glowScale);
-      pulseMesh.scale.setScalar(glowScale);
+      // The glow strand: each point stays fully dark until the growth
+      // frontier reaches it (mirrors the tiles' own gating, just via
+      // color instead of scale, since a Points object has no per-
+      // vertex scale to speak of), then shows a traveling brightness
+      // wave -- the "energy flowing" read that used to come from a
+      // scrolling texture, now from each point's own oscillating
+      // brightness -- and, if a pulse is currently passing this point,
+      // blends toward the Gruvbox gradient sampled across the pulse's
+      // own window instead.
+      for (let i = 0; i < GLOW_POINT_COUNT; i++) {
+        const along = glowAlong[i];
+        if (along > frontier) {
+          glowColors[i * 3] = 0;
+          glowColors[i * 3 + 1] = 0;
+          glowColors[i * 3 + 2] = 0;
+          continue;
+        }
 
-      // Cyber glow: always scrolling, from the moment any of the tube
-      // exists -- reads as "alive" rather than waiting for growth to
-      // finish first.
-      cyberGlowTexture.offset.x -= dt * CYBER_SCROLL_SPEED;
+        const wave = 0.55 + 0.45 * Math.sin(along * GLOW_WAVE_COUNT * Math.PI * 2 - elapsed * GLOW_SCROLL_SPEED * Math.PI * 2);
+        scratchColor.copy(GLOW_BASE_COLOR).multiplyScalar(wave);
+
+        if (pulseProgress >= 0) {
+          let delta = along - pulseProgress;
+          if (delta > 0.5) delta -= 1;
+          if (delta < -0.5) delta += 1;
+          if (Math.abs(delta) < PULSE_GLOW_WINDOW) {
+            const w = 1 - Math.abs(delta) / PULSE_GLOW_WINDOW;
+            // Maps across the *whole* window (not just 0 to the
+            // midpoint), so the band shows a real sweep through the
+            // palette as it passes a given point, not one flat hue.
+            const bandT = delta / PULSE_GLOW_WINDOW / 2 + 0.5;
+            gruvboxColorAt(bandT, rainbowColor);
+            scratchColor.lerp(rainbowColor, w);
+          }
+        }
+
+        glowColors[i * 3] = scratchColor.r;
+        glowColors[i * 3 + 1] = scratchColor.g;
+        glowColors[i * 3 + 2] = scratchColor.b;
+      }
+      glowColorAttr.needsUpdate = true;
 
       renderer.render(scene, camera);
       raf = requestAnimationFrame(tick);
@@ -695,9 +712,7 @@ export function InfinityTrack3D() {
       tileMaterial.dispose();
       glowGeometry.dispose();
       glowMaterial.dispose();
-      cyberGlowTexture.dispose();
-      pulseMaterial.dispose();
-      pulseTexture.dispose();
+      glowSprite.dispose();
       pmrem.dispose();
       container.removeChild(renderer.domElement);
     };
