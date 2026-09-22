@@ -111,7 +111,7 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     // handler (for stamping a release time) need it.
     const startTime = performance.now();
 
-    const bgHex = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#282828";
+    const bgHex = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() || "#0a0b0f";
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(bgHex);
 
@@ -129,12 +129,13 @@ export function LoadingScreen3D({ onComplete }: { onComplete: () => void }) {
     container.appendChild(renderer.domElement);
 
     // Neutral white throughout, not warm-tinted -- the surface's vertex
-    // colors are the whole point (a diverging Gruvbox colormap), and a
-    // warm key light shifts blue toward green/olive by the time it's
-    // multiplied through (confirmed: the peaks, near Gruvbox's muted
-    // teal-blue #83a598 at their highest, rendered olive-green instead
-    // of reading as blue at all). Lights are for shading/depth here,
-    // not for adding their own color into the mix.
+    // colors are the whole point (a diverging warm-to-indigo colormap,
+    // see createLoadingGraph.ts's own COLOR_STOPS), and a warm key light
+    // shifts blue toward green by the time it's multiplied through
+    // (confirmed directly with the old Gruvbox palette's own muted teal-
+    // blue: it rendered olive-green instead of reading as blue at all).
+    // Lights are for shading/depth here, not for adding their own color
+    // into the mix.
     scene.add(new THREE.AmbientLight(0xffffff, 0.8));
     const key = new THREE.DirectionalLight(0xffffff, 0.9);
     key.position.set(4, 6, 3);

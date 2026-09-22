@@ -29,16 +29,20 @@ export function evaluateF(x: number, y: number): number {
   return (7 * x * y) / Math.exp(x * x + y * y);
 }
 
-// Gruvbox bright, used as a diverging colormap keyed to height -- red at
-// the lowest trough, up through orange/yellow near zero, to green/blue
-// at the highest crest. f's range here is about [-1.29, 1.29] (the
+// A diverging colormap keyed to height -- warm coral at the lowest
+// trough, up through a light neutral near zero, to the site's own
+// indigo accent at the highest crest. Doubles as the same chalk-warm-
+// to-digital-cool shift the rest of the site's palette makes: this
+// surface reads "warmer" below the saddle point, "cooler" above it,
+// before a single line of the reveal sequence that actually tells that
+// story has appeared. f's range here is about [-1.29, 1.29] (the
 // extrema sit where x = y = ±1/sqrt(2)).
 const COLOR_STOPS: [number, THREE.Color][] = [
-  [-1.3, new THREE.Color(0xfb4934)],
-  [-0.55, new THREE.Color(0xfe8019)],
-  [0, new THREE.Color(0xfabd2f)],
-  [0.55, new THREE.Color(0xb8bb26)],
-  [1.3, new THREE.Color(0x83a598)],
+  [-1.3, new THREE.Color(0xff5c5c)],
+  [-0.55, new THREE.Color(0xff8a5c)],
+  [0, new THREE.Color(0xe8eaf0)],
+  [0.55, new THREE.Color(0x8aa0ff)],
+  [1.3, new THREE.Color(0x5b7cff)],
 ];
 
 function colorForHeight(z: number, out: THREE.Color): THREE.Color {

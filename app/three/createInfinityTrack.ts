@@ -1,154 +1,35 @@
 import * as THREE from "three";
 
 /**
- * Three distinct closed-curve families the tiled track can be built
- * from -- the tile-sweep machinery below (buildTrackFrames/
- * buildTrackGeometry) only ever needs `curvePoint(config, t)` to trace
- * *some* smooth, non-self-intersecting closed loop; it doesn't care
- * which family produced it. That's what makes the site's own shape
- * morph (Experience3D.tsx) possible at all: every family shares the
- * exact same station/tilesAround/tubeRadius, so they produce identical
- * tile *topology* -- only where each tile sits differs -- and a whole
- * shape can be swapped for a real, different, lerp-able one instead of
- * just retuning one curve's own parameters.
+ * The tile-sweep math for the site's original shape -- the chalkboard-
+ * era infinity racetrack everything was first tuned against on
+ * /infinity-preview (InfinityTrack3D.tsx, which only ever builds this
+ * one shape and is otherwise untouched). Experience3D.tsx's own multi-
+ * shape morph (see FlatShapeGeometry / buildOrbShape / buildScreenShape
+ * further down) blends this against two shapes that AREN'T built this
+ * way at all -- see that section's own comment for why.
  *
- * - "lemniscate": the original infinity racetrack (see its own comment
- *   below) -- chalk-era, analog, rounded.
- * - "roundedRect": a stadium/rounded-rectangle perimeter -- a screen
- *   bezel's own outline, flatter and far more rigid/geometric than the
- *   lemniscate.
- * - "zigzag": a closed loop built from a base circle plus a couple of
- *   integer-frequency sine harmonics -- an irregular, angular,
- *   circuit-trace-like silhouette. Guaranteed non-self-intersecting for
- *   free (not verified numerically, unlike the lemniscate): a polar
- *   curve r(t) > 0 swept once around a fixed center can never cross
- *   itself, so keeping the harmonic amplitudes comfortably below the
- *   base radius is the only real constraint, not a proof obligation.
+ * Built from the Lemniscate of Gerono, x = cos t, y = sin t cos t,
+ * banked in z by C sin t so the two passes through the shared (x, y)
+ * crossing point land at +C and -C -- a genuine 3D "racetrack" that
+ * still reads as a flat infinity symbol head-on. Verified numerically
+ * at the time (dense sampling + pairwise distance check) that the
+ * closest approach anywhere on the loop is nowhere near the crossing,
+ * and the crossing itself separates by a full 2*C, comfortably more
+ * than twice the tube radius.
  */
-export type TrackShapeConfig =
-  | { family: "lemniscate"; curveA: number; curveC: number; twistTurns: number }
-  | { family: "roundedRect"; width: number; height: number; radius: number; depth: number; twistTurns: number }
-  | {
-      family: "zigzag";
-      radius: number;
-      ampA: number;
-      freqA: number;
-      ampB: number;
-      freqB: number;
-      depth: number;
-      twistTurns: number;
-    };
-
-/**
- * The chalkboard-era shape everything was originally tuned against on
- * /infinity-preview: a flat lemniscate of Gerono, x = cos t, y =
- * sin t cos t, banked in z by C sin t so the two passes through the
- * shared (x, y) crossing point land at +C and -C -- a genuine 3D
- * "racetrack" that still reads as a flat infinity symbol head-on.
- * Verified numerically at the time (dense sampling + pairwise distance
- * check) that the closest approach anywhere on the loop is nowhere near
- * the crossing, and the crossing itself separates by a full 2*C,
- * comfortably more than twice the tube radius.
- */
-export const SHAPE_TEACHER: TrackShapeConfig = { family: "lemniscate", curveA: 2.2, curveC: 0.9, twistTurns: 0 };
-/** A monitor bezel's own outline -- flat, rigid, geometric. The "it's turned into a screen" beat. */
-export const SHAPE_TERMINAL: TrackShapeConfig = { family: "roundedRect", width: 4.6, height: 3.1, radius: 0.6, depth: 0.18, twistTurns: 0.4 };
-/** An irregular, angular closed loop -- the "fully digitized" resolved form. */
-export const SHAPE_CIRCUIT: TrackShapeConfig = {
-  family: "zigzag",
-  radius: 2.3,
-  ampA: 0.32,
-  freqA: 5,
-  ampB: 0.18,
-  freqB: 8,
-  depth: 0.4,
-  twistTurns: 1.5,
-};
-/** The full journey, in order -- Experience3D.tsx blends through these by overall scroll progress. */
-export const TRACK_SHAPES: TrackShapeConfig[] = [SHAPE_TEACHER, SHAPE_TERMINAL, SHAPE_CIRCUIT];
-
-const HALF_PI = Math.PI / 2;
-
-/** A stadium/rounded-rectangle perimeter, parametrized by arc length `s` around it. Center-origin, `w`/`h` full extents, `r` corner radius. */
-function roundedRectXY(w: number, h: number, r: number, s: number, out: { x: number; y: number }) {
-  const hw = w / 2;
-  const hh = h / 2;
-  const sx = w - 2 * r; // straight top/bottom run
-  const sy = h - 2 * r; // straight left/right run
-  const arcLen = HALF_PI * r;
-  let u = s;
-  if (u < sy) {
-    out.x = hw;
-    out.y = -hh + r + u;
-    return;
-  }
-  u -= sy;
-  if (u < arcLen) {
-    const a = u / r;
-    out.x = hw - r + r * Math.cos(a);
-    out.y = hh - r + r * Math.sin(a);
-    return;
-  }
-  u -= arcLen;
-  if (u < sx) {
-    out.x = hw - r - u;
-    out.y = hh;
-    return;
-  }
-  u -= sx;
-  if (u < arcLen) {
-    const a = HALF_PI + u / r;
-    out.x = -hw + r + r * Math.cos(a);
-    out.y = hh - r + r * Math.sin(a);
-    return;
-  }
-  u -= arcLen;
-  if (u < sy) {
-    out.x = -hw;
-    out.y = hh - r - u;
-    return;
-  }
-  u -= sy;
-  if (u < arcLen) {
-    const a = Math.PI + u / r;
-    out.x = -hw + r + r * Math.cos(a);
-    out.y = -hh + r + r * Math.sin(a);
-    return;
-  }
-  u -= arcLen;
-  if (u < sx) {
-    out.x = -hw + r + u;
-    out.y = -hh;
-    return;
-  }
-  u -= sx;
-  const a = 1.5 * Math.PI + u / r;
-  out.x = hw - r + r * Math.cos(a);
-  out.y = -hh + r + r * Math.sin(a);
+export interface TrackShapeConfig {
+  curveA: number; // horizontal size
+  curveC: number; // depth/banking amount at the crossing
+  /** Extra full turns the tile ring's own rotation advances over one
+   * lap of the loop -- 0 is the plain, untwisted racetrack. */
+  twistTurns: number;
 }
 
-const rectScratch = { x: 0, y: 0 };
+export const SHAPE_TEACHER: TrackShapeConfig = { curveA: 2.2, curveC: 0.9, twistTurns: 0 };
 
 export function curvePoint(config: TrackShapeConfig, t: number, out = new THREE.Vector3()): THREE.Vector3 {
-  switch (config.family) {
-    case "lemniscate":
-      return out.set(config.curveA * Math.cos(t), config.curveA * Math.sin(t) * Math.cos(t), config.curveC * Math.sin(t));
-    case "roundedRect": {
-      const { width, height, radius, depth } = config;
-      const sx = width - 2 * radius;
-      const sy = height - 2 * radius;
-      const perim = 2 * sx + 2 * sy + 2 * Math.PI * radius;
-      let s = (t / (Math.PI * 2)) * perim;
-      s = ((s % perim) + perim) % perim;
-      roundedRectXY(width, height, radius, s, rectScratch);
-      return out.set(rectScratch.x, rectScratch.y, depth * Math.sin(t * 3));
-    }
-    case "zigzag": {
-      const { radius, ampA, freqA, ampB, freqB, depth } = config;
-      const r = radius + ampA * Math.sin(t * freqA) + ampB * Math.sin(t * freqB + 0.7);
-      return out.set(r * Math.cos(t), r * Math.sin(t), depth * Math.sin(t * 3 + 1.1));
-    }
-  }
+  return out.set(config.curveA * Math.cos(t), config.curveA * Math.sin(t) * Math.cos(t), config.curveC * Math.sin(t));
 }
 
 interface TrackFrame {
@@ -161,14 +42,13 @@ interface TrackFrame {
 /**
  * A rotation-minimizing frame walked around the closed curve -- a naive
  * Frenet frame (built from the curve's second derivative) flips
- * violently wherever curvature passes through zero, which every one of
- * these curves does somewhere by construction, and a tube built from
- * those frames would show the whole cross-section suddenly twisting
- * there. Each station's normal is instead just the previous station's
- * normal projected into the new tangent's perpendicular plane and
- * renormalized (Gram-Schmidt) -- simpler than a full double-reflection
- * RMF, and produces no visible twist for a smooth closed curve sampled
- * this densely.
+ * violently wherever curvature passes through zero, which this curve
+ * does by construction, and a tube built from those frames would show
+ * the whole cross-section suddenly twisting there. Each station's
+ * normal is instead just the previous station's normal projected into
+ * the new tangent's perpendicular plane and renormalized (Gram-Schmidt)
+ * -- simpler than a full double-reflection RMF, and produces no visible
+ * twist for a smooth closed curve sampled this densely.
  */
 function buildTrackFrames(config: TrackShapeConfig, stationCount: number): TrackFrame[] {
   const frames: TrackFrame[] = [];
@@ -248,9 +128,7 @@ export function buildTrackGeometry(
     const frame = frames[i];
     // The twist: each ring's own start angle advances steadily over the
     // loop, `twistTurns` full turns by the time it closes back on
-    // itself -- zero for an untwisted shape, a real spiral otherwise.
-    // Applies identically regardless of which curve family produced
-    // this station's frame.
+    // itself -- zero for the untwisted shape, a real spiral otherwise.
     const twistOffset = (i / stationCount) * config.twistTurns * Math.PI * 2;
     for (let j = 0; j < tilesAround; j++) {
       const angle = (j / tilesAround) * Math.PI * 2 + twistOffset;
@@ -279,79 +157,163 @@ export function buildTrackGeometry(
   return { tiles, tileWidth, tileHeight, loopLength };
 }
 
-export interface TrackGeometrySet {
-  tileCount: number;
-  along: Float32Array; // shared across every shape -- same topology/order
-  ringT: Float32Array; // shared too -- each tile's fixed position around the tube's own circumference, used as a noise-field domain in Experience3D.tsx
-  positions: Float32Array[]; // one entry per shape in `shapes`
-  outwards: Float32Array[];
-  quats: Float32Array[];
-  tileWidth: number;
-  tileHeight: number;
+/**
+ * The site's actual shape morph (Experience3D.tsx): three GENUINELY
+ * different arrangements, not variations on one "tiles swept around a
+ * beam" theme -- a closed loop, a sphere, and a flat grid share no
+ * common parametrization at all, so each gets its own dedicated
+ * generator instead of all being pushed through the tube-sweep code
+ * above. What they DO share is the output shape (flat position/
+ * outward/quaternion arrays, one entry per tile, same tile count and
+ * index order across all three) -- that's the only thing Experience3D
+ * actually needs to blend between them with a cheap per-tile lerp/
+ * slerp, same technique as the tube-only version this replaced.
+ */
+export interface FlatShapeGeometry {
+  positions: Float32Array;
+  outwards: Float32Array;
+  quats: Float32Array;
+}
+
+/** Flattens a tube-swept TrackGeometryInfo into the same shape the other two generators produce, so all three can sit side by side in Experience3D's own shape array. */
+export function flattenTubeShape(info: TrackGeometryInfo): FlatShapeGeometry {
+  const n = info.tiles.length;
+  const positions = new Float32Array(n * 3);
+  const outwards = new Float32Array(n * 3);
+  const quats = new Float32Array(n * 4);
+  for (let i = 0; i < n; i++) {
+    const tile = info.tiles[i];
+    positions[i * 3] = tile.basePosition.x;
+    positions[i * 3 + 1] = tile.basePosition.y;
+    positions[i * 3 + 2] = tile.basePosition.z;
+    outwards[i * 3] = tile.outward.x;
+    outwards[i * 3 + 1] = tile.outward.y;
+    outwards[i * 3 + 2] = tile.outward.z;
+    quats[i * 4] = tile.quaternion.x;
+    quats[i * 4 + 1] = tile.quaternion.y;
+    quats[i * 4 + 2] = tile.quaternion.z;
+    quats[i * 4 + 3] = tile.quaternion.w;
+  }
+  return { positions, outwards, quats };
+}
+
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+/**
+ * `tileCount` points spread evenly over a sphere (a Fibonacci/"golden
+ * spiral" point set -- the standard even-coverage construction: walk
+ * latitude linearly from pole to pole, at each step advance longitude
+ * by the golden angle, which never lines up into visible meridian
+ * bands the way a naive equal-angle grid would). Each tile's outward is
+ * just its own radial direction; orientation follows from that alone
+ * (no path/tangent to inherit the way the tube-swept shape has one).
+ * The "data orb" mid-journey shape -- the loop visibly breaking apart
+ * and condensing into something else entirely, not just re-tuned.
+ */
+export function buildOrbShape(tileCount: number, radius: number): FlatShapeGeometry {
+  const positions = new Float32Array(tileCount * 3);
+  const outwards = new Float32Array(tileCount * 3);
+  const quats = new Float32Array(tileCount * 4);
+
+  const worldUp = new THREE.Vector3(0, 1, 0);
+  const altSeed = new THREE.Vector3(1, 0, 0);
+  const tileZ = new THREE.Vector3();
+  const tileX = new THREE.Vector3();
+  const tileY = new THREE.Vector3();
+  const basisMatrix = new THREE.Matrix4();
+  const quaternion = new THREE.Quaternion();
+
+  for (let i = 0; i < tileCount; i++) {
+    const yFrac = tileCount > 1 ? 1 - (i / (tileCount - 1)) * 2 : 0; // 1..-1, pole to pole
+    const radiusAtY = Math.sqrt(Math.max(0, 1 - yFrac * yFrac));
+    const theta = GOLDEN_ANGLE * i;
+    const px = Math.cos(theta) * radiusAtY * radius;
+    const py = yFrac * radius;
+    const pz = Math.sin(theta) * radiusAtY * radius;
+    positions[i * 3] = px;
+    positions[i * 3 + 1] = py;
+    positions[i * 3 + 2] = pz;
+
+    tileZ.set(px, py, pz).normalize();
+    outwards[i * 3] = tileZ.x;
+    outwards[i * 3 + 1] = tileZ.y;
+    outwards[i * 3 + 2] = tileZ.z;
+
+    const seed = Math.abs(tileZ.dot(worldUp)) > 0.99 ? altSeed : worldUp;
+    tileX.crossVectors(seed, tileZ).normalize();
+    tileY.crossVectors(tileZ, tileX);
+    basisMatrix.makeBasis(tileX, tileY, tileZ);
+    quaternion.setFromRotationMatrix(basisMatrix);
+    quats[i * 4] = quaternion.x;
+    quats[i * 4 + 1] = quaternion.y;
+    quats[i * 4 + 2] = quaternion.z;
+    quats[i * 4 + 3] = quaternion.w;
+  }
+
+  return { positions, outwards, quats };
 }
 
 /**
- * Builds a full tile geometry for each shape in `shapes` -- all from
- * the same station/tilesAround/tubeRadius, so every one shares the
- * exact same topology and tile count, index for index -- and flattens
- * each into typed arrays. Experience3D.tsx blends between whichever two
- * are currently adjacent in the journey with a cheap per-tile lerp/
- * slerp, rather than juggling parallel arrays of TileInstance objects
- * or rebuilding geometry on the fly. tileWidth/tileHeight are averaged
- * across all shapes: the box geometry built from them is one shared,
- * unchanging InstancedMesh geometry, not something that resizes as the
- * shape blends.
+ * `tileCount` tiles arranged in a flat `cols`-wide grid -- a screen
+ * made of tiles instead of a loop tracing a screen's outline (the
+ * earlier attempt at a "terminal" shape, before this rework: a rounded-
+ * rectangle loop, which was really just another variation on "tiles
+ * swept around a beam"). Every tile faces the same way (+z, world
+ * space) since there's no curved surface to follow -- lifting toward
+ * the viewer reads as a pixel breaking free of the screen.
+ * `tileCount` is expected to divide evenly by `cols` (it does for the
+ * counts this file's callers actually use); any remainder just lands in
+ * a final partial row rather than being dropped.
  */
-export function buildTrackGeometrySet(
-  shapes: TrackShapeConfig[],
-  stationCount: number,
-  tilesAround: number,
-  tubeRadius: number,
-): TrackGeometrySet {
-  const built = shapes.map((shape) => buildTrackGeometry(shape, stationCount, tilesAround, tubeRadius));
-  const tileCount = built[0].tiles.length;
+export function buildScreenShape(tileCount: number, cols: number, spacing: number): FlatShapeGeometry {
+  const rows = Math.ceil(tileCount / cols);
+  const positions = new Float32Array(tileCount * 3);
+  const outwards = new Float32Array(tileCount * 3);
+  const quats = new Float32Array(tileCount * 4);
+  // Identity orientation: local +Z (the tile's own thickness axis) is
+  // already world +Z, local +X/+Y already the grid's own row/column
+  // axes -- no basis construction needed here at all.
+  for (let i = 0; i < tileCount; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = (col - (cols - 1) / 2) * spacing;
+    const y = ((rows - 1) / 2 - row) * spacing; // row 0 at the top
+    positions[i * 3] = x;
+    positions[i * 3 + 1] = y;
+    positions[i * 3 + 2] = 0;
+    outwards[i * 3] = 0;
+    outwards[i * 3 + 1] = 0;
+    outwards[i * 3 + 2] = 1;
+    quats[i * 4] = 0;
+    quats[i * 4 + 1] = 0;
+    quats[i * 4 + 2] = 0;
+    quats[i * 4 + 3] = 1;
+  }
+  return { positions, outwards, quats };
+}
 
+/**
+ * Every tile's fixed (along-the-loop, around-the-tube) coordinate,
+ * derived directly from the tube-sweep's own station/ring indexing --
+ * used as the noise-field domain in Experience3D.tsx for every shape,
+ * not just the tube one. That's intentional, not a shortcut: since tile
+ * index order (and therefore which UV each index owns) never changes
+ * across the whole shape morph, whatever subset of the 2600 tiles reads
+ * as "one coherent patch" under the noise field stays the SAME set of
+ * tiles no matter which shape currently holds them -- a consistent
+ * identity for "this neighborhood" through the whole transformation,
+ * even though the neighborhood's actual position keeps changing.
+ */
+export function buildTileUV(stationCount: number, tilesAround: number): { along: Float32Array; ringT: Float32Array } {
+  const tileCount = stationCount * tilesAround;
   const along = new Float32Array(tileCount);
   const ringT = new Float32Array(tileCount);
-  for (let i = 0; i < tileCount; i++) {
-    along[i] = built[0].tiles[i].along;
-    ringT[i] = built[0].tiles[i].ringT;
+  for (let i = 0; i < stationCount; i++) {
+    for (let j = 0; j < tilesAround; j++) {
+      const idx = i * tilesAround + j;
+      along[idx] = i / stationCount;
+      ringT[idx] = j / tilesAround;
+    }
   }
-
-  const positions = built.map((info) => {
-    const arr = new Float32Array(tileCount * 3);
-    for (let i = 0; i < tileCount; i++) {
-      const p = info.tiles[i].basePosition;
-      arr[i * 3] = p.x;
-      arr[i * 3 + 1] = p.y;
-      arr[i * 3 + 2] = p.z;
-    }
-    return arr;
-  });
-  const outwards = built.map((info) => {
-    const arr = new Float32Array(tileCount * 3);
-    for (let i = 0; i < tileCount; i++) {
-      const o = info.tiles[i].outward;
-      arr[i * 3] = o.x;
-      arr[i * 3 + 1] = o.y;
-      arr[i * 3 + 2] = o.z;
-    }
-    return arr;
-  });
-  const quats = built.map((info) => {
-    const arr = new Float32Array(tileCount * 4);
-    for (let i = 0; i < tileCount; i++) {
-      const q = info.tiles[i].quaternion;
-      arr[i * 4] = q.x;
-      arr[i * 4 + 1] = q.y;
-      arr[i * 4 + 2] = q.z;
-      arr[i * 4 + 3] = q.w;
-    }
-    return arr;
-  });
-
-  const tileWidth = built.reduce((sum, info) => sum + info.tileWidth, 0) / built.length;
-  const tileHeight = built.reduce((sum, info) => sum + info.tileHeight, 0) / built.length;
-
-  return { tileCount, along, ringT, positions, outwards, quats, tileWidth, tileHeight };
+  return { along, ringT };
 }

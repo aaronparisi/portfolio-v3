@@ -1,58 +1,55 @@
 @import "tailwindcss";
 
 @theme {
-  /* Gruvbox-theme experiment (branch: gruvbox-theme): the "Overhead
-     Projector" world's sans/hand pairing (Space Grotesk + Permanent
-     Marker) is swapped for a text-editor's own type stack — two distinct
-     coder-monospace faces doing double duty as display AND body copy
-     (Space Mono's wider, more geometric letterforms carry headlines;
-     JetBrains Mono's tighter rhythm carries everything read at length,
-     the same split a real editor draws between a title bar and its
-     buffer), plus a grittier, less-ubiquitous hand face for annotation
-     marks than the Permanent Marker/Caveat/Kalam trio every site reaches
-     for. */
+  /* A text-editor's own type stack — two distinct coder-monospace faces
+     doing double duty as display AND body copy (Space Mono's wider,
+     more geometric letterforms carry headlines; JetBrains Mono's
+     tighter rhythm carries everything read at length, the same split a
+     real editor draws between a title bar and its buffer), plus a
+     grittier, less-ubiquitous hand face for annotation marks than the
+     Permanent Marker/Caveat/Kalam trio every site reaches for. */
   --font-display: "Space Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-sans: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace, "Apple Color Emoji", "Segoe UI Emoji";
   --font-hand: "Rock Salt", cursive;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Gruvbox-theme experiment (branch: gruvbox-theme): every token below is
-   the standard Gruvbox Dark (medium contrast) palette — bg0/bg1, fg1/fg4,
-   and the bright yellow/orange accent pair — mapped straight onto the
-   same role names the Overhead Projector world used (--accent,
-   --accent-warm, --plane-*). No component changed to build this: the
-   whole site already read its colors from these variables, never a
-   hardcoded hex, so a full retheme is a token swap, not a rewrite. */
+/* The site's own dark theme (Gruvbox retired) -- a near-black, cool-
+   neutral ground rather than a warm retro-terminal one, with a single
+   vivid indigo as the one real "lamp" (--accent) and a warm coral kept
+   only as a second, human accent (--accent-warm) for the hand-drawn
+   annotation marks and the timeline's pivot card -- the chalk-era
+   warmth against the digital-era blue is doing real narrative work now,
+   not just decoration. No component changed to build this: the whole
+   site already read its colors from these variables, never a hardcoded
+   hex, so a full retheme is a token swap, not a rewrite. */
 :root {
   --radius-lg: 1.25rem;
   --radius-md: 0.75rem;
   --shadow-color: 0 0% 4%;
 
-  /* Gruvbox bg0 / fg1 — the editor's own background and foreground. */
-  --bg: #282828;
-  --bg-alt: #3c3836;
-  --ink: #ebdbb2;
-  --ink-soft: #a89984;
-  --border: rgb(235 219 178 / 12%);
-  --border-strong: rgb(235 219 178 / 22%);
+  --bg: #0a0b0f;
+  --bg-alt: #14161d;
+  --ink: #eef0f4;
+  --ink-soft: #8b93a4;
+  --border: rgb(238 240 244 / 10%);
+  --border-strong: rgb(238 240 244 / 18%);
   color-scheme: dark;
 
-  /* Gruvbox's bright yellow is doing the job --accent (the site's one
-     "lamp") always did; bright orange stands in for --accent-warm. Same
-     warm-family constraint as before, just a different warm family. */
-  --accent: #fabd2f;
-  --accent-soft: #fbdca0;
-  --accent-warm: #fe8019;
-  --accent-warm-soft: #febf6f;
-  --on-accent: #1d2021;
+  /* The one lamp: a vivid, modern indigo-blue rather than Gruvbox's
+     mustard yellow -- "coder" energy leads now, chalk-warmth follows. */
+  --accent: #5b7cff;
+  --accent-soft: #b3c2ff;
+  --accent-warm: #ff8a5c;
+  --accent-warm-soft: #ffc3a3;
+  --on-accent: #ffffff;
 
-  --plane-shadow: #458588;
-  --plane-midtone: #d65d0e;
-  --plane-highlight: #fabd2f;
-  --plane-line: #1d2021;
+  --plane-shadow: #2a3142;
+  --plane-midtone: #ff8a5c;
+  --plane-highlight: #5b7cff;
+  --plane-line: #0a0b0f;
 
-  --board: #32302f;
+  --board: #101219;
   --marker: var(--accent-soft);
 }
 

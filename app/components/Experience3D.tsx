@@ -2,7 +2,15 @@ import { useEffect, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { SimplexNoise } from "three/examples/jsm/math/SimplexNoise.js";
-import { buildTrackGeometrySet, curvePoint, TRACK_SHAPES } from "~/three/createInfinityTrack";
+import {
+  buildTrackGeometry,
+  buildOrbShape,
+  buildScreenShape,
+  buildTileUV,
+  flattenTubeShape,
+  SHAPE_TEACHER,
+  type FlatShapeGeometry,
+} from "~/three/createInfinityTrack";
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
@@ -10,34 +18,36 @@ import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
  * The site's persistent 3D backdrop -- the same tiled light-beam
  * infinity track tuned in isolation on /infinity-preview
  * (InfinityTrack3D.tsx, left untouched), rebuilt as a fixed, full-
- * viewport layer that runs the whole way down the page. Three things
- * happen, none of them on a timer:
+ * viewport layer that runs the whole way down the page. Everything here
+ * is driven by scroll -- position, not time:
  *
- * 1. The shape itself morphs through `TRACK_SHAPES` (createInfinityTrack
- *    .ts) -- the chalk-era lemniscate, a monitor-bezel rounded
- *    rectangle, an angular "circuit" loop -- as a function of overall
- *    scroll progress. All three share identical topology/tile count, so
- *    this is a cheap per-tile lerp/slerp between whichever two are
- *    currently adjacent, not a geometry rebuild.
- * 2. The "coming apart" effect is a continuous field, not a discrete
- *    trigger: a slow, low-frequency 3D simplex noise sampled over each
- *    tile's own fixed (along-the-loop, around-the-tube) coordinates --
- *    low frequency on purpose, so whole neighborhoods of tiles rise and
- *    fall together instead of individual sparkle -- crossed against a
- *    threshold that *scroll velocity* pushes down (the faster you
- *    scroll, the more of the surface "un-thresholds" and lifts, like
- *    disturbing something molten by moving through the room). Mouse
- *    position adds a second, independent bump on top: the canvas itself
- *    stays `pointer-events: none` (so it can never fight real page
- *    content for clicks), and hover is tracked via a window-level
- *    pointermove listener + the exact same raycast-in-local-space
- *    technique the interactive preview uses, just without the canvas
- *    needing to own the pointer at all.
- * 3. The camera swings from side to side room by room (see
- *    CAMERA_KEYFRAMES) so the object and the page's own text content
- *    are never fighting for the same screen space -- home.tsx's
- *    sections each keep their text column to whichever side the camera
- *    isn't currently favoring.
+ * 1. The shape itself morphs between three GENUINELY different
+ *    arrangements (createInfinityTrack.ts) -- the chalk-era tube-swept
+ *    loop, a sphere ("orb"), and a flat tile grid ("screen") -- as a
+ *    function of overall scroll progress. Not three variations on one
+ *    "tiles around a beam" theme: a loop, a sphere, and a plane share no
+ *    common parametrization at all, only the same tile count/index
+ *    order, which is all the per-tile lerp/slerp blend actually needs.
+ * 2. The "coming apart" effect is a continuous field, active ONLY while
+ *    actually scrolling -- low-frequency 3D simplex noise sampled over
+ *    each tile's own fixed (along, around) coordinates so whole
+ *    neighborhoods rise and fall together, crossed against a threshold
+ *    that's unreachable at rest and drops as scroll *velocity* rises.
+ *    The noise field's own "drift" and the glow strand's flowing
+ *    brightness wave are both driven by an accumulated scroll distance,
+ *    not elapsed time -- stop scrolling and both freeze exactly where
+ *    they are, not just visually slow down. Mouse hover adds a second,
+ *    independent bump on top, tracked via a window-level pointermove
+ *    listener rather than the canvas itself ever receiving pointer
+ *    events, so it can never compete with real page content for clicks.
+ * 3. The object itself (not the camera, which stays fixed) moves to a
+ *    different place on screen room by room (see ROOM_KEYFRAMES) --
+ *    home.tsx's sections keep their text column wherever the object
+ *    currently isn't.
+ *
+ * The only thing still driven by elapsed wall-clock time is the one-
+ * shot boot/growth sequence on mount -- a real entrance, not ambient
+ * idling, so it's exempt from "still unless scrolling."
  */
 
 const STATIONS = 130;
@@ -45,52 +55,56 @@ const TILES_AROUND = 20;
 const TUBE_RADIUS = 0.34;
 const TILE_GAP_FRACTION = 0.86;
 const TILE_THICKNESS = 0.03;
+const ORB_RADIUS = 2.1;
+const SCREEN_COLS = 65; // 130*20 / 65 = 40 rows exactly, no partial row
+const SCREEN_SPACING = 0.085;
 
 const GROWTH_DURATION_S = 2.6;
 const POP_TENSION = 260;
 const POP_FRICTION = 13;
 
-// How quickly `shapeJourney`/the camera/the scroll-linked spin catch up
-// to their real scroll-driven targets -- a few frames of physical lag,
-// same "everything settles like something physical" language as the
-// rest of this site's springs, just exponentially smoothed here instead
-// of react-spring-driven (this loop is plain requestAnimationFrame, not
-// React state).
+// How quickly `shapeJourney`/the room transform/the scroll-linked spin
+// catch up to their real scroll-driven targets -- a few frames of
+// physical lag, same "everything settles like something physical"
+// language as the rest of this site's springs, just exponentially
+// smoothed here instead of react-spring-driven (this loop is plain
+// requestAnimationFrame, not React state). This is the only smoothing
+// left that can make the object move a beat after scroll has already
+// stopped -- a brief physical settle, not perpetual idling.
 const PROGRESS_RESPONSIVENESS = 5; // per second
 
-const IDLE_YAW_SPEED = 0.05; // rad/s
-const SCROLL_YAW_TURNS = 1.35; // full turns across progress 0..1
-const IDLE_TILT_SPEED = 0.35; // rad/s
-const IDLE_TILT_AMPLITUDE = 0.05; // rad
+const SCROLL_YAW_TURNS = 1.35; // full turns across progress 0..1 -- purely scroll-driven, no idle component
 const BASE_TILT = 0.18; // rad, a gentle constant 3/4 angle rather than dead-on
 const SCROLL_TILT_SHIFT = 0.22; // rad, added tilt by the end of the journey
 
-interface CameraKeyframe {
+interface RoomKeyframe {
   p: number;
   pos: [number, number, number];
-  fov: number;
+  scale: number;
 }
-// Alternates sides room by room so the object and each section's text
-// column never contest the same screen space -- positive x swings the
-// object right (text sits left), negative x swings it left (text sits
-// right). Hero/About/Skills below key their own text alignment off
-// these same beats.
-const CAMERA_KEYFRAMES: CameraKeyframe[] = [
-  { p: 0.0, pos: [2.3, 0.7, 6.1], fov: 40 }, // Hero: object right, text left
-  { p: 0.16, pos: [-2.5, 0.2, 7.0], fov: 39 }, // About: object left, text right
-  { p: 0.38, pos: [0.4, 1.1, 9.6], fov: 36 }, // Timeline room: pulled back, roomier framing
-  { p: 0.62, pos: [0.4, -0.5, 9.6], fov: 36 }, // Timeline room, later
-  { p: 0.82, pos: [2.4, 0.35, 7.1], fov: 38 }, // Skills: object right, text left
-  { p: 1.0, pos: [0, 0.1, 9.3], fov: 36 }, // resolved, calm, centered
+// Where the object sits on screen, room by room -- the camera itself
+// stays fixed (see its own setup below); this is what actually moves.
+// Deliberately varied beyond just "left vs. right": top, bottom, a
+// lower corner, center -- "move to different places on the screen; it
+// shouldn't always be centered behind everything" was explicit
+// feedback. Hero/About/Skills key their own text alignment off these
+// same beats (see each component's own comment).
+const ROOM_KEYFRAMES: RoomKeyframe[] = [
+  { p: 0.0, pos: [2.7, 0.3, 0], scale: 1.05 }, // Hero: right, big
+  { p: 0.16, pos: [-2.9, -0.2, -0.5], scale: 0.85 }, // About: left
+  { p: 0.36, pos: [0, 2.3, -2], scale: 0.55 }, // Timeline room: pushed up top, small, out of the cards' way
+  { p: 0.62, pos: [0, -2.3, -2], scale: 0.55 }, // Timeline room: drifts to the bottom by the room's end
+  { p: 0.82, pos: [2.6, -1.6, -0.3], scale: 0.85 }, // Skills: right, lower corner
+  { p: 1.0, pos: [0, 0, -3], scale: 0.5 }, // resolved: center, small, receding into the fade-out
 ];
 
-function sampleCamera(p: number, out: { x: number; y: number; z: number; fov: number }) {
-  let lo = CAMERA_KEYFRAMES[0];
-  let hi = CAMERA_KEYFRAMES[CAMERA_KEYFRAMES.length - 1];
-  for (let i = 0; i < CAMERA_KEYFRAMES.length - 1; i++) {
-    if (p >= CAMERA_KEYFRAMES[i].p && p <= CAMERA_KEYFRAMES[i + 1].p) {
-      lo = CAMERA_KEYFRAMES[i];
-      hi = CAMERA_KEYFRAMES[i + 1];
+function sampleRoom(p: number, out: { x: number; y: number; z: number; scale: number }) {
+  let lo = ROOM_KEYFRAMES[0];
+  let hi = ROOM_KEYFRAMES[ROOM_KEYFRAMES.length - 1];
+  for (let i = 0; i < ROOM_KEYFRAMES.length - 1; i++) {
+    if (p >= ROOM_KEYFRAMES[i].p && p <= ROOM_KEYFRAMES[i + 1].p) {
+      lo = ROOM_KEYFRAMES[i];
+      hi = ROOM_KEYFRAMES[i + 1];
       break;
     }
   }
@@ -99,32 +113,43 @@ function sampleCamera(p: number, out: { x: number; y: number; z: number; fov: nu
   out.x = lo.pos[0] + (hi.pos[0] - lo.pos[0]) * t;
   out.y = lo.pos[1] + (hi.pos[1] - lo.pos[1]) * t;
   out.z = lo.pos[2] + (hi.pos[2] - lo.pos[2]) * t;
-  out.fov = lo.fov + (hi.fov - lo.fov) * t;
+  out.scale = lo.scale + (hi.scale - lo.scale) * t;
 }
 
 // The organic "coming apart" field. Frequencies are deliberately LOW --
-// a handful of cycles across the whole loop/circumference -- so
+// a handful of cycles across the whole tile index range -- so
 // neighboring tiles share close noise values and whole neighborhoods
-// move together, which is what actually reads as "large sections
-// coming apart" instead of fine sparkle (that was the specific
-// complaint about the old version, a narrow band sweeping the loop on a
-// timer).
+// move together, reading as "large sections coming apart" instead of
+// fine sparkle.
 const NOISE_FREQ_ALONG = 3.2;
 const NOISE_FREQ_RING = 2.4;
-const NOISE_DRIFT_SPEED = 0.16; // how fast the field itself churns, independent of scroll/hover
-const REST_THRESHOLD = 0.72; // noise value a tile needs to clear to lift, at rest
-const AGITATED_THRESHOLD = 0.28; // ...and at max scroll-driven agitation -- lower = more of the surface qualifies
+// The field's own drift is driven by accumulated scroll DISTANCE, not
+// elapsed time (see `scrollOdometer` in tick()) -- explicit feedback
+// was that the surface read as "alive" on its own; multiplied against
+// odometer (which only advances while actually scrolling) this freezes
+// completely at rest instead of just slowing down.
+const NOISE_DRIFT_SPEED = 6;
+// REST_THRESHOLD sits above 1 (noise01's own max) on purpose -- the
+// smoothstep band below it can never be crossed at agitation 0, so
+// exactly zero ambient activation at rest, not just "rare." Only
+// AGITATED_THRESHOLD (reached while actively, briskly scrolling) sits
+// in reachable territory.
+const REST_THRESHOLD = 1.3;
+const AGITATED_THRESHOLD = 0.28;
 const THRESHOLD_BAND = 0.16; // smoothstep width around the live threshold, softens the on/off edge
-const MAX_LIFT = 0.52; // bigger than the old hover-only MAX_LIFT (0.36) -- this reads as bigger sections breaking loose, not a subtle bump
+const MAX_LIFT = 0.52;
 const ACTIVATION_CHAOS_ROTATION = 0.4; // rad, max per-tile wobble at full activation
 
 // Scroll velocity -> agitation: a peak-hold-with-decay envelope, same
-// technique this codebase already uses for the drag/momentum systems
-// (see LoadingScreen3D.tsx/InfinityTrack3D.tsx's own PEAK_HOLD
-// comments) -- jumps up instantly to match a fast scroll, decays slowly
-// otherwise, so a quick flick of the wheel still reads as a real
-// disturbance even a few frames later, not just an instantaneous blip.
-const AGITATION_VELOCITY_GAIN = 14; // progress-units/sec -> agitation, roughly
+// technique this codebase's own drag/momentum systems already use --
+// jumps up instantly to match a fast scroll, decays over half a second
+// otherwise, so the surface's own reaction outlasts a single scroll
+// event by a beat rather than flickering with it, while still reading
+// as "still" within a second or so of the scrolling actually stopping.
+// The gain is tuned to respond to ordinary wheel/trackpad scrolling,
+// not just an aggressive flick -- verified directly against a simulated
+// moderate scroll, not just a synthetic burst.
+const AGITATION_VELOCITY_GAIN = 45;
 const AGITATION_DECAY_HALF_LIFE_S = 0.5;
 
 // Mouse hover: tracked globally (window pointermove), raycast against
@@ -145,31 +170,41 @@ const HOVER_LIFT = 0.4;
 // resting tiles look exactly like the material's own base color.
 const HOT_TINT = new THREE.Color(3.2, 1.7, 0.55);
 
-interface CameraKeyframeState {
-  x: number;
-  y: number;
-  z: number;
-  fov: number;
-}
-
 const GLOW_POINT_COUNT = 260;
+const GLOW_INDEX_STRIDE = (STATIONS * TILES_AROUND) / GLOW_POINT_COUNT; // 10, exact -- every 10th tile's own position/along feeds the glow strand
 const GLOW_POINT_SIZE = TUBE_RADIUS * 3.2;
 const GLOW_WAVE_COUNT = 14;
-const GLOW_SCROLL_SPEED = 0.35;
+// Same reasoning as NOISE_DRIFT_SPEED -- driven by accumulated scroll
+// distance, not elapsed time, so the "energy flowing" wave freezes at
+// rest instead of perpetually animating.
+const GLOW_SCROLL_SPEED = 2.5;
 
 // The palette blend: warm chalk-gold ("teacher") toward a cooler
-// Gruvbox aqua/blue ("resolved"), sampled across however many shapes
-// are in TRACK_SHAPES (not just the two endpoints), so the middle
-// "terminal" shape reads as a real midpoint, not an early jump.
+// resolved blue, across the whole journey regardless of which two
+// shapes are currently blending.
 const TILE_COLOR_TEACHER = new THREE.Color(0x2b2622);
-const TILE_COLOR_CODER = new THREE.Color(0x20282b);
-const GLOW_COLOR_TEACHER = new THREE.Color(0xfabd2f);
-const GLOW_COLOR_CODER = new THREE.Color(0x83a598);
+const TILE_COLOR_CODER = new THREE.Color(0x22262f);
+const GLOW_COLOR_TEACHER = new THREE.Color(0xf0b23c);
+const GLOW_COLOR_CODER = new THREE.Color(0x6d8cff);
+
+// The shape morph finishes by this fraction of the whole scroll, not at
+// 1 -- see shapeJourney's own comment in tick() for why.
+const SHAPE_MORPH_END = 0.75;
 
 // The fade-out: over the last stretch of progress, the whole layer
 // eases its opacity to 0 so Footer reads as a clean, deliberate stop
-// rather than fighting a giant WebGL canvas for attention.
+// rather than fighting a giant WebGL canvas for attention. Starts well
+// after SHAPE_MORPH_END, leaving a real settled window in between.
 const FADE_START = 0.92;
+
+// The camera never moves -- everything about "where does it appear on
+// screen" is the object's own position/scale instead (ROOM_KEYFRAMES
+// above). A fixed camera also means its matrixWorld only ever needs
+// updating once, at setup, rather than every frame the way a moving
+// camera would (see this file's own commit history on why a moving
+// camera's stale matrixWorld silently broke hover raycasting before).
+const CAMERA_POS: [number, number, number] = [0, 0.3, 8.5];
+const CAMERA_FOV = 40;
 
 function createGlowSprite(): THREE.CanvasTexture {
   const size = 64;
@@ -222,8 +257,8 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     if (!container) return;
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
-    camera.position.set(2.3, 0.7, 6.1);
+    const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 1, 0.1, 100);
+    camera.position.set(...CAMERA_POS);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -241,13 +276,29 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     rim.position.set(-5, -2, -3);
     scene.add(rim);
 
-    const set = buildTrackGeometrySet(TRACK_SHAPES, STATIONS, TILES_AROUND, TUBE_RADIUS);
-    const tileCount = set.tileCount;
-    const shapeCount = TRACK_SHAPES.length;
+    // Three genuinely different shapes -- see this file's own top
+    // comment. `along`/`ringT` come from the tube topology alone
+    // (buildTileUV) and are reused as every shape's noise-field domain,
+    // regardless of which one is actually on screen -- see
+    // buildTileUV's own comment for why that's deliberate.
+    const tubeInfo = buildTrackGeometry(SHAPE_TEACHER, STATIONS, TILES_AROUND, TUBE_RADIUS);
+    const teacherGeom: FlatShapeGeometry = flattenTubeShape(tubeInfo);
+    const orbGeom = buildOrbShape(STATIONS * TILES_AROUND, ORB_RADIUS);
+    const screenGeom = buildScreenShape(STATIONS * TILES_AROUND, SCREEN_COLS, SCREEN_SPACING);
+    const shapes = [teacherGeom, orbGeom, screenGeom];
+    const shapeCount = shapes.length;
+    const positions = shapes.map((s) => s.positions);
+    const outwards = shapes.map((s) => s.outwards);
+    const quats = shapes.map((s) => s.quats);
+    const { along, ringT } = buildTileUV(STATIONS, TILES_AROUND);
+    const tileCount = along.length;
 
+    // An average tile footprint across all three shapes, from the
+    // tube's own real proportions -- one shared, unchanging box
+    // geometry, not something that resizes as the shape blends.
     const tileGeometry = new THREE.BoxGeometry(
-      set.tileWidth * TILE_GAP_FRACTION,
-      set.tileHeight * TILE_GAP_FRACTION,
+      tubeInfo.tileWidth * TILE_GAP_FRACTION,
+      tubeInfo.tileHeight * TILE_GAP_FRACTION,
       TILE_THICKNESS,
     );
     const tileMaterial = new THREE.MeshStandardMaterial({
@@ -269,26 +320,15 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     trackRoot.add(tileMesh);
     scene.add(trackRoot);
 
-    // The glow strand, same technique as the preview (soft additive
-    // points on the curve's own centerline) but sampled from *every*
-    // shape so it blends right along with the tiles.
-    const glowPositionsByShape: Float32Array[] = [];
+    // The glow strand: every GLOW_INDEX_STRIDE'th tile's own position
+    // (and `along`) feeds it directly -- same underlying arrays the
+    // tiles themselves use, at a stride, rather than a second,
+    // independent curve-sampling system per shape (which orb/screen
+    // don't have a natural one for anyway).
     const glowAlong = new Float32Array(GLOW_POINT_COUNT);
     const glowLive = new Float32Array(GLOW_POINT_COUNT * 3);
     const glowColors = new Float32Array(GLOW_POINT_COUNT * 3);
-    const glowVec = new THREE.Vector3();
-    for (const shape of TRACK_SHAPES) {
-      const arr = new Float32Array(GLOW_POINT_COUNT * 3);
-      for (let i = 0; i < GLOW_POINT_COUNT; i++) {
-        const t = (i / GLOW_POINT_COUNT) * Math.PI * 2;
-        curvePoint(shape, t, glowVec);
-        arr[i * 3] = glowVec.x;
-        arr[i * 3 + 1] = glowVec.y;
-        arr[i * 3 + 2] = glowVec.z;
-      }
-      glowPositionsByShape.push(arr);
-    }
-    for (let i = 0; i < GLOW_POINT_COUNT; i++) glowAlong[i] = i / GLOW_POINT_COUNT;
+    for (let k = 0; k < GLOW_POINT_COUNT; k++) glowAlong[k] = along[k * GLOW_INDEX_STRIDE];
 
     const glowGeometry = new THREE.BufferGeometry();
     const glowPositionAttr = new THREE.BufferAttribute(glowLive, 3);
@@ -337,14 +377,14 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     function paintTile(i: number, growScale: number, lift: number, i0: number, i1: number, frac: number, chaosJitter: number) {
       const i3 = i * 3;
       const i4 = i * 4;
-      const a = set.positions[i0];
-      const b = set.positions[i1];
+      const a = positions[i0];
+      const b = positions[i1];
       const px = a[i3] + (b[i3] - a[i3]) * frac;
       const py = a[i3 + 1] + (b[i3 + 1] - a[i3 + 1]) * frac;
       const pz = a[i3 + 2] + (b[i3 + 2] - a[i3 + 2]) * frac;
 
-      const oa = set.outwards[i0];
-      const ob = set.outwards[i1];
+      const oa = outwards[i0];
+      const ob = outwards[i1];
       let ox = oa[i3] + (ob[i3] - oa[i3]) * frac;
       let oy = oa[i3 + 1] + (ob[i3 + 1] - oa[i3 + 1]) * frac;
       let oz = oa[i3 + 2] + (ob[i3 + 2] - oa[i3 + 2]) * frac;
@@ -360,7 +400,7 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       // identically at runtime, and casting here avoids either widening
       // these arrays to real arrays (2600 tiles * 4 floats, times 3
       // shapes) or copying out of them on every tile, every frame.
-      THREE.Quaternion.slerpFlat(quatScratch, 0, set.quats[i0] as unknown as number[], i4, set.quats[i1] as unknown as number[], i4, frac);
+      THREE.Quaternion.slerpFlat(quatScratch, 0, quats[i0] as unknown as number[], i4, quats[i1] as unknown as number[], i4, frac);
       if (chaosJitter > 0) {
         chaosAxis.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
         chaosQuat.setFromAxisAngle(chaosAxis, (Math.random() - 0.5) * 2 * chaosJitter * ACTIVATION_CHAOS_ROTATION);
@@ -374,6 +414,7 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     }
 
     const eulerScratch = new THREE.Euler();
+    const roomSample = { x: 0, y: 0, z: 0, scale: 1 };
 
     function disposeAll() {
       if (!container) return;
@@ -390,25 +431,24 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
 
     if (reduced) {
       // A single static, fully-grown resting frame in the "teacher"
-      // shape/palette/framing -- no rAF loop at all.
+      // shape/palette, Hero's own room position -- no rAF loop at all.
       for (let i = 0; i < tileCount; i++) paintTile(i, 1, 0, 0, 0, 0, 0);
       tileMesh.instanceMatrix.needsUpdate = true;
       tileMaterial.color.copy(TILE_COLOR_TEACHER);
-      const glowShape0 = glowPositionsByShape[0];
-      for (let i = 0; i < GLOW_POINT_COUNT; i++) {
-        glowLive[i * 3] = glowShape0[i * 3];
-        glowLive[i * 3 + 1] = glowShape0[i * 3 + 1];
-        glowLive[i * 3 + 2] = glowShape0[i * 3 + 2];
-        glowColors[i * 3] = GLOW_COLOR_TEACHER.r;
-        glowColors[i * 3 + 1] = GLOW_COLOR_TEACHER.g;
-        glowColors[i * 3 + 2] = GLOW_COLOR_TEACHER.b;
+      for (let k = 0; k < GLOW_POINT_COUNT; k++) {
+        const srcI = k * GLOW_INDEX_STRIDE;
+        glowLive[k * 3] = teacherGeom.positions[srcI * 3];
+        glowLive[k * 3 + 1] = teacherGeom.positions[srcI * 3 + 1];
+        glowLive[k * 3 + 2] = teacherGeom.positions[srcI * 3 + 2];
+        glowColors[k * 3] = GLOW_COLOR_TEACHER.r;
+        glowColors[k * 3 + 1] = GLOW_COLOR_TEACHER.g;
+        glowColors[k * 3 + 2] = GLOW_COLOR_TEACHER.b;
       }
       glowPositionAttr.needsUpdate = true;
       glowColorAttr.needsUpdate = true;
-      camera.position.set(...CAMERA_KEYFRAMES[0].pos);
-      camera.fov = CAMERA_KEYFRAMES[0].fov;
-      camera.updateProjectionMatrix();
-      camera.lookAt(0, 0, 0);
+      sampleRoom(0, roomSample);
+      trackRoot.position.set(roomSample.x, roomSample.y, roomSample.z);
+      trackRoot.scale.setScalar(roomSample.scale);
       resize();
       renderer.render(scene, camera);
       onBootCompleteRef.current?.();
@@ -423,6 +463,7 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
           shapeJourney: lastShapeJourney,
           smoothedProgress: lastSmoothedProgress,
           agitation,
+          scrollOdometer,
           hovering,
           bootFired,
           pointerScreen: { x: pointerRef.current.x, y: pointerRef.current.y },
@@ -441,9 +482,12 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
     let lastSmoothedProgress = 0;
     let bootFired = false;
     let agitation = 0;
+    let scrollOdometer = 0;
     let hovering = false;
 
-    const cameraSample: CameraKeyframeState = { x: 0, y: 0, z: 0, fov: 42 };
+    // Camera never moves after this -- see CAMERA_POS's own comment.
+    camera.updateMatrixWorld(true);
+
     const raycaster = new THREE.Raycaster();
     const pointerNdc = new THREE.Vector2(-9999, -9999);
     const hitPoint = new THREE.Vector3();
@@ -455,7 +499,9 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       lastElapsed = elapsed;
 
       const rawProgress = progressRef.current ?? 0;
-      const scrollSpeed = dt > 0 ? Math.abs(rawProgress - lastRawProgress) / dt : 0;
+      const rawDelta = rawProgress - lastRawProgress;
+      const scrollSpeed = dt > 0 ? Math.abs(rawDelta) / dt : 0;
+      scrollOdometer += Math.abs(rawDelta);
       lastRawProgress = rawProgress;
       // Peak-hold with exponential decay -- jumps to match a fast
       // scroll instantly, decays smoothly otherwise (see this file's
@@ -467,41 +513,50 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       smoothedProgress += (rawProgress - smoothedProgress) * (1 - Math.exp(-PROGRESS_RESPONSIVENESS * dt));
       lastSmoothedProgress = smoothedProgress;
 
-      const shapeJourney = smoothedProgress * (shapeCount - 1);
+      // Compressed into the first SHAPE_MORPH_END of the scroll, not the
+      // whole thing -- mapping shapeJourney straight off smoothedProgress
+      // 0..1 meant the final shape only ever finished forming exactly at
+      // progress 1, the same moment FADE_START has already made the
+      // whole layer nearly invisible (confirmed directly: the resolved
+      // "screen" shape was never actually visible at full opacity,
+      // anywhere). This leaves a real settled window -- SHAPE_MORPH_END
+      // to FADE_START -- where the final shape is fully formed and still
+      // fully opaque before it fades.
+      const shapeJourney = Math.min(shapeCount - 1, (smoothedProgress / SHAPE_MORPH_END) * (shapeCount - 1));
       lastShapeJourney = shapeJourney;
       const i0 = Math.min(shapeCount - 1, Math.max(0, Math.floor(shapeJourney)));
       const i1 = Math.min(shapeCount - 1, i0 + 1);
       const frac = i1 > i0 ? shapeJourney - i0 : 0;
 
-      // Orientation: idle ambient spin + a much larger turn tied to
-      // scroll, plus a gentle tilt that shifts a little further open by
-      // the end of the journey.
-      const yaw = elapsed * IDLE_YAW_SPEED + smoothedProgress * SCROLL_YAW_TURNS * Math.PI * 2;
-      const tilt = BASE_TILT + Math.sin(elapsed * IDLE_TILT_SPEED) * IDLE_TILT_AMPLITUDE + smoothedProgress * SCROLL_TILT_SHIFT;
+      // Orientation and position/scale: both purely a function of
+      // smoothedProgress now -- no elapsed-time-driven idle spin/tilt at
+      // all (that was the actual mechanism behind the surface reading as
+      // "alive" even at rest).
+      const yaw = smoothedProgress * SCROLL_YAW_TURNS * Math.PI * 2;
+      const tilt = BASE_TILT + smoothedProgress * SCROLL_TILT_SHIFT;
       eulerScratch.set(tilt, yaw, 0, "XYZ");
       trackRoot.quaternion.setFromEuler(eulerScratch);
-      // Rotation only lands in .quaternion until the scene graph
-      // updates at render time -- raycasting below needs this frame's
-      // matrixWorld, not last frame's, or hover reads as intermittently
-      // missing on a shape that's always at least a little in motion.
+      sampleRoom(smoothedProgress, roomSample);
+      trackRoot.position.set(roomSample.x, roomSample.y, roomSample.z);
+      trackRoot.scale.setScalar(roomSample.scale);
+      // Rotation/position/scale only land in their own properties until
+      // the scene graph updates at render time -- raycasting below needs
+      // this frame's matrixWorld, not last frame's, or hover reads as
+      // intermittently missing on a shape that's always at least a
+      // little in motion.
       trackRoot.updateMatrixWorld(true);
 
-      sampleCamera(smoothedProgress, cameraSample);
-      camera.position.set(cameraSample.x, cameraSample.y, cameraSample.z);
-      camera.fov = cameraSample.fov;
-      camera.updateProjectionMatrix();
-      camera.lookAt(0, 0, 0);
-      // Same reasoning as trackRoot's own updateMatrixWorld above: the
-      // camera moves every single frame here (unlike the interactive
-      // preview, where it's static and only the object rotates), so its
-      // matrixWorld is just as stale until render() -- confirmed
-      // directly this was the actual reason hover raycasts never hit
-      // anything at all, not just an occasional miss.
-      camera.updateMatrixWorld(true);
-
-      const paletteT = smoothedProgress; // 0..1 across the whole journey, independent of which two shapes are blending
+      // Same SHAPE_MORPH_END compression as shapeJourney -- the palette
+      // should finish resolving right alongside the shape, not keep
+      // drifting warm-to-cool for the rest of the scroll after the shape
+      // itself has already settled into its final form.
+      const paletteT = Math.min(1, smoothedProgress / SHAPE_MORPH_END);
       tileMaterial.color.lerpColors(TILE_COLOR_TEACHER, TILE_COLOR_CODER, paletteT);
       glowBaseNow.lerpColors(GLOW_COLOR_TEACHER, GLOW_COLOR_CODER, paletteT);
+      // Sprite size doesn't auto-scale with the parent group's own scale
+      // (only vertex *positions* do) -- without this the glow would stay
+      // full-size even when the whole object shrinks into a smaller room.
+      glowMaterial.size = GLOW_POINT_SIZE * roomSample.scale;
 
       // Hover: raycast the latest known pointer position against the
       // tiles. The canvas itself never receives pointer events (see
@@ -514,12 +569,7 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       // cached forever. Tiles are still collapsed to scale 0 around the
       // origin on that very first frame (mid-boot), so without
       // recomputing it here, every ray afterward gets tested against a
-      // near-zero sphere from a shape that no longer exists -- confirmed
-      // directly this was the entire reason hover never registered a
-      // single hit, anywhere, ever. One frame stale (this uses whatever
-      // instance matrices the previous frame's paint loop left behind)
-      // is imperceptible; the actual per-instance test below still uses
-      // this frame's real matrices regardless.
+      // near-zero sphere from a shape that no longer exists.
       tileMesh.computeBoundingSphere();
       pointerNdc.x = (pointerRef.current.x / window.innerWidth) * 2 - 1;
       pointerNdc.y = -(pointerRef.current.y / window.innerHeight) * 2 + 1;
@@ -538,23 +588,25 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       }
 
       // The live activation threshold -- agitation (scroll velocity)
-      // pushes it down, exposing more of the noise field as "active."
+      // pushes it down from an unreachable resting value, exposing more
+      // of the noise field as "active" the faster you scroll.
       const liveThreshold = REST_THRESHOLD + (AGITATED_THRESHOLD - REST_THRESHOLD) * agitation;
+      const noiseZ = scrollOdometer * NOISE_DRIFT_SPEED;
 
       for (let i = 0; i < tileCount; i++) {
-        const along = set.along[i];
-        if (poppedAt[i] < 0 && along <= frontier) poppedAt[i] = elapsed;
+        const tileAlong = along[i];
+        if (poppedAt[i] < 0 && tileAlong <= frontier) poppedAt[i] = elapsed;
         const growScale = poppedAt[i] < 0 ? 0 : Math.max(0, springValue(elapsed - poppedAt[i], 0, 1, POP_TENSION, POP_FRICTION));
 
-        const n = simplex.noise3d(along * NOISE_FREQ_ALONG, set.ringT[i] * NOISE_FREQ_RING, elapsed * NOISE_DRIFT_SPEED);
+        const n = simplex.noise3d(tileAlong * NOISE_FREQ_ALONG, ringT[i] * NOISE_FREQ_RING, noiseZ);
         const n01 = n * 0.5 + 0.5;
         const fieldActive = smoothstep(liveThreshold - THRESHOLD_BAND, liveThreshold + THRESHOLD_BAND, n01);
 
         let hoverBump = 0;
         if (hovering) {
           const i3 = i * 3;
-          const a = set.positions[i0];
-          const b = set.positions[i1];
+          const a = positions[i0];
+          const b = positions[i1];
           const px = a[i3] + (b[i3] - a[i3]) * frac;
           const py = a[i3 + 1] + (b[i3 + 1] - a[i3 + 1]) * frac;
           const pz = a[i3 + 2] + (b[i3 + 2] - a[i3 + 2]) * frac;
@@ -578,27 +630,28 @@ export function Experience3D({ progressRef, onBootComplete }: { progressRef: Ref
       tileMesh.instanceMatrix.needsUpdate = true;
       if (tileMesh.instanceColor) tileMesh.instanceColor.needsUpdate = true;
 
-      const glowA = glowPositionsByShape[i0];
-      const glowB = glowPositionsByShape[i1];
-      for (let i = 0; i < GLOW_POINT_COUNT; i++) {
-        const i3 = i * 3;
-        glowLive[i3] = glowA[i3] + (glowB[i3] - glowA[i3]) * frac;
-        glowLive[i3 + 1] = glowA[i3 + 1] + (glowB[i3 + 1] - glowA[i3 + 1]) * frac;
-        glowLive[i3 + 2] = glowA[i3 + 2] + (glowB[i3 + 2] - glowA[i3 + 2]) * frac;
+      const glowPosA = positions[i0];
+      const glowPosB = positions[i1];
+      for (let k = 0; k < GLOW_POINT_COUNT; k++) {
+        const srcI3 = k * GLOW_INDEX_STRIDE * 3;
+        const k3 = k * 3;
+        glowLive[k3] = glowPosA[srcI3] + (glowPosB[srcI3] - glowPosA[srcI3]) * frac;
+        glowLive[k3 + 1] = glowPosA[srcI3 + 1] + (glowPosB[srcI3 + 1] - glowPosA[srcI3 + 1]) * frac;
+        glowLive[k3 + 2] = glowPosA[srcI3 + 2] + (glowPosB[srcI3 + 2] - glowPosA[srcI3 + 2]) * frac;
 
-        const along = glowAlong[i];
-        if (along > frontier) {
-          glowColors[i3] = 0;
-          glowColors[i3 + 1] = 0;
-          glowColors[i3 + 2] = 0;
+        const pointAlong = glowAlong[k];
+        if (pointAlong > frontier) {
+          glowColors[k3] = 0;
+          glowColors[k3 + 1] = 0;
+          glowColors[k3 + 2] = 0;
           continue;
         }
-        const wave = 0.55 + 0.45 * Math.sin(along * GLOW_WAVE_COUNT * Math.PI * 2 - elapsed * GLOW_SCROLL_SPEED * Math.PI * 2);
+        const wave = 0.55 + 0.45 * Math.sin(pointAlong * GLOW_WAVE_COUNT * Math.PI * 2 - scrollOdometer * GLOW_SCROLL_SPEED * Math.PI * 2);
         const heat = 1 + agitation * 1.8;
         scratchColor.copy(glowBaseNow).multiplyScalar(wave * heat);
-        glowColors[i3] = scratchColor.r;
-        glowColors[i3 + 1] = scratchColor.g;
-        glowColors[i3 + 2] = scratchColor.b;
+        glowColors[k3] = scratchColor.r;
+        glowColors[k3 + 1] = scratchColor.g;
+        glowColors[k3 + 2] = scratchColor.b;
       }
       glowPositionAttr.needsUpdate = true;
       glowColorAttr.needsUpdate = true;

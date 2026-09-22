@@ -4,20 +4,22 @@ import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 // The rainbow rings (everything but the center) -- winds outward from
-// right next to the cursor through the rest of the Gruvbox bright
-// palette, then fades to transparent rather than wrapping back to its
-// first color: an explicit CSS radial-gradient size (see
-// JAWBREAKER_RADIUS_PX below) paints its *last* stop as a solid fill
-// for the entire rest of the element beyond that radius, so a
-// wrap-to-first-color ending meant nearly the whole button --
-// everywhere further than the radius from the cursor -- was actually
-// a solid wash of that last color, not localized to the cursor at
-// all. That's what read as the button "turning tan": the gradient's
-// final color (previously red, wrapped from the first stop) was
-// silently flooding the whole background outside a small circle.
-// Fading to transparent instead means anywhere outside the ring
-// pattern shows the real, unblended accent yellow underneath.
-const RING_COLORS = ["#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b", "transparent"];
+// right next to the cursor through a warm-to-cool sweep built from the
+// site's own two-accent palette (coral through to indigo, not a full
+// multi-hue rainbow -- that read as a Gruvbox signature specifically,
+// not a fit for this theme's much more restrained two-accent palette),
+// then fades to transparent rather than wrapping back to its first
+// color: an explicit CSS radial-gradient size (see JAWBREAKER_RADIUS_PX
+// below) paints its *last* stop as a solid fill for the entire rest of
+// the element beyond that radius, so a wrap-to-first-color ending would
+// mean nearly the whole button -- everywhere further than the radius
+// from the cursor -- ends up a solid wash of that last color, not
+// localized to the cursor at all (confirmed directly with the old
+// palette: that's what read as the button "turning tan," the previous
+// final color flooding the whole background outside a small circle).
+// Fading to transparent instead means anywhere outside the ring pattern
+// shows the real, unblended accent color underneath.
+const RING_COLORS = ["#ff8a5c", "#ffab7c", "#eef0f4", "#a5b4ff", "#5b7cff", "#4a63d9", "transparent"];
 
 /**
  * Each color gets two stops, straddling its own position -- holding
@@ -49,29 +51,30 @@ const JAWBREAKER_RADIUS_PX = 55;
 // above, rendered with ordinary alpha compositing instead of
 // mix-blend-mode: color. That's not a style inconsistency -- it's the
 // only way to make it actually read as its true color. mix-blend-mode:
-// color locks the result's luminance to whatever's underneath, and the
-// accent yellow backdrop is bright enough that *any* hue rendered
-// through it that way comes out pale and washed -- confirmed directly
-// against the browser's own compositor (a canvas with
-// globalCompositeOperation: "color", not just a guess from the spec):
-// blue over this exact yellow at full opacity comes out rgb(169,203,190),
-// a pale mint, and at the 0.5 opacity the rings use it's rgb(210,196,119)
-// -- textbook "tan". No amount of retuning blend-mode opacity fixes
-// that; it's a ceiling built into the blend mode itself against a
-// backdrop this bright. Plain alpha blending at high opacity doesn't
-// have that ceiling -- so the center gets its own normal-blend layer
-// on top of the ring layer, sized just big enough to fully cover the
-// rings' own color at position 0 (which no longer matters what it is).
-const CENTER_COLOR = "#fb4934";
+// color locks the result's luminance to whatever's underneath, and a
+// bright-enough backdrop washes out *any* hue rendered through it that
+// way (confirmed directly against the browser's own compositor -- a
+// canvas with globalCompositeOperation: "color", not just a guess from
+// the spec -- against the theme's previous, brighter accent yellow: a
+// cool hue over that backdrop came out a washed pale mint at full
+// opacity, "tan" at the 0.5 opacity the rings use). No amount of
+// retuning blend-mode opacity fixes that; it's a ceiling built into the
+// blend mode itself against a bright backdrop. Plain alpha blending at
+// high opacity doesn't have that ceiling -- so the center gets its own
+// normal-blend layer on top of the ring layer, sized just big enough to
+// fully cover the rings' own color at position 0 (which no longer
+// matters what it is).
+const CENTER_COLOR = "#ff6a3d";
 const CENTER_RADIUS_PX = 10;
 const CENTER_FADE_PX = 7;
 
 // The one-shot transition that plays when the button flips from
-// disabled to enabled: a diagonal band of Gruvbox colors sweeps left
-// to right, with solid accent yellow trailing behind it and the
-// disabled tan still showing ahead of it (wherever the sweep hasn't
-// reached yet) -- like the band is repainting the button as it
-// passes, rather than a plain crossfade.
+// disabled to enabled: a diagonal band sweeps left to right through
+// the same warm-to-cool palette the jawbreaker rings use, with the
+// solid accent color trailing behind it and the disabled tan still
+// showing ahead of it (wherever the sweep hasn't reached yet) -- like
+// the band is repainting the button as it passes, rather than a plain
+// crossfade.
 //
 // Built as a single element containing two children -- a big solid
 // block of yellow, followed by a narrow strip of striped colors --
@@ -94,7 +97,7 @@ const WIPE_SKEW_DEG = -16;
 // the top or bottom -- comfortably oversized for any height this
 // button is likely to be.
 const WIPE_MARGIN_PX = 32;
-const WIPE_STRIPE_COLORS = ["#fb4934", "#fe8019", "#fabd2f", "#b8bb26", "#8ec07c", "#83a598", "#d3869b"];
+const WIPE_STRIPE_COLORS = ["#ff6a3d", "#ff8a5c", "#ffab7c", "#eef0f4", "#a5b4ff", "#5b7cff", "#4a63d9"];
 const WIPE_STRIPE_PX = 7; // width of each individual color stripe
 const WIPE_BRUSH_PX = WIPE_STRIPE_COLORS.length * WIPE_STRIPE_PX; // the band shows exactly one pass of the full palette
 const WIPE_BRUSH_GRADIENT = `repeating-linear-gradient(90deg, ${WIPE_STRIPE_COLORS.map((c, i) => `${c} ${i * WIPE_STRIPE_PX}px ${(i + 1) * WIPE_STRIPE_PX}px`).join(", ")})`;
