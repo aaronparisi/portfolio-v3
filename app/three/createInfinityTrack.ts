@@ -21,12 +21,37 @@ import * as THREE from "three";
  * a self-intersection) is nowhere near the crossing, and the crossing
  * itself separates by a full 2*C -- comfortably more than twice the
  * tube radius below, so the two strands never come close to touching.
+ *
+ * `curveA`/`curveC` used to be fixed module constants; they're now a
+ * config object instead (see TrackShapeConfig) so the site's persistent
+ * backdrop (Experience3D.tsx) can build two distinct shapes -- the same
+ * topology, different proportions and an optional spiral twist -- and
+ * blend between them as the visitor scrolls. The tuned preview
+ * (InfinityTrack3D.tsx) just passes one fixed config, unchanged from
+ * the values this file used to hard-code.
  */
-export const CURVE_A = 2.2; // horizontal size
-export const CURVE_C = 0.9; // depth/banking amount at the crossing
+export interface TrackShapeConfig {
+  curveA: number; // horizontal size
+  curveC: number; // depth/banking amount at the crossing
+  /** Extra full turns the tile ring's own rotation advances over one
+   * lap of the loop -- 0 is the plain, untwisted racetrack; a nonzero
+   * value spirals the tiling into more of a coiled conduit, reading as
+   * a distinctly more "engineered" shape than the same curve untwisted. */
+  twistTurns: number;
+}
 
-export function curvePoint(t: number, out = new THREE.Vector3()): THREE.Vector3 {
-  return out.set(CURVE_A * Math.cos(t), CURVE_A * Math.sin(t) * Math.cos(t), CURVE_C * Math.sin(t));
+export const TRACK_SHAPES: Record<"teacher" | "coder", TrackShapeConfig> = {
+  // The shape everything was tuned against on /infinity-preview: smooth,
+  // rounded, symmetric -- a chalkboard infinity symbol.
+  teacher: { curveA: 2.2, curveC: 0.9, twistTurns: 0 },
+  // Wider and flatter (less banking depth), with a slow spiral twist
+  // through the tiling -- reads as tighter and more deliberately
+  // engineered without changing the underlying loop's topology at all.
+  coder: { curveA: 2.6, curveC: 0.45, twistTurns: 1.5 },
+};
+
+export function curvePoint(config: TrackShapeConfig, t: number, out = new THREE.Vector3()): THREE.Vector3 {
+  return out.set(config.curveA * Math.cos(t), config.curveA * Math.sin(t) * Math.cos(t), config.curveC * Math.sin(t));
 }
 
 interface TrackFrame {
@@ -47,14 +72,14 @@ interface TrackFrame {
  * -- simpler than a full double-reflection RMF, and produces no visible
  * twist for a smooth closed curve sampled this densely.
  */
-function buildTrackFrames(stationCount: number): TrackFrame[] {
+function buildTrackFrames(config: TrackShapeConfig, stationCount: number): TrackFrame[] {
   const frames: TrackFrame[] = [];
   const delta = 0.0005;
   for (let i = 0; i < stationCount; i++) {
     const t = (i / stationCount) * Math.PI * 2;
-    const position = curvePoint(t);
-    const ahead = curvePoint(t + delta);
-    const behind = curvePoint(t - delta);
+    const position = curvePoint(config, t);
+    const ahead = curvePoint(config, t + delta);
+    const behind = curvePoint(config, t - delta);
     const tangent = ahead.sub(behind).normalize();
     frames.push({ position, tangent, normal: new THREE.Vector3(), binormal: new THREE.Vector3() });
   }
@@ -102,8 +127,13 @@ export interface TrackGeometryInfo {
  * as a tiled surface without needing exact-fit trapezoids at every
  * station.
  */
-export function buildTrackGeometry(stationCount: number, tilesAround: number, tubeRadius: number): TrackGeometryInfo {
-  const frames = buildTrackFrames(stationCount);
+export function buildTrackGeometry(
+  config: TrackShapeConfig,
+  stationCount: number,
+  tilesAround: number,
+  tubeRadius: number,
+): TrackGeometryInfo {
+  const frames = buildTrackFrames(config, stationCount);
 
   let loopLength = 0;
   for (let i = 0; i < stationCount; i++) {
@@ -117,8 +147,12 @@ export function buildTrackGeometry(stationCount: number, tilesAround: number, tu
   const basisMatrix = new THREE.Matrix4();
   for (let i = 0; i < stationCount; i++) {
     const frame = frames[i];
+    // The twist: each ring's own start angle advances steadily over the
+    // loop, `twistTurns` full turns by the time it closes back on
+    // itself -- zero for the untwisted shape, a real spiral otherwise.
+    const twistOffset = (i / stationCount) * config.twistTurns * Math.PI * 2;
     for (let j = 0; j < tilesAround; j++) {
-      const angle = (j / tilesAround) * Math.PI * 2;
+      const angle = (j / tilesAround) * Math.PI * 2 + twistOffset;
       const outward = frame.normal
         .clone()
         .multiplyScalar(Math.cos(angle))
@@ -142,4 +176,92 @@ export function buildTrackGeometry(stationCount: number, tilesAround: number, tu
   }
 
   return { tiles, tileWidth, tileHeight, loopLength };
+}
+
+export interface TrackGeometryPair {
+  tileCount: number;
+  along: Float32Array; // shared between both shapes -- same topology/order
+  positionsA: Float32Array;
+  positionsB: Float32Array;
+  outwardA: Float32Array;
+  outwardB: Float32Array;
+  quatA: Float32Array;
+  quatB: Float32Array;
+  tileWidth: number;
+  tileHeight: number;
+}
+
+/**
+ * Builds two full tile geometries from the same station/tilesAround/
+ * tubeRadius (so they share the exact same topology and tile count,
+ * index for index) and flattens both into typed arrays -- the shape
+ * Experience3D.tsx wants for a cheap per-frame lerp/slerp between them,
+ * rather than juggling two parallel arrays of TileInstance objects.
+ * tileWidth/tileHeight are averaged across the pair: the box geometry
+ * built from them is one shared, unchanging InstancedMesh geometry, not
+ * something that resizes as the shape blends.
+ */
+export function buildTrackGeometryPair(
+  shapeA: TrackShapeConfig,
+  shapeB: TrackShapeConfig,
+  stationCount: number,
+  tilesAround: number,
+  tubeRadius: number,
+): TrackGeometryPair {
+  const a = buildTrackGeometry(shapeA, stationCount, tilesAround, tubeRadius);
+  const b = buildTrackGeometry(shapeB, stationCount, tilesAround, tubeRadius);
+  const tileCount = a.tiles.length;
+
+  const along = new Float32Array(tileCount);
+  const positionsA = new Float32Array(tileCount * 3);
+  const positionsB = new Float32Array(tileCount * 3);
+  const outwardA = new Float32Array(tileCount * 3);
+  const outwardB = new Float32Array(tileCount * 3);
+  const quatA = new Float32Array(tileCount * 4);
+  const quatB = new Float32Array(tileCount * 4);
+
+  for (let i = 0; i < tileCount; i++) {
+    along[i] = a.tiles[i].along;
+    const pa = a.tiles[i].basePosition;
+    const pb = b.tiles[i].basePosition;
+    positionsA[i * 3] = pa.x;
+    positionsA[i * 3 + 1] = pa.y;
+    positionsA[i * 3 + 2] = pa.z;
+    positionsB[i * 3] = pb.x;
+    positionsB[i * 3 + 1] = pb.y;
+    positionsB[i * 3 + 2] = pb.z;
+
+    const oa = a.tiles[i].outward;
+    const ob = b.tiles[i].outward;
+    outwardA[i * 3] = oa.x;
+    outwardA[i * 3 + 1] = oa.y;
+    outwardA[i * 3 + 2] = oa.z;
+    outwardB[i * 3] = ob.x;
+    outwardB[i * 3 + 1] = ob.y;
+    outwardB[i * 3 + 2] = ob.z;
+
+    const qa = a.tiles[i].quaternion;
+    const qb = b.tiles[i].quaternion;
+    quatA[i * 4] = qa.x;
+    quatA[i * 4 + 1] = qa.y;
+    quatA[i * 4 + 2] = qa.z;
+    quatA[i * 4 + 3] = qa.w;
+    quatB[i * 4] = qb.x;
+    quatB[i * 4 + 1] = qb.y;
+    quatB[i * 4 + 2] = qb.z;
+    quatB[i * 4 + 3] = qb.w;
+  }
+
+  return {
+    tileCount,
+    along,
+    positionsA,
+    positionsB,
+    outwardA,
+    outwardB,
+    quatA,
+    quatB,
+    tileWidth: (a.tileWidth + b.tileWidth) / 2,
+    tileHeight: (a.tileHeight + b.tileHeight) / 2,
+  };
 }

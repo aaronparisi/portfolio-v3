@@ -3,7 +3,7 @@ import { TimelineItem } from "./TimelineItem";
 import { PivotCard } from "./PivotCard";
 import { Reveal } from "./Reveal";
 
-export function Timeline() {
+export function Timeline({ onPivotEnter }: { onPivotEnter?: () => void } = {}) {
   return (
     <section className="relative py-24 sm:py-32">
       {/* Same technique as About's #about anchor: keep the section's own
@@ -28,7 +28,7 @@ export function Timeline() {
           {timeline.map((entry, i) => (
             <Reveal key={entry.id} delay={Math.min(i, 4) * 70}>
               {entry.id === "appacademy" ? (
-                <PivotCard entry={entry} />
+                <PivotCard entry={entry} onEnter={onPivotEnter} />
               ) : (
                 <TimelineItem entry={entry} />
               )}

@@ -1,7 +1,13 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { buildTrackGeometry, curvePoint, type TileInstance } from "~/three/createInfinityTrack";
+import { buildTrackGeometry, curvePoint, TRACK_SHAPES, type TileInstance } from "~/three/createInfinityTrack";
+
+// This preview is tuned against a single fixed shape -- the "teacher"
+// config is exactly the curveA=2.2/curveC=0.9/no-twist values this file
+// used to hard-code itself, before createInfinityTrack.ts generalized
+// to support the site's own shape-blending (see Experience3D.tsx).
+const SHAPE = TRACK_SHAPES.teacher;
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
@@ -219,7 +225,7 @@ export function InfinityTrack3D() {
     rim.position.set(-5, -2, -3);
     scene.add(rim);
 
-    const { tiles, tileWidth, tileHeight } = buildTrackGeometry(STATIONS, TILES_AROUND, TUBE_RADIUS);
+    const { tiles, tileWidth, tileHeight } = buildTrackGeometry(SHAPE, STATIONS, TILES_AROUND, TUBE_RADIUS);
     const tileCount = tiles.length;
 
     const tileGeometry = new THREE.BoxGeometry(
@@ -257,7 +263,7 @@ export function InfinityTrack3D() {
     const glowPointVec = new THREE.Vector3();
     for (let i = 0; i < GLOW_POINT_COUNT; i++) {
       const t = (i / GLOW_POINT_COUNT) * Math.PI * 2;
-      curvePoint(t, glowPointVec);
+      curvePoint(SHAPE, t, glowPointVec);
       glowPositions[i * 3] = glowPointVec.x;
       glowPositions[i * 3 + 1] = glowPointVec.y;
       glowPositions[i * 3 + 2] = glowPointVec.z;

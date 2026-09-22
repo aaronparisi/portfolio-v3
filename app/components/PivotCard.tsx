@@ -1,11 +1,33 @@
+import { useEffect, useRef } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import type { TimelineEntry } from "~/data/timeline";
 import { TerminalIcon } from "./icons";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 
 /** The App Academy entry gets special treatment — it's the hinge the whole story turns on. */
-export function PivotCard({ entry }: { entry: TimelineEntry }) {
+export function PivotCard({ entry, onEnter }: { entry: TimelineEntry; onEnter?: () => void }) {
   const reduced = usePrefersReducedMotion();
+  const cardRef = useRef<HTMLLIElement>(null);
+
+  // The single most deliberate beat in the whole 3D backdrop's story --
+  // "the turning point" literally is the calc-teacher-to-coder hinge, so
+  // this is where its own blowout pulse fires, once, rather than on
+  // every timeline entry (which would read as noise on a fast scroll).
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el || !onEnter) return;
+    const observer = new IntersectionObserver(
+      ([intersection]) => {
+        if (intersection.isIntersecting) {
+          onEnter();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onEnter]);
   // No y-translate here on purpose — an upward slide reads as the card
   // "rising" up the page, not "coming toward you". Scale + a shadow that
   // grows underneath it reads much more like the card lifting off the
@@ -17,7 +39,7 @@ export function PivotCard({ entry }: { entry: TimelineEntry }) {
   }));
 
   return (
-    <li className="relative pl-16 sm:pl-20">
+    <li ref={cardRef} className="relative pl-16 sm:pl-20">
       <span className="timeline-dot absolute left-0 top-0.5 flex h-11 w-11 items-center justify-center rounded-full text-[var(--accent-warm)]">
         <TerminalIcon className="h-5 w-5" />
       </span>

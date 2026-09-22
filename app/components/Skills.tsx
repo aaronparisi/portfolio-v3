@@ -197,11 +197,31 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
   );
 }
 
-export function Skills() {
+export function Skills({ onEnter }: { onEnter?: () => void } = {}) {
   let runningIndex = 0;
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Same one-shot IntersectionObserver pattern as About/PivotCard --
+  // this is the last of the 3D backdrop's three story-beat pulses, the
+  // "resolved coder form" one.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || !onEnter) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onEnter();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onEnter]);
 
   return (
-    <section id="skills" className="py-24 sm:py-32">
+    <section ref={sectionRef} id="skills" className="py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-6">
         <Reveal>
           <h2 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">

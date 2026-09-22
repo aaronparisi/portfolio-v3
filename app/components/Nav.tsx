@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import { MotionToggle } from "./MotionToggle";
 import { BrandMark } from "./BrandMark";
@@ -11,26 +12,33 @@ const links = [
   { href: "#contact", label: "Contact" },
 ];
 
-export function Nav() {
+// How long after Hero's text (its own TEXT_DELAY, measured from
+// `booted`) to wait before Nav drops in -- long enough for that trail's
+// spring (tension 190/friction 22) to have visibly settled, not just
+// started. This used to be a delay from Nav's own mount instead, tuned
+// by hand against Hero's constants and left to silently drift out of
+// sync with them (confirmed: it did, once Hero's `booted` timing
+// changed source out from under it) -- keying off the same `booted`
+// value Hero itself uses removes that whole class of bug instead of
+// just re-tuning the magic number again.
+const NAV_DELAY_AFTER_BOOT = 2600;
+
+export function Nav({ booted }: { booted: boolean }) {
   const reduced = usePrefersReducedMotion();
 
-  // The site "turning on" -- but the nav isn't the first thing to move.
-  // Hero's own reveal runs first in full: the 3D calculus surface boots
-  // up, the equation gets its featured beat, then the heading/bio/CTA
-  // text arrives -- only once all of *that* has settled does the nav
-  // drop down from off-screen, with the scroll cue arriving last after
-  // it. The 4.3s delay is tuned against that sequence in Hero.tsx
-  // (EQUATION_DELAY/SURFACE_SETTLE_DELAY/TEXT_DELAY) -- change one,
-  // sanity-check the other. A small overshoot past 0 (low friction
-  // relative to tension) reads as a physical thing settling into its
-  // slot, not a panel sliding to a stop.
-  const entrance = useSpring({
-    from: { y: -80, opacity: 0 },
-    to: { y: 0, opacity: 1 },
-    delay: reduced ? 0 : 4300,
-    immediate: reduced,
-    config: { tension: 210, friction: 18 },
-  });
+  // A small overshoot past 0 (low friction relative to tension) reads
+  // as a physical thing settling into its slot, not a panel sliding to
+  // a stop.
+  const [entrance, entranceApi] = useSpring(() => ({ y: -80, opacity: 0 }));
+
+  useEffect(() => {
+    if (reduced) {
+      entranceApi.set({ y: 0, opacity: 1 });
+      return;
+    }
+    if (!booted) return;
+    void entranceApi.start({ y: 0, opacity: 1, delay: NAV_DELAY_AFTER_BOOT, config: { tension: 210, friction: 18 } });
+  }, [booted, reduced, entranceApi]);
 
   return (
     <animated.header

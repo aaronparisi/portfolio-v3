@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import { Reveal } from "./Reveal";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
@@ -47,9 +48,32 @@ function EndorsementCard({ name, quote, accent }: { name: string; quote: string;
   );
 }
 
-export function About() {
+export function About({ onEnter }: { onEnter?: () => void } = {}) {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // Fires the 3D backdrop's own "content arriving" pulse (see
+  // Experience3D.tsx / home.tsx) once, the first time this section
+  // actually scrolls into view -- same IntersectionObserver-once
+  // pattern Reveal already uses, just watching the section itself
+  // instead of gating a spring.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el || !onEnter) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          onEnter();
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onEnter]);
+
   return (
-    <section className="relative py-24 sm:py-32">
+    <section ref={sectionRef} className="relative py-24 sm:py-32">
       {/* The section itself keeps its full top padding for visual rhythm
           on a natural scroll, but jumping here from the nav link or the
           hero's chevron should land near the actual heading, not on a
