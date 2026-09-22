@@ -28,7 +28,7 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="contact" className="border-t border-[var(--border)] px-6 py-24">
+    <footer id="contact" className="relative z-10 border-t border-[var(--border)] px-6 py-24">
       <div className="mx-auto max-w-2xl text-center">
         <Reveal>
           <h2 className="font-display text-4xl text-[var(--ink)] sm:text-5xl">

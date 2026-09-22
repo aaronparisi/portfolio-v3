@@ -65,7 +65,10 @@ export default function Home() {
           <Experience3D progressRef={progressRef} pulseSignal={pulseSignal} onBootComplete={() => setBooted(true)} />
           <ScrollProgress />
           <Nav booted={booted} />
-          <main>
+          {/* Explicit z-10, not just "later in the DOM than
+              Experience3D" -- see that component's own comment on why
+              a negative z-index on it wasn't good enough here. */}
+          <main className="relative z-10">
             <div ref={experienceRef}>
               <Hero booted={booted} />
               <About onEnter={bumpPulse} />

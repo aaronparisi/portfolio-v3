@@ -558,22 +558,20 @@ export function Experience3D({
     <div
       ref={containerRef}
       aria-hidden="true"
-      // NOTE ON VERIFICATION: this project's headless test setup
-      // (Playwright + Chromium's software WebGL) was never able to
-      // screenshot this canvas correctly layered behind real page
-      // content, in ANY combination tried -- position:fixed vs
-      // absolute, negative vs explicit z-index, GPU flags on or off,
-      // with or without a manual scroll-pin transform. A minimal
-      // repro with a plain 2D canvas (no WebGL) in the exact same spot
-      // layered correctly on the first try, which points at a WebGL-
-      // canvas-specific headless compositing limitation rather than
-      // anything wrong with this CSS -- "behind everything via a
-      // negative z-index" is an extremely well-established, ubiquitous
-      // pattern for exactly this (matches Hero's own light-cone divs),
-      // and is what every attempt here kept converging back on as the
-      // simplest correct answer. Flagged for a one-time real-browser
-      // spot-check rather than five more headless workarounds.
-      className="pointer-events-none fixed inset-0 -z-10 h-full w-full"
+      // z-0, not a negative z-index: confirmed directly, in a real
+      // browser (not just this project's own unreliable headless test
+      // setup), that a negative z-index here left the canvas fully
+      // invisible -- existing, correctly sized, mounted with no errors,
+      // just never painted. Negative z-index vs. plain non-positioned
+      // content works fine LOCALLY (Hero's own light-cone divs do
+      // exactly that, inside Hero's own `position: relative` section),
+      // but this is a full page-root-level fixed layer competing against
+      // ~5 unrelated ancestors (Nav, main, Footer, ...) at once -- a
+      // much less bulletproof case. Explicit z-index both directions
+      // instead: every real content layer above this one carries its
+      // own `relative z-10` (see home.tsx/Footer.tsx) rather than this
+      // one going negative.
+      className="pointer-events-none fixed inset-0 z-0 h-full w-full"
     />
   );
 }
