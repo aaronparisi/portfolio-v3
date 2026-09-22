@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { buildTrackGeometry, curvePoint, TRACK_SHAPES, type TileInstance } from "~/three/createInfinityTrack";
+import { buildTrackGeometry, curvePoint, SHAPE_TEACHER, type TileInstance } from "~/three/createInfinityTrack";
 
-// This preview is tuned against a single fixed shape -- the "teacher"
-// config is exactly the curveA=2.2/curveC=0.9/no-twist values this file
-// used to hard-code itself, before createInfinityTrack.ts generalized
-// to support the site's own shape-blending (see Experience3D.tsx).
-const SHAPE = TRACK_SHAPES.teacher;
+// This preview is tuned against a single fixed shape -- SHAPE_TEACHER
+// is exactly the curveA=2.2/curveC=0.9/no-twist values this file used
+// to hard-code itself, before createInfinityTrack.ts generalized to
+// support the site's own multi-shape morph (see Experience3D.tsx).
+const SHAPE = SHAPE_TEACHER;
 import { springValue } from "~/utils/springValue";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
 

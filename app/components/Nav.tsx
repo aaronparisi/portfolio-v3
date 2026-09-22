@@ -41,8 +41,14 @@ export function Nav({ booted }: { booted: boolean }) {
   }, [booted, reduced, entranceApi]);
 
   return (
+    // backdrop-blur dropped: this predates the 3D backdrop, but now
+    // that a live WebGL canvas sits behind everything (Experience3D.tsx),
+    // blurring it through backdrop-filter renders as a distorted ghost/
+    // double-image instead of clean frosted glass (confirmed directly,
+    // see Hero.tsx's own comment) -- a slightly higher solid opacity
+    // reads just as clean without it.
     <animated.header
-      className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/80 backdrop-blur-md"
+      className="sticky top-0 z-40 border-b border-[var(--border)] bg-[var(--bg)]/92"
       style={{ opacity: entrance.opacity, transform: entrance.y.to((y) => `translate3d(0, ${y}px, 0)`) }}
     >
       <nav className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">

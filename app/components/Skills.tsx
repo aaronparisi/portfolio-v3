@@ -197,34 +197,21 @@ function PillGroup({ label, items, startIndex }: { label: string; items: SkillIt
   );
 }
 
-export function Skills({ onEnter }: { onEnter?: () => void } = {}) {
+export function Skills() {
   let runningIndex = 0;
-  const sectionRef = useRef<HTMLElement>(null);
-
-  // Same one-shot IntersectionObserver pattern as About/PivotCard --
-  // this is the last of the 3D backdrop's three story-beat pulses, the
-  // "resolved coder form" one.
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el || !onEnter) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onEnter();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.3 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onEnter]);
 
   return (
-    <section ref={sectionRef} id="skills" className="py-24 sm:py-32">
-      <div className="mx-auto max-w-3xl px-6">
+    <section id="skills" className="py-24 sm:py-32">
+      {/* The 3D backdrop's camera swings the object RIGHT through this
+          section (Experience3D.tsx's own CAMERA_KEYFRAMES), same side as
+          Hero -- this column sits left to match. The pill grid already
+          carries its own opaque background per pill, so only the
+          heading needs its own legibility panel. No backdrop-blur --
+          see Hero.tsx's own comment on why it renders as a distorted
+          ghost over the live WebGL canvas rather than clean glass. */}
+      <div className="mx-auto max-w-3xl px-6 lg:mx-0 lg:max-w-2xl">
         <Reveal>
-          <h2 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">
+          <h2 className="inline-block rounded-2xl bg-[var(--bg)]/92 px-4 py-2 font-display text-3xl text-[var(--ink)] sm:text-4xl">
             What I bring to the table
           </h2>
         </Reveal>

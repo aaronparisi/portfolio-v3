@@ -97,46 +97,57 @@ export function Hero({ booted }: { booted: boolean }) {
           object has scrolled/rotated to. */}
       <div aria-hidden="true" className="light-cone absolute inset-x-0 top-0 -z-10 h-[36rem] opacity-60" />
 
-      <div className="mx-auto max-w-2xl px-6 text-center">
-        <animated.div
-          style={{
-            opacity: equation.opacity,
-            transform: to([equation.y, equation.scale], (y, s) => `translate3d(0, ${y}px, 0) scale(${s})`),
-            pointerEvents: equation.opacity.to((o) => (o < 0.05 ? "none" : "auto")),
-          }}
-          className="mb-8 flex justify-center"
-        >
-          <AnimatedEquation />
-        </animated.div>
+      {/* The 3D backdrop's camera swings the object RIGHT through Hero
+          (Experience3D.tsx's own CAMERA_KEYFRAMES) -- this column sits
+          left, on large viewports, to match, with its own high-opacity
+          panel underneath as a legibility floor regardless of exactly
+          where the object ends up on screen. No backdrop-blur --
+          confirmed directly that blurring a live WebGL canvas through
+          backdrop-filter renders as a distorted ghost/double-image
+          rather than clean frosted glass; a near-solid background reads
+          just as clean without it. */}
+      <div className="mx-auto max-w-2xl px-6 lg:mx-0 lg:ml-[7%] lg:max-w-xl">
+        <div className="rounded-3xl bg-[var(--bg)]/92 p-6 text-center sm:p-10 lg:text-left">
+          <animated.div
+            style={{
+              opacity: equation.opacity,
+              transform: to([equation.y, equation.scale], (y, s) => `translate3d(0, ${y}px, 0) scale(${s})`),
+              pointerEvents: equation.opacity.to((o) => (o < 0.05 ? "none" : "auto")),
+            }}
+            className="mb-8 flex justify-center lg:justify-start"
+          >
+            <AnimatedEquation />
+          </animated.div>
 
-        <animated.h1
-          style={riseStyle(trail[0])}
-          className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
-        >
-          Aaron{" "}
-          <em className="font-hand not-italic tracking-normal text-[var(--accent)]">Parisi</em>
-        </animated.h1>
+          <animated.h1
+            style={riseStyle(trail[0])}
+            className="font-display text-5xl leading-[1.05] tracking-tight text-[var(--ink)] sm:text-7xl"
+          >
+            Aaron{" "}
+            <em className="font-hand not-italic tracking-normal text-[var(--accent)]">Parisi</em>
+          </animated.h1>
 
-        <animated.p
-          style={riseStyle(trail[1])}
-          className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)]"
-        >
-          AP Calculus teacher turned Frontend Developer. I build interfaces with React,
-          TypeScript, and a habit of digging one layer deeper. The type of kid who kept
-          asking, <span className="annotation text-xl">Why?</span>
-        </animated.p>
+          <animated.p
+            style={riseStyle(trail[1])}
+            className="mx-auto mt-6 max-w-md text-lg leading-relaxed text-[var(--ink-soft)] lg:mx-0"
+          >
+            AP Calculus teacher turned Frontend Developer. I build interfaces with React,
+            TypeScript, and a habit of digging one layer deeper. The type of kid who kept
+            asking, <span className="annotation text-xl">Why?</span>
+          </animated.p>
 
-        <animated.div
-          style={riseStyle(trail[2])}
-          className="mt-8 flex flex-wrap items-center justify-center gap-4"
-        >
-          <SpringButton href="#journey" className="btn-primary rounded-full px-6 py-3 font-medium">
-            See my journey
-          </SpringButton>
-          <SpringButton href="#contact" className="btn-secondary rounded-full px-6 py-3 font-medium">
-            Get in touch
-          </SpringButton>
-        </animated.div>
+          <animated.div
+            style={riseStyle(trail[2])}
+            className="mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start"
+          >
+            <SpringButton href="#journey" className="btn-primary rounded-full px-6 py-3 font-medium">
+              See my journey
+            </SpringButton>
+            <SpringButton href="#contact" className="btn-secondary rounded-full px-6 py-3 font-medium">
+              Get in touch
+            </SpringButton>
+          </animated.div>
+        </div>
       </div>
 
       <a

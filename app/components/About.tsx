@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { animated, useSpring } from "@react-spring/web";
 import { Reveal } from "./Reveal";
 import { usePrefersReducedMotion } from "~/hooks/usePrefersReducedMotion";
@@ -48,32 +47,9 @@ function EndorsementCard({ name, quote, accent }: { name: string; quote: string;
   );
 }
 
-export function About({ onEnter }: { onEnter?: () => void } = {}) {
-  const sectionRef = useRef<HTMLElement>(null);
-
-  // Fires the 3D backdrop's own "content arriving" pulse (see
-  // Experience3D.tsx / home.tsx) once, the first time this section
-  // actually scrolls into view -- same IntersectionObserver-once
-  // pattern Reveal already uses, just watching the section itself
-  // instead of gating a spring.
-  useEffect(() => {
-    const el = sectionRef.current;
-    if (!el || !onEnter) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          onEnter();
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.3 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [onEnter]);
-
+export function About() {
   return (
-    <section ref={sectionRef} className="relative py-24 sm:py-32">
+    <section className="relative py-24 sm:py-32">
       {/* The section itself keeps its full top padding for visual rhythm
           on a natural scroll, but jumping here from the nav link or the
           hero's chevron should land near the actual heading, not on a
@@ -84,50 +60,63 @@ export function About({ onEnter }: { onEnter?: () => void } = {}) {
           keeps below itself (mb-6, 24px) — so "About" sits exactly as
           far from the nav as it does from the line under it. */}
       <span id="about" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-[97px] sm:top-32" />
-      <div className="mx-auto max-w-2xl px-6 text-center">
-        <Reveal>
-          <blockquote className="font-display text-3xl font-medium leading-snug text-[var(--ink)] sm:text-4xl">
-            &ldquo;The kind of kid who kept asking,{" "}
-            <span className="annotation text-4xl sm:text-5xl">why?</span>&rdquo;
-          </blockquote>
-          <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            I taught AP Calculus before I ever wrote a line of code. Teaching advanced mathematics
-            requires more than just being smart - you have to understand complexity well enough to explain it;
-            you have to understand people well enough to connect with them.
-            Turns out this translates well: I bring those same instincts to the frontend, seeking roles
-            that involve extensive collaboration with product and design, and always digging one
-            layer deeper into the architecture I build, and the tools I use to build it.
-          </p>
-          <p className="mx-auto mt-8 max-w-xl text-sm leading-relaxed text-[var(--ink-soft)]">
-            I&rsquo;ll admit it: I don&rsquo;t have years and years of development experience.
-            I&rsquo;ve never studied advanced algorithms. I&rsquo;m no mastermind, and I am not
-            the fastest developer this side of the Mississippi.
-          </p>
-          <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            And&hellip; in the words of my coworkers, I am{" "}
-            <span className="font-semibold text-[var(--ink)]">&ldquo;an asset to any team&rdquo;</span>.{" "}
-            <span className="annotation text-2xl">Why?</span>
-          </p>
-          <p className="mx-auto mt-8 max-w-xl text-base leading-relaxed text-[var(--ink-soft)]">
-            Because I don&rsquo;t just find &ldquo;a solution&rdquo; ~{" "}
-            <strong className="font-semibold text-[var(--ink)]">
-              I dig until I am confident my code is well-written.
-            </strong>{" "}
-            Because I don&rsquo;t just find bugs ~{" "}
-            <strong className="font-semibold text-[var(--ink)]">
-              I poke and prod until I know <span className="annotation text-lg">WHY</span>{" "}
-              the code broke, and how to fix it at the root.
-            </strong>{" "}
-            I can&rsquo;t grok spaghetti code, so I don&rsquo;t write it. And I have a hawkish eye
-            for inconsistencies ~ so when something doesn&rsquo;t make sense to me, I ask about it
-            until I do.
-          </p>
-          <p className="mx-auto mt-8 max-w-xl text-sm leading-relaxed text-[var(--ink-soft)]">
-            But don&rsquo;t take my word for it&hellip;
-          </p>
-        </Reveal>
+      <div className="mx-auto max-w-4xl px-6">
+        {/* The 3D backdrop's camera swings the object LEFT through this
+            section (Experience3D.tsx's own CAMERA_KEYFRAMES) -- this
+            column sits right, on large viewports, to match, with its
+            own high-opacity panel underneath as a legibility floor
+            regardless of exactly where the object ends up on screen.
+            No backdrop-blur -- confirmed directly that blurring a live
+            WebGL canvas through backdrop-filter renders as a distorted
+            ghost/double-image rather than clean frosted glass; a
+            near-solid background reads just as clean without it. */}
+        <div className="lg:ml-auto lg:mr-0 lg:max-w-xl">
+          <Reveal>
+            <div className="rounded-3xl bg-[var(--bg)]/92 p-6 text-center sm:p-10 lg:text-left">
+              <blockquote className="font-display text-3xl font-medium leading-snug text-[var(--ink)] sm:text-4xl">
+                &ldquo;The kind of kid who kept asking,{" "}
+                <span className="annotation text-4xl sm:text-5xl">why?</span>&rdquo;
+              </blockquote>
+              <p className="mt-8 text-base leading-relaxed text-[var(--ink-soft)]">
+                I taught AP Calculus before I ever wrote a line of code. Teaching advanced mathematics
+                requires more than just being smart - you have to understand complexity well enough to explain it;
+                you have to understand people well enough to connect with them.
+                Turns out this translates well: I bring those same instincts to the frontend, seeking roles
+                that involve extensive collaboration with product and design, and always digging one
+                layer deeper into the architecture I build, and the tools I use to build it.
+              </p>
+              <p className="mt-8 text-sm leading-relaxed text-[var(--ink-soft)]">
+                I&rsquo;ll admit it: I don&rsquo;t have years and years of development experience.
+                I&rsquo;ve never studied advanced algorithms. I&rsquo;m no mastermind, and I am not
+                the fastest developer this side of the Mississippi.
+              </p>
+              <p className="mt-8 text-base leading-relaxed text-[var(--ink-soft)]">
+                And&hellip; in the words of my coworkers, I am{" "}
+                <span className="font-semibold text-[var(--ink)]">&ldquo;an asset to any team&rdquo;</span>.{" "}
+                <span className="annotation text-2xl">Why?</span>
+              </p>
+              <p className="mt-8 text-base leading-relaxed text-[var(--ink-soft)]">
+                Because I don&rsquo;t just find &ldquo;a solution&rdquo; ~{" "}
+                <strong className="font-semibold text-[var(--ink)]">
+                  I dig until I am confident my code is well-written.
+                </strong>{" "}
+                Because I don&rsquo;t just find bugs ~{" "}
+                <strong className="font-semibold text-[var(--ink)]">
+                  I poke and prod until I know <span className="annotation text-lg">WHY</span>{" "}
+                  the code broke, and how to fix it at the root.
+                </strong>{" "}
+                I can&rsquo;t grok spaghetti code, so I don&rsquo;t write it. And I have a hawkish eye
+                for inconsistencies ~ so when something doesn&rsquo;t make sense to me, I ask about it
+                until I do.
+              </p>
+              <p className="mt-8 text-sm leading-relaxed text-[var(--ink-soft)]">
+                But don&rsquo;t take my word for it&hellip;
+              </p>
+            </div>
+          </Reveal>
+        </div>
 
-        <div className="mt-10 grid gap-5 text-left sm:grid-cols-2">
+        <div className="mt-10 grid gap-5 text-left sm:grid-cols-3">
           {ENDORSEMENTS.map((entry, i) => (
             <Reveal key={entry.name} delay={120 + i * 100}>
               <EndorsementCard

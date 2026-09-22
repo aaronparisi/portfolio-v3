@@ -1,9 +1,10 @@
 import { timeline } from "~/data/timeline";
 import { TimelineItem } from "./TimelineItem";
 import { PivotCard } from "./PivotCard";
+import { HorizontalRoom } from "./HorizontalRoom";
 import { Reveal } from "./Reveal";
 
-export function Timeline({ onPivotEnter }: { onPivotEnter?: () => void } = {}) {
+export function Timeline() {
   return (
     <section className="relative py-24 sm:py-32">
       {/* Same technique as About's #about anchor: keep the section's own
@@ -15,26 +16,34 @@ export function Timeline({ onPivotEnter }: { onPivotEnter?: () => void } = {}) {
       <span id="journey" aria-hidden="true" className="absolute left-0 top-24 scroll-mt-[97px] sm:top-32" />
       <div className="mx-auto max-w-3xl px-6">
         <Reveal>
-          <h2 className="font-display text-3xl text-[var(--ink)] sm:text-4xl">
+          {/* No backdrop-blur here -- see Hero.tsx's own comment on why
+              it renders as a distorted ghost over the live WebGL canvas
+              rather than clean glass. */}
+          <h2 className="inline-block rounded-2xl bg-[var(--bg)]/92 px-4 py-2 font-display text-3xl text-[var(--ink)] sm:text-4xl">
             From chalkboard to codebase
           </h2>
         </Reveal>
+      </div>
 
-        <ol className="relative mt-16 space-y-10">
-          <span
-            aria-hidden="true"
-            className="timeline-rail absolute left-5 top-1 h-[calc(100%-2rem)] w-px sm:left-7"
-          />
-          {timeline.map((entry, i) => (
-            <Reveal key={entry.id} delay={Math.min(i, 4) * 70}>
-              {entry.id === "appacademy" ? (
-                <PivotCard entry={entry} onEnter={onPivotEnter} />
-              ) : (
-                <TimelineItem entry={entry} />
-              )}
-            </Reveal>
-          ))}
-        </ol>
+      {/* The site's first "room": scroll down through this span and the
+          career entries below pan horizontally instead of scrolling
+          away vertically -- a real "wait, we're moving sideways" beat
+          rather than one continuous trip down the page. See
+          HorizontalRoom's own comment. */}
+      <div className="mt-12">
+        <HorizontalRoom roomHeightVh={280}>
+          {/* Leading/trailing spacers so the first and last cards don't
+              start flush against the viewport edge mid-pan. */}
+          <div aria-hidden="true" className="w-[6vw] shrink-0" />
+          {timeline.map((entry) =>
+            entry.id === "appacademy" ? (
+              <PivotCard key={entry.id} entry={entry} />
+            ) : (
+              <TimelineItem key={entry.id} entry={entry} />
+            ),
+          )}
+          <div aria-hidden="true" className="w-[6vw] shrink-0" />
+        </HorizontalRoom>
       </div>
     </section>
   );

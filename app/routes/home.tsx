@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import type { Route } from "./+types/home";
 import { Nav } from "~/components/Nav";
 import { Hero } from "~/components/Hero";
@@ -46,14 +46,6 @@ export default function Home() {
   const progressRef = useStoryProgressRef(experienceRef);
 
   const [booted, setBooted] = useState(false);
-  // Bumped once per story beat (About/the timeline's pivot card/Skills
-  // scrolling into view) -- Experience3D watches for the increment and
-  // replays its own tile-blowout + Gruvbox color pulse in response. A
-  // plain incrementing counter, not a boolean, so two beats close
-  // together (e.g. a very fast scroll) still each register as a real
-  // change instead of colliding on the same "true".
-  const [pulseSignal, setPulseSignal] = useState(0);
-  const bumpPulse = useCallback(() => setPulseSignal((n) => n + 1), []);
 
   return (
     <div id="top" className="min-h-screen text-[var(--ink)]">
@@ -62,7 +54,7 @@ export default function Home() {
         <LoadingScreen onComplete={() => setLoading(false)} />
       ) : (
         <>
-          <Experience3D progressRef={progressRef} pulseSignal={pulseSignal} onBootComplete={() => setBooted(true)} />
+          <Experience3D progressRef={progressRef} onBootComplete={() => setBooted(true)} />
           <ScrollProgress />
           <Nav booted={booted} />
           {/* Explicit z-10, not just "later in the DOM than
@@ -71,9 +63,9 @@ export default function Home() {
           <main className="relative z-10">
             <div ref={experienceRef}>
               <Hero booted={booted} />
-              <About onEnter={bumpPulse} />
-              <Timeline onPivotEnter={bumpPulse} />
-              <Skills onEnter={bumpPulse} />
+              <About />
+              <Timeline />
+              <Skills />
             </div>
           </main>
           <Footer />
